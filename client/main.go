@@ -130,8 +130,6 @@ func handleClient(conn *net.TCPConn) {
 	}
 	defer conn_peer.Close()
 
-	force_re := time.After(6 * time.Hour)
-
 	for {
 		select {
 		case bts, ok := <-ch_peer:
@@ -150,8 +148,6 @@ func handleClient(conn *net.TCPConn) {
 				log.Println(err)
 				return
 			}
-		case <-force_re:
-			return
 		}
 	}
 }
