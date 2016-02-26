@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	_port     = ":1194"     // change this to bind ip
+	_port     = ":12948"    // change this to bind ip
 	_server   = "vps:29900" // server address
 	_key_send = "KS7893685" // change both key for client & server
 	_key_recv = "KR3411865"

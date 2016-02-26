@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	_port     = ":29900"         // change this to bind ip
-	_endpoint = "localhost:1194" // endpoint address
-	_key_recv = "KS7893685"      // change both key for client & server
+	_port     = ":29900"          // change this to bind ip
+	_endpoint = "localhost:12948" // endpoint address
+	_key_recv = "KS7893685"       // change both key for client & server
 	_key_send = "KR3411865"
 )
 
