@@ -18,24 +18,16 @@ const (
 )
 
 func main() {
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", _port)
+	udpaddr, err := net.ResolveUDPAddr("udp", _port)
 	checkError(err)
-	listener, err := net.ListenTCP("tcp", tcpAddr)
+	conn, err := net.ListenUDP("udp", udpaddr)
 	checkError(err)
-	log.Println("listening on:", listener.Addr())
-
-	for {
-		conn, err := listener.AcceptTCP()
-		if err != nil {
-			log.Println("accept failed:", err)
-			continue
-		}
-		handleClient(conn)
-	}
+	log.Println("listening on:", conn.LocalAddr())
+	handleClient(conn)
 }
 
 func peer(sess_die chan struct{}) (net.Conn, <-chan []byte) {
-	conn, err := kcp.Dial(kcp.MODE_NORMAL, _server)
+	conn, err := kcp.Dial(kcp.MODE_FAST, _server)
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +67,7 @@ func peer(sess_die chan struct{}) (net.Conn, <-chan []byte) {
 	return conn, ch
 }
 
-func client(conn *net.TCPConn, sess_die chan struct{}) <-chan []byte {
+func client(conn net.Conn, sess_die chan struct{}) <-chan []byte {
 	ch := make(chan []byte, 128)
 	go func() {
 		defer func() {
@@ -107,7 +99,7 @@ func client(conn *net.TCPConn, sess_die chan struct{}) <-chan []byte {
 	return ch
 }
 
-func handleClient(conn *net.TCPConn) {
+func handleClient(conn net.Conn) {
 	log.Println("stream opened")
 	defer log.Println("stream closed")
 	sess_die := make(chan struct{})

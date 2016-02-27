@@ -17,7 +17,7 @@ const (
 )
 
 func main() {
-	lis, err := kcp.Listen(kcp.MODE_NORMAL, _port)
+	lis, err := kcp.Listen(kcp.MODE_FAST, _port)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func peer(conn net.Conn, sess_die chan struct{}) chan []byte {
 }
 
 func endpoint(sess_die chan struct{}) (net.Conn, <-chan []byte) {
-	conn, err := net.Dial("tcp", _endpoint)
+	conn, err := net.Dial("udp", _endpoint)
 	if err != nil {
 		log.Println(err)
 		return nil, nil
