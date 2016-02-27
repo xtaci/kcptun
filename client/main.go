@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/xtaci/kcp-go"
@@ -111,11 +110,6 @@ func client(conn *net.TCPConn, sess_die chan struct{}) <-chan []byte {
 func handleClient(conn *net.TCPConn) {
 	log.Println("stream opened")
 	defer log.Println("stream closed")
-	defer func() {
-		cmd := exec.Command("killall", "-HUP", "openvpn")
-		cmd.Run()
-	}()
-
 	sess_die := make(chan struct{})
 	defer func() {
 		close(sess_die)

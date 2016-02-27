@@ -4,7 +4,6 @@ import (
 	"crypto/rc4"
 	"log"
 	"net"
-	"os/exec"
 	"time"
 
 	"github.com/xtaci/kcp-go"
@@ -108,11 +107,6 @@ func endpoint(sess_die chan struct{}) (net.Conn, <-chan []byte) {
 func handleClient(conn net.Conn) {
 	log.Println("stream open")
 	defer log.Println("stream close")
-	defer func() {
-		cmd := exec.Command("killall", "-HUP", "openvpn")
-		cmd.Run()
-	}()
-
 	sess_die := make(chan struct{})
 	defer func() {
 		close(sess_die)
