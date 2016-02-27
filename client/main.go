@@ -99,7 +99,7 @@ func client(conn net.Conn, sess_die chan struct{}) <-chan []byte {
 	return ch
 }
 
-func handleClient(conn net.Conn) {
+func handleClient(conn *net.UDPConn) {
 	log.Println("stream opened")
 	defer log.Println("stream closed")
 	sess_die := make(chan struct{})
@@ -109,7 +109,14 @@ func handleClient(conn net.Conn) {
 	}()
 
 	//
+	buf := make([]byte, 4096)
+	n, from, err := conn.ReadFromUDP(buf)
+	if err != nil {
+		return
+	}
+
 	conn_peer, ch_peer := peer(sess_die)
+	conn_peer.Write(buf[:n])
 	ch_client := client(conn, sess_die)
 	if conn_peer == nil {
 		return
@@ -122,7 +129,7 @@ func handleClient(conn net.Conn) {
 			if !ok {
 				return
 			}
-			if _, err := conn.Write(bts); err != nil {
+			if _, err := conn.WriteTo(bts, from); err != nil {
 				log.Println(err)
 				return
 			}
