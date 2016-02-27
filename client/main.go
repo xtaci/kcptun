@@ -18,12 +18,19 @@ const (
 )
 
 func main() {
-	udpaddr, err := net.ResolveUDPAddr("udp", _port)
+	addr, err := net.ResolveTCPAddr("tcp", _port)
 	checkError(err)
-	conn, err := net.ListenUDP("udp", udpaddr)
+	listener, err := net.ListenTCP("tcp", addr)
 	checkError(err)
-	log.Println("listening on:", conn.LocalAddr())
-	handleClient(conn)
+	log.Println("listening on:", listener.Addr())
+	for {
+		conn, err := listener.AcceptTCP()
+		if err != nil {
+			log.Println("accept failed:", err)
+			continue
+		}
+		handleClient(conn)
+	}
 }
 
 func peer(sess_die chan struct{}) (net.Conn, <-chan []byte) {
@@ -99,7 +106,7 @@ func client(conn net.Conn, sess_die chan struct{}) <-chan []byte {
 	return ch
 }
 
-func handleClient(conn *net.UDPConn) {
+func handleClient(conn *net.TCPConn) {
 	log.Println("stream opened")
 	defer log.Println("stream closed")
 	sess_die := make(chan struct{})
@@ -108,15 +115,7 @@ func handleClient(conn *net.UDPConn) {
 		conn.Close()
 	}()
 
-	//
-	buf := make([]byte, 4096)
-	n, from, err := conn.ReadFromUDP(buf)
-	if err != nil {
-		return
-	}
-
 	conn_peer, ch_peer := peer(sess_die)
-	conn_peer.Write(buf[:n])
 	ch_client := client(conn, sess_die)
 	if conn_peer == nil {
 		return
@@ -129,7 +128,7 @@ func handleClient(conn *net.UDPConn) {
 			if !ok {
 				return
 			}
-			if _, err := conn.WriteTo(bts, from); err != nil {
+			if _, err := conn.Write(bts); err != nil {
 				log.Println(err)
 				return
 			}

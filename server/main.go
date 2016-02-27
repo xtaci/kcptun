@@ -66,7 +66,7 @@ func peer(conn net.Conn, sess_die chan struct{}) chan []byte {
 }
 
 func endpoint(sess_die chan struct{}) (net.Conn, <-chan []byte) {
-	conn, err := net.Dial("udp", _endpoint)
+	conn, err := net.Dial("tcp", _endpoint)
 	if err != nil {
 		log.Println(err)
 		return nil, nil
