@@ -36,7 +36,7 @@ func main() {
 }
 
 func peer(sess_die chan struct{}) (net.Conn, <-chan []byte) {
-	conn, err := kcp.Dial(_server)
+	conn, err := kcp.Dial(kcp.MODE_FAST, _server)
 	if err != nil {
 		panic(err)
 	}

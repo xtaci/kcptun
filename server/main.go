@@ -18,7 +18,7 @@ const (
 )
 
 func main() {
-	lis, err := kcp.Listen(_port)
+	lis, err := kcp.Listen(kcp.MODE_FAST, _port)
 	if err != nil {
 		log.Fatal(err)
 	}
