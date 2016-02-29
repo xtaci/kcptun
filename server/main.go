@@ -4,49 +4,68 @@ import (
 	"crypto/rc4"
 	"log"
 	"net"
+	"os"
 	"time"
 
+	"github.com/codegangsta/cli"
 	"github.com/xtaci/kcp-go"
 )
 
-const (
-	_port     = ":29900"          // change this to bind ip
-	_endpoint = "localhost:12948" // endpoint address
-	_key_recv = "KS7893685"       // change both key for client & server
-	_key_send = "KR3411865"
-)
-
 func main() {
-	lis, err := kcp.Listen(kcp.MODE_FAST, _port)
-	if err != nil {
-		log.Fatal(err)
+	myApp := cli.NewApp()
+	myApp.Name = "kcptun"
+	myApp.Usage = "kcptun server"
+	myApp.Version = "1.0"
+	myApp.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "listen,l",
+			Value: ":29900",
+			Usage: "kcp server listen addr:",
+		},
+		cli.StringFlag{
+			Name:  "target, t",
+			Value: "127.0.0.1:12948",
+			Usage: "target server addr",
+		},
+		cli.StringFlag{
+			Name:  "key",
+			Value: "it's a secrect",
+			Usage: "key for communcation, must be the same as kcptun client",
+		},
 	}
+	myApp.Action = func(c *cli.Context) {
+		lis, err := kcp.Listen(kcp.MODE_FAST, c.String("listen"))
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	log.Println("listening on ", lis.Addr())
-	for {
-		if conn, err := lis.Accept(); err == nil {
-			handleClient(conn)
-		} else {
-			log.Println(err)
+		log.Println("listening on ", lis.Addr())
+		for {
+			if conn, err := lis.Accept(); err == nil {
+				handleClient(conn, c.String("endpoint"), c.String("key"))
+			} else {
+				log.Println(err)
+			}
 		}
 	}
+	myApp.Run(os.Args)
 }
 
-func peer(conn net.Conn, sess_die chan struct{}) chan []byte {
+func peer(conn net.Conn, sess_die chan struct{}, key string) chan []byte {
 	ch := make(chan []byte, 128)
 	go func() {
 		defer func() {
 			close(ch)
 		}()
 
-		decoder, err := rc4.NewCipher([]byte(_key_recv))
+		decoder, err := rc4.NewCipher([]byte(key))
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
 		for {
-			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
+			conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 			bts := make([]byte, 4096)
 			n, err := conn.Read(bts)
 			if err != nil {
@@ -65,8 +84,8 @@ func peer(conn net.Conn, sess_die chan struct{}) chan []byte {
 	return ch
 }
 
-func endpoint(sess_die chan struct{}) (net.Conn, <-chan []byte) {
-	conn, err := net.Dial("tcp", _endpoint)
+func endpoint(sess_die chan struct{}, target string, key string) (net.Conn, <-chan []byte) {
+	conn, err := net.Dial("tcp", target)
 	if err != nil {
 		log.Println(err)
 		return nil, nil
@@ -78,7 +97,7 @@ func endpoint(sess_die chan struct{}) (net.Conn, <-chan []byte) {
 			close(ch)
 		}()
 
-		encoder, err := rc4.NewCipher([]byte(_key_send))
+		encoder, err := rc4.NewCipher([]byte(key))
 		if err != nil {
 			log.Println(err)
 			return
@@ -104,7 +123,7 @@ func endpoint(sess_die chan struct{}) (net.Conn, <-chan []byte) {
 	return conn, ch
 }
 
-func handleClient(conn net.Conn) {
+func handleClient(conn net.Conn, target string, key string) {
 	log.Println("stream open")
 	defer log.Println("stream close")
 	sess_die := make(chan struct{})
@@ -114,8 +133,8 @@ func handleClient(conn net.Conn) {
 	}()
 
 	////
-	ch_peer := peer(conn, sess_die)
-	conn_ep, ch_ep := endpoint(sess_die)
+	ch_peer := peer(conn, sess_die, key)
+	conn_ep, ch_ep := endpoint(sess_die, target, key)
 	if conn_ep == nil {
 		return
 	}

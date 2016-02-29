@@ -7,34 +7,52 @@ import (
 	"os"
 	"time"
 
+	"github.com/codegangsta/cli"
 	"github.com/xtaci/kcp-go"
 )
 
-const (
-	_port     = ":12948"    // change this to bind ip
-	_server   = "vps:29900" // server address
-	_key_send = "KS7893685" // change both key for client & server
-	_key_recv = "KR3411865"
-)
-
 func main() {
-	addr, err := net.ResolveTCPAddr("tcp", _port)
-	checkError(err)
-	listener, err := net.ListenTCP("tcp", addr)
-	checkError(err)
-	log.Println("listening on:", listener.Addr())
-	for {
-		conn, err := listener.AcceptTCP()
-		if err != nil {
-			log.Println("accept failed:", err)
-			continue
-		}
-		handleClient(conn)
+	myApp := cli.NewApp()
+	myApp.Name = "kcptun"
+	myApp.Usage = "kcptun client"
+	myApp.Version = "1.0"
+	myApp.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "localaddr,l",
+			Value: ":12948",
+			Usage: "local listen addr:",
+		},
+		cli.StringFlag{
+			Name:  "remoteaddr, r",
+			Value: "vps:29900",
+			Usage: "kcp server addr",
+		},
+		cli.StringFlag{
+			Name:  "key",
+			Value: "it's a secrect",
+			Usage: "key for communcation, must be the same as kcptun server",
+		},
 	}
+	myApp.Action = func(c *cli.Context) {
+		addr, err := net.ResolveTCPAddr("tcp", c.String("localaddr"))
+		checkError(err)
+		listener, err := net.ListenTCP("tcp", addr)
+		checkError(err)
+		log.Println("listening on:", listener.Addr())
+		for {
+			conn, err := listener.AcceptTCP()
+			if err != nil {
+				log.Println("accept failed:", err)
+				continue
+			}
+			handleClient(conn, c.String("remoteaddr"), c.String("key"))
+		}
+	}
+	myApp.Run(os.Args)
 }
 
-func peer(sess_die chan struct{}) (net.Conn, <-chan []byte) {
-	conn, err := kcp.Dial(kcp.MODE_FAST, _server)
+func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan []byte) {
+	conn, err := kcp.Dial(kcp.MODE_FAST, remote)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +66,7 @@ func peer(sess_die chan struct{}) (net.Conn, <-chan []byte) {
 			close(ch)
 		}()
 
-		decoder, err := rc4.NewCipher([]byte(_key_recv))
+		decoder, err := rc4.NewCipher([]byte(key))
 		if err != nil {
 			log.Println(err)
 			return
@@ -74,14 +92,14 @@ func peer(sess_die chan struct{}) (net.Conn, <-chan []byte) {
 	return conn, ch
 }
 
-func client(conn net.Conn, sess_die chan struct{}) <-chan []byte {
+func client(conn net.Conn, sess_die chan struct{}, key string) <-chan []byte {
 	ch := make(chan []byte, 128)
 	go func() {
 		defer func() {
 			close(ch)
 		}()
 		// encoder
-		encoder, err := rc4.NewCipher([]byte(_key_send))
+		encoder, err := rc4.NewCipher([]byte(key))
 		if err != nil {
 			log.Println(err)
 			return
@@ -106,7 +124,7 @@ func client(conn net.Conn, sess_die chan struct{}) <-chan []byte {
 	return ch
 }
 
-func handleClient(conn *net.TCPConn) {
+func handleClient(conn *net.TCPConn, remote string, key string) {
 	log.Println("stream opened")
 	defer log.Println("stream closed")
 	sess_die := make(chan struct{})
@@ -115,8 +133,8 @@ func handleClient(conn *net.TCPConn) {
 		conn.Close()
 	}()
 
-	conn_peer, ch_peer := peer(sess_die)
-	ch_client := client(conn, sess_die)
+	conn_peer, ch_peer := peer(sess_die, remote, key)
+	ch_client := client(conn, sess_die, key)
 	if conn_peer == nil {
 		return
 	}
