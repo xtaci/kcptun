@@ -73,7 +73,7 @@ func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan [
 		}
 
 		for {
-			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
+			conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 			bts := make([]byte, 4096)
 			n, err := conn.Read(bts)
 			if err != nil {
