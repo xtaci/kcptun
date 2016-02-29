@@ -42,7 +42,7 @@ func main() {
 		log.Println("listening on ", lis.Addr())
 		for {
 			if conn, err := lis.Accept(); err == nil {
-				handleClient(conn, c.String("endpoint"), c.String("key"))
+				handleClient(conn, c.String("target"), c.String("key"))
 			} else {
 				log.Println(err)
 			}
