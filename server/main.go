@@ -52,7 +52,7 @@ func main() {
 }
 
 func peer(conn net.Conn, sess_die chan struct{}, key string) chan []byte {
-	ch := make(chan []byte, 128)
+	ch := make(chan []byte, 1024)
 	go func() {
 		defer func() {
 			close(ch)
@@ -66,7 +66,7 @@ func peer(conn net.Conn, sess_die chan struct{}, key string) chan []byte {
 
 		for {
 			conn.SetReadDeadline(time.Now().Add(30 * time.Second))
-			bts := make([]byte, 4096)
+			bts := make([]byte, 65536)
 			n, err := conn.Read(bts)
 			if err != nil {
 				log.Println(err)
@@ -91,7 +91,7 @@ func endpoint(sess_die chan struct{}, target string, key string) (net.Conn, <-ch
 		return nil, nil
 	}
 
-	ch := make(chan []byte, 128)
+	ch := make(chan []byte, 1024)
 	go func() {
 		defer func() {
 			close(ch)
@@ -104,7 +104,7 @@ func endpoint(sess_die chan struct{}, target string, key string) (net.Conn, <-ch
 		}
 
 		for {
-			bts := make([]byte, 4096)
+			bts := make([]byte, 65536)
 			n, err := conn.Read(bts)
 			if err != nil {
 				log.Println(err)
