@@ -11,6 +11,23 @@ import (
 	"github.com/xtaci/kcp-go"
 )
 
+const (
+	BUFSIZ = 65536
+)
+
+var (
+	ch_buf chan []byte
+)
+
+func init() {
+	ch_buf = make(chan []byte, 1024)
+	go func() {
+		for {
+			ch_buf <- make([]byte, BUFSIZ)
+		}
+	}()
+}
+
 func main() {
 	myApp := cli.NewApp()
 	myApp.Name = "kcptun"
@@ -74,7 +91,7 @@ func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan [
 
 		for {
 			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
-			bts := make([]byte, 65536)
+			bts := <-ch_buf
 			n, err := conn.Read(bts)
 			if err != nil {
 				log.Println(err)
@@ -106,7 +123,7 @@ func client(conn net.Conn, sess_die chan struct{}, key string) <-chan []byte {
 		}
 
 		for {
-			bts := make([]byte, 65536)
+			bts := <-ch_buf
 			n, err := conn.Read(bts)
 			if err != nil {
 				log.Println(err)
