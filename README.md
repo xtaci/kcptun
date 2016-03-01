@@ -7,3 +7,8 @@ TCP流转换为KCP+UDP流，工作示意图:
 2. 客户端: go get github.com/xtaci/kcptun/client;  client
 
 执行 client -h , server -h 查看帮助
+
+# 举例
+1. openvpn client -> kcptun client -> kcptun server -> openvpn server
+2. browser socks5 proxy(pac) -> kcptun client -> kcptun server -> socks5 server
+3. 跨地区的服务器访问提速
