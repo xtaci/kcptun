@@ -10,5 +10,5 @@ TCP流转换为KCP+UDP流，工作示意图:
 
 # 举例
 1. openvpn client -> kcptun client -> kcptun server -> openvpn server
+2. ssh client -> kcptun client -> kcptun server -> sshd
 2. browser socks5 proxy(pac) -> kcptun client -> kcptun server -> socks5 server
-3. 跨地区的服务器访问提速
