@@ -1,7 +1,8 @@
 package main
 
 import (
-	"crypto/rc4"
+	"crypto/aes"
+	"crypto/cipher"
 	"log"
 	"net"
 	"os"
@@ -17,6 +18,7 @@ const (
 
 var (
 	ch_buf chan []byte
+	iv     []byte = []byte{147, 243, 201, 109, 83, 207, 190, 153, 204, 106, 86, 122, 71, 135, 200, 20}
 )
 
 func init() {
@@ -26,6 +28,7 @@ func init() {
 			ch_buf <- make([]byte, BUFSIZ)
 		}
 	}()
+
 }
 
 func main() {
@@ -83,11 +86,15 @@ func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan [
 			close(ch)
 		}()
 
-		decoder, err := rc4.NewCipher([]byte(key))
+		//decoder
+		commkey := make([]byte, aes.BlockSize)
+		copy(commkey, []byte(key))
+		block, err := aes.NewCipher(commkey)
 		if err != nil {
 			log.Println(err)
 			return
 		}
+		decoder := cipher.NewCTR(block, iv)
 
 		for {
 			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
@@ -115,12 +122,16 @@ func client(conn net.Conn, sess_die chan struct{}, key string) <-chan []byte {
 		defer func() {
 			close(ch)
 		}()
+
 		// encoder
-		encoder, err := rc4.NewCipher([]byte(key))
+		commkey := make([]byte, aes.BlockSize)
+		copy(commkey, []byte(key))
+		block, err := aes.NewCipher(commkey)
 		if err != nil {
 			log.Println(err)
 			return
 		}
+		encoder := cipher.NewCTR(block, iv)
 
 		for {
 			bts := <-ch_buf
