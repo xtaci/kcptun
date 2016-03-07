@@ -87,7 +87,7 @@ func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan [
 		}()
 
 		//decoder
-		commkey := make([]byte, aes.BlockSize)
+		commkey := make([]byte, 32)
 		copy(commkey, []byte(key))
 		block, err := aes.NewCipher(commkey)
 		if err != nil {
@@ -124,7 +124,7 @@ func client(conn net.Conn, sess_die chan struct{}, key string) <-chan []byte {
 		}()
 
 		// encoder
-		commkey := make([]byte, aes.BlockSize)
+		commkey := make([]byte, 32)
 		copy(commkey, []byte(key))
 		block, err := aes.NewCipher(commkey)
 		if err != nil {
