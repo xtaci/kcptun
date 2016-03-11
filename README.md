@@ -34,5 +34,9 @@ TCP流转换为KCP+UDP流(AES加密)，工作示意图:
 2. ssh client -> kcptun client -> kcptun server -> sshd
 2. browser socks5 proxy(pac) -> kcptun client -> kcptun server -> socks5 server
 
+# 常见问题
+Q: client/server都启动了，但无法传输数据        
+A: 先杀掉client/server，然后重新启动     
+
 # 贡献
 欢迎短小精干的PR
