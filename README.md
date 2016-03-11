@@ -2,6 +2,9 @@
 TCP流转换为KCP+UDP流(AES加密)，工作示意图:        
 ```原client -> kcptun client ->  kcptun server -> 原server```
 
+# 基于二进制的安装(推荐)
+在release中下载对应平台的client, server， 执行 client -h 和server -h 查看使用方法
+
 # 基于源码的安装
 ## 预备条件:       
 1. 安装好```golang```       
@@ -17,7 +20,7 @@ TCP流转换为KCP+UDP流(AES加密)，工作示意图:
 
 客户端和服务端启动后，使用ssh -D 连接kcptun客户端，即可发起socks通信.
 
-# 举例
+# 使用案例
 1. openvpn client -> kcptun client -> kcptun server -> openvpn server
 2. ssh client -> kcptun client -> kcptun server -> sshd
 2. browser socks5 proxy(pac) -> kcptun client -> kcptun server -> socks5 server
