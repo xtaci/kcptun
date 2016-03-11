@@ -65,7 +65,7 @@ func main() {
 				log.Println("accept failed:", err)
 				continue
 			}
-			handleClient(conn, c.String("remoteaddr"), c.String("key"))
+			go handleClient(conn, c.String("remoteaddr"), c.String("key"))
 		}
 	}
 	myApp.Run(os.Args)
