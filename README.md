@@ -1,17 +1,19 @@
 # kcptun
 TCP流转换为KCP+UDP流(AES加密)，工作示意图:        
-原client -> kcptun client ->  kcptun server -> 原server
+```原client -> kcptun client ->  kcptun server -> 原server```
 
-# 安装
-1. 服务端: go get github.com/xtaci/kcptun/server;  server 
-2. 客户端: go get github.com/xtaci/kcptun/client;  client
-
-# 使用 -- 以ssh tunnel为例
-kcptun 服务端          
+# 基于源码的安装
+## 预备条件:       
+1. 安装好```golang```       
+2. 设置好```GOPATH```  以及```PATH=$PATH:$GOPATH/bin``` (例如: ```export GOPATH=/home/ubuntu;  export PATH=$PATH:$GOPATH/bin```)       
+## 安装命令
+1. 服务端: ```go get github.com/xtaci/kcptun/server;  server```        
 ![server](server.gif)      
 
-kcptun 客户端             
-![client](client.gif)      
+2. 客户端: ```go get github.com/xtaci/kcptun/client;  client```      
+![client](client.gif)    
+
+# 使用 -- 以ssh tunnel为例
 
 客户端和服务端启动后，使用ssh -D 连接kcptun客户端，即可发起socks通信.
 
