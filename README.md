@@ -45,11 +45,14 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 2. browser socks5 proxy(pac) -> kcptun client -> kcptun server -> socks5 server
 
 # 常见问题
-Q: client/server都启动了，但无法传输数据        
+Q: client/server都启动了，但无法传输数据，服务器显示了stream open        
 A: 先杀掉client/server，然后重新启动就能解决绝大部分的问题             
 
+Q: client/server都启动了，但服务器没有收到任何数据包也没有stream open          
+A: 某些IDC默认屏蔽的UDP协议，需要在防火墙中打开对应的端口
+
 Q: 出现不明原因降速严重，可能有50%丢包         
-A: 可能该端口被运营商限制，KCP C/S 更换一个端口就能解决        
+A: 可能该端口被运营商限制，更换一个端口就能解决        
 
 # 贡献
 欢迎短小精干的PR
