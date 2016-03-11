@@ -21,10 +21,10 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 
 1. 假定服务器IP为:```xxx.xxx.xxx.xxx```
 
-2. 服务器端启动kcp server:     
+2. 在服务器启动kcp server:     
 ```server -t "127.0.0.1:22"  ```     // 所有数据包转发到sshd进程的22端口           
 
-3. 客户端启动kcp client:          
+3. 在本地启动kcp client:          
 ```client -r "xxx.xxx.xxx.xxx:29900"   ```    // 连接到kcp server，默认server端口是29900           
 
 4. 客户端和服务端启动后，使用ssh 连接本地kcp client(数据包会***经过kcp client到达kcp server***最终转发到目标sshd的22端口), 例如:             
