@@ -27,10 +27,10 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 3. 客户端执行:          
 ```client -r "xxx.xxx.xxx.xxx:29900"   ```    // 连接到远端服务器，默认server端口是29900           
 
-4. 客户端和服务端启动后，使用ssh 连接本地kcptun客户端(数据包会通过kcp转发到目标sshd的22端口)，即可发起socks通信， 例如:             
+4. 客户端和服务端启动后，使用ssh 连接本地kcptun客户端(数据包会***经过kcp client到达kcp server***最终转发到目标sshd的22端口), 例如:             
 ```ssh -D 8080 -p 12948 ubuntu@localhost```     // 默认的client端口为12948    
 
-5. 浏览器就可以连接8080端口做socks代理了
+5. 浏览器就可以连接8080端口的ssh socks代理了
 
 # 基于源码的安装  (方便使用最新版本)
 ## 预备条件:       
