@@ -1,6 +1,7 @@
 # kcptun
-TCP流转换为KCP+UDP流(AES加密)，工作示意图:        
-```原client -> kcptun client ->  kcptun server -> 原server```
+TCP流转换为KCP+UDP流(AES加密)，工作示意图:         
+```原client -> kcptun client ->  kcptun server -> 原server```        
+kcptun客户端和服务端分别只有一个main.go文件，非常简单，也方便自己修改。      
 
 # 基于二进制的安装 (使用简单)
 在release中下载对应平台的client, server， 执行 client -h 和server -h 查看详细使用方法. 举例：            
@@ -17,7 +18,7 @@ TCP流转换为KCP+UDP流(AES加密)，工作示意图:
 
 浏览器就可以连接8080端口做socks代理了
 
-# 基于源码的安装（方便使用最新版本)
+# 基于源码的安装  (方便使用最新版本)
 ## 预备条件:       
 1. 安装好```golang```       
 2. 设置好```GOPATH```  以及```PATH=$PATH:$GOPATH/bin``` (例如: ```export GOPATH=/home/ubuntu;  export PATH=$PATH:$GOPATH/bin```), 最好放到.bashrc .zshrc中 
@@ -37,7 +38,7 @@ TCP流转换为KCP+UDP流(AES加密)，工作示意图:
 
 # 常见问题
 Q: client/server都启动了，但无法传输数据        
-A: 先杀掉client/server，然后重新启动     
+A: 先杀掉client/server，然后重新启动就能解决绝大部分的问题。      
 
 # 贡献
 欢迎短小精干的PR
