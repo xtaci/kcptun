@@ -1,5 +1,5 @@
 # kcptun
-TCP流转换为KCP+UDP流(AES加密)，工作示意图:         
+TCP流转换为KCP+UDP流(AES加密)，降低丢包对传输速度的影响，工作示意图:         
 ```原client -> kcptun client ->  kcptun server -> 原server```        
 kcptun客户端和服务端分别只有一个main.go文件，非常简单，也方便自己修改。      
 
