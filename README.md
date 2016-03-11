@@ -29,7 +29,7 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 # 基于源码的安装  (方便使用最新版本)
 ## 预备条件:       
 1. 安装好```golang```       
-2. 设置好```GOPATH```  以及```PATH=$PATH:$GOPATH/bin``` (例如: ```export GOPATH=/home/ubuntu;  export PATH=$PATH:$GOPATH/bin```), 最好放到.bashrc .zshrc中 
+2. 设置好```GOPATH```  以及```PATH=$PATH:$GOPATH/bin``` (例如: ```export GOPATH=/home/ubuntu;  export PATH=$PATH:$GOPATH/bin```), 最好放到.bashrc 或 .zshrc中 
 
 ## 安装命令
 1. 服务端: ```go get github.com/xtaci/kcptun/server;  server```        
