@@ -30,7 +30,7 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 4. 在本地启动kcp client:          
 ```client -r "xxx.xxx.xxx.xxx:29900"   ```    // 连接到kcp server，默认server端口是29900           
 
-5. 浏览器就可以连接29900端口的socks代理了
+5. 浏览器就可以连接12948端口的socks代理了   // 默认client的端口是12948
 
 # 基于源码的安装  (方便使用最新版本)
 ## 预备条件:       
