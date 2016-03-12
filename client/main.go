@@ -81,6 +81,8 @@ func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan [
 		return nil, nil
 	}
 	ch := make(chan []byte, 1024)
+
+	conn.SetWindowSize(128, 1024)
 	go func() {
 		defer func() {
 			close(ch)

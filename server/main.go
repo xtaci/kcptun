@@ -60,6 +60,7 @@ func main() {
 		log.Println("listening on ", lis.Addr())
 		for {
 			if conn, err := lis.Accept(); err == nil {
+				conn.SetWindowSize(1024, 128)
 				go handleClient(conn, c.String("target"), c.String("key"))
 			} else {
 				log.Println(err)
