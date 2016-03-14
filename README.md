@@ -47,9 +47,9 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 
 
 # 使用案例
-1. openvpn client -> kcptun client -> kcptun server -> openvpn server
-2. ssh client -> kcptun client -> kcptun server -> sshd
-2. browser socks5 -> kcptun client -> kcptun server -> ssh -D socks5 server
+1. openvpn client -> kcptun client -> kcptun server -> openvpn server (推荐应用)
+2. ssh tunnel client -> kcptun client -> kcptun server -> sshd (推荐应用)
+2. browser socks5 -> kcptun client -> kcptun server -> ssh -D socks5 server (高易用性)
 
 # 常见问题
 Q: client/server都启动了，但无法传输数据，服务器显示了stream open        
