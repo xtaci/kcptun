@@ -52,7 +52,7 @@ func main() {
 		},
 	}
 	myApp.Action = func(c *cli.Context) {
-		lis, err := kcp.Listen(kcp.MODE_FAST, c.String("listen"))
+		lis, err := kcp.ListenEncrypted(kcp.MODE_FAST, c.String("listen"), c.String("key"))
 		if err != nil {
 			log.Fatal(err)
 		}
