@@ -100,13 +100,16 @@ func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan [
 		for {
 			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
 			bts := <-ch_buf
-			n, err := conn.Read(bts)
-			if err != nil {
+			if n, err := conn.Read(bts); err == nil {
+				bts = bts[:n]
+				decoder.XORKeyStream(bts, bts)
+			} else if err, ok := err.(*net.OpError); ok && err.Timeout() {
+				continue
+			} else {
 				log.Println(err)
 				return
 			}
-			bts = bts[:n]
-			decoder.XORKeyStream(bts, bts)
+
 			select {
 			case ch <- bts:
 			case <-sess_die:
