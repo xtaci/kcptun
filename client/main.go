@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -29,6 +30,7 @@ func init() {
 		}
 	}()
 
+	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {

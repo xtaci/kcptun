@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -28,7 +29,9 @@ func init() {
 			ch_buf <- make([]byte, BUFSIZ)
 		}
 	}()
+	rand.Seed(time.Now().UnixNano())
 }
+
 func main() {
 	myApp := cli.NewApp()
 	myApp.Name = "kcptun"
