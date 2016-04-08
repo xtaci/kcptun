@@ -42,7 +42,7 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 
 5. 浏览器就可以连接12948端口进行socks5代理访问了。   // 默认kcp client的端口是12948
 
-**注意：这个例子是为了让你快速上手，正确的姿势应该是在客户端开启ssh -D，详见 使用案例**
+**注意：这个例子是为了让你快速上手，正确的姿势应该是在客户端开启ssh -D，详见 使用案例和https://github.com/xtaci/kcptun/issues/6**
 
 # 特别注意
 一对kcp c/s 最好只承载一条tcp connection，这是kcptun的最佳工作方式
