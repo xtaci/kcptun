@@ -103,7 +103,7 @@ func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan [
 			if n, err := conn.Read(bts); err == nil {
 				bts = bts[:n]
 				decoder.XORKeyStream(bts, bts)
-			} else if err, ok := err.(*net.OpError); ok && err.Timeout() {
+			} else if err_t, ok := err.(*net.OpError); ok && err_t.Timeout() {
 				continue
 			} else {
 				log.Println(err)
