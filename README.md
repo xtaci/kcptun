@@ -54,11 +54,7 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 
 ## 安装命令
 1. 服务端: ```go get github.com/xtaci/kcptun/server;  server```        
-![server](server.gif)      
-
 2. 客户端: ```go get github.com/xtaci/kcptun/client;  client```      
-![client](client.gif)    
-
 
 # 使用案例
 1. openvpn client -> kcptun client -> kcptun server -> openvpn server (最佳实践)
