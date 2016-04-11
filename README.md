@@ -25,7 +25,7 @@ kcptun客户端和服务端分别只有一个main.go文件，非常简单，也�
 注意，请确保默认服务器端UDP端口 ```29900``` 开启，防火墙允许UDP包通过。   (端口可以通过命令行参数调整，不要忘记修改对应的防火墙规则。)
 
 # 快速上手
-点 [这里](https://github.com/xtaci/kcptun/releases) 下载最新的对应平台的版本， 执行 client -h 和server -h 查看详细使用方法.        
+点 [这里](https://github.com/xtaci/kcptun/releases) 下载最新的对应平台的版本(内含x86/x64/arm)， 执行 client -h 和server -h 查看详细使用方法.        
 我们以加速ssh -D访问为例示范使用方法如下：         
 
 1. 假定服务器IP为:```xxx.xxx.xxx.xxx```
