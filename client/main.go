@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"io"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -13,25 +13,7 @@ import (
 	"github.com/xtaci/kcp-go"
 )
 
-const (
-	BUFSIZ = 65536
-)
-
-var (
-	ch_buf chan []byte
-	iv     []byte = []byte{147, 243, 201, 109, 83, 207, 190, 153, 204, 106, 86, 122, 71, 135, 200, 20}
-)
-
-func init() {
-	ch_buf = make(chan []byte, 1024)
-	go func() {
-		for {
-			ch_buf <- make([]byte, BUFSIZ)
-		}
-	}()
-
-	rand.Seed(time.Now().UnixNano())
-}
+var iv = []byte{147, 243, 201, 109, 83, 207, 190, 153, 204, 106, 86, 122, 71, 135, 200, 20}
 
 func main() {
 	myApp := cli.NewApp()
@@ -73,124 +55,95 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-func peer(sess_die chan struct{}, remote string, key string) (net.Conn, <-chan []byte) {
-	conn, err := kcp.DialEncrypted(kcp.MODE_FAST, remote, key)
+type cipherConn struct {
+	rw net.Conn
+	rs cipher.Stream
+	ws cipher.Stream
+	rd time.Duration
+}
+
+func NewCipherConn(rw net.Conn, commkey []byte) *cipherConn {
+	rblock, rerr := aes.NewCipher(commkey)
+	checkError(rerr)
+	wblock, werr := aes.NewCipher(commkey)
+	checkError(werr)
+	return &cipherConn{
+		rw: rw,
+		rs: cipher.NewCTR(rblock, iv),
+		ws: cipher.NewCTR(wblock, iv),
+	}
+}
+
+func (m *cipherConn) Read(b []byte) (n int, err error) {
+	if n, err = m.rw.Read(b); n > 0 {
+		m.rs.XORKeyStream(b[:n], b[:n])
+		if m.rd != 0 {
+			m.rw.SetReadDeadline(time.Now().Add(m.rd))
+		}
+	}
+	return
+}
+
+func (m *cipherConn) Write(b []byte) (n int, err error) {
+	m.ws.XORKeyStream(b, b)
+	return m.rw.Write(b)
+}
+
+func (m *cipherConn) SetReadTimeout(rd time.Duration) {
+	m.rd = rd
+}
+
+func handleClient(tcp_conn *net.TCPConn, remote string, key string) {
+	log.Println("stream opened")
+	tcp_conn.SetNoDelay(false)
+	defer tcp_conn.Close()
+	defer log.Println("stream closed")
+
+	udp_conn, err := kcp.DialEncrypted(kcp.MODE_FAST, remote, key)
+
 	if err != nil {
 		log.Println(err)
-		return nil, nil
-	}
-	ch := make(chan []byte, 1024)
-
-	conn.SetWindowSize(128, 1024)
-	go func() {
-		defer func() {
-			close(ch)
-		}()
-
-		//decoder
-		commkey := make([]byte, 32)
-		copy(commkey, []byte(key))
-		block, err := aes.NewCipher(commkey)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		decoder := cipher.NewCTR(block, iv)
-
-		for {
-			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
-			bts := <-ch_buf
-			if n, err := conn.Read(bts); err == nil {
-				bts = bts[:n]
-				decoder.XORKeyStream(bts, bts)
-			} else {
-				log.Println(err)
-				return
-			}
-
-			select {
-			case ch <- bts:
-			case <-sess_die:
-				return
-			}
-		}
-	}()
-	return conn, ch
-}
-
-func client(conn net.Conn, sess_die chan struct{}, key string) <-chan []byte {
-	ch := make(chan []byte, 1024)
-	go func() {
-		defer func() {
-			close(ch)
-		}()
-
-		// encoder
-		commkey := make([]byte, 32)
-		copy(commkey, []byte(key))
-		block, err := aes.NewCipher(commkey)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		encoder := cipher.NewCTR(block, iv)
-
-		for {
-			bts := <-ch_buf
-			n, err := conn.Read(bts)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			bts = bts[:n]
-			encoder.XORKeyStream(bts, bts)
-			select {
-			case ch <- bts:
-			case <-sess_die:
-				return
-			}
-		}
-	}()
-	return ch
-}
-
-func handleClient(conn *net.TCPConn, remote string, key string) {
-	log.Println("stream opened")
-	defer log.Println("stream closed")
-	conn.SetNoDelay(false)
-	sess_die := make(chan struct{})
-	defer func() {
-		close(sess_die)
-		conn.Close()
-	}()
-
-	conn_peer, ch_peer := peer(sess_die, remote, key)
-	ch_client := client(conn, sess_die, key)
-	if conn_peer == nil {
 		return
 	}
-	defer conn_peer.Close()
 
-	for {
-		select {
-		case bts, ok := <-ch_peer:
-			if !ok {
-				return
-			}
-			if _, err := conn.Write(bts); err != nil {
-				log.Println(err)
-				return
-			}
-		case bts, ok := <-ch_client:
-			if !ok {
-				return
-			}
-			if _, err := conn_peer.Write(bts); err != nil {
-				log.Println(err)
-				return
-			}
+	udp_conn.SetWindowSize(128, 1024)
+	defer udp_conn.Close()
+
+	commkey := make([]byte, 32)
+	copy(commkey, []byte(key))
+
+	c_udp_conn := NewCipherConn(udp_conn, commkey)
+	c_tcp_conn := NewCipherConn(tcp_conn, commkey)
+
+	sess_die := make(chan struct{})
+
+	go func() {
+		if _, err := io.Copy(c_udp_conn, c_tcp_conn); nil != err {
+			log.Println(err)
 		}
-	}
+
+		select {
+		case <-sess_die:
+		default:
+			close(sess_die)
+		}
+	}()
+
+	go func() {
+		c_udp_conn.SetReadTimeout(2 * time.Minute)
+
+		if _, err := io.Copy(c_tcp_conn, c_udp_conn); nil != err {
+			log.Println(err)
+		}
+
+		select {
+		case <-sess_die:
+		default:
+			close(sess_die)
+		}
+	}()
+
+	<-sess_die
 }
 
 func checkError(err error) {
