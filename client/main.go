@@ -157,6 +157,7 @@ func client(conn net.Conn, sess_die chan struct{}, key string) <-chan []byte {
 func handleClient(conn *net.TCPConn, remote string, key string) {
 	log.Println("stream opened")
 	defer log.Println("stream closed")
+	conn.SetNoDelay(false)
 	sess_die := make(chan struct{})
 	defer func() {
 		close(sess_die)

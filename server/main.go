@@ -118,6 +118,12 @@ func endpoint(sess_die chan struct{}, target string, key string) (net.Conn, <-ch
 		return nil, nil
 	}
 
+	if tcpconn, ok := conn.(*net.TCPConn); ok {
+		tcpconn.SetNoDelay(false)
+	} else {
+		log.Println("not tcp connection")
+	}
+
 	ch := make(chan []byte, 1024)
 	go func() {
 		defer func() {
