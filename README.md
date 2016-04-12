@@ -1,5 +1,5 @@
 # kcptun
-TCP流转换为KCP+UDP流(AES加密)，核心基于[kcp-go](https://github.com/xtaci/kcp-go)，用于在高丢包环境中，TCP降速严重的问题，工作示意图:      
+TCP流转换为KCP+UDP流(AES加密)，核心基于[kcp-go](https://github.com/xtaci/kcp-go)，用于解决在高丢包环境中，TCP降速严重的问题，工作示意图:      
 ```
 
                  +---------------------------------------+
