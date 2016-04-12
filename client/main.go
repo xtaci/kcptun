@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"io"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -14,25 +13,7 @@ import (
 	"github.com/xtaci/kcp-go"
 )
 
-const (
-	BUFSIZ = 65536
-)
-
-var (
-	ch_buf chan []byte
-	iv     []byte = []byte{147, 243, 201, 109, 83, 207, 190, 153, 204, 106, 86, 122, 71, 135, 200, 20}
-)
-
-func init() {
-	ch_buf = make(chan []byte, 1024)
-	go func() {
-		for {
-			ch_buf <- make([]byte, BUFSIZ)
-		}
-	}()
-
-	rand.Seed(time.Now().UnixNano())
-}
+var iv = []byte{147, 243, 201, 109, 83, 207, 190, 153, 204, 106, 86, 122, 71, 135, 200, 20}
 
 func main() {
 	myApp := cli.NewApp()
@@ -113,9 +94,7 @@ func handleClient(tcp_conn *net.TCPConn, remote string, key string) {
 	log.Println("stream opened")
 	tcp_conn.SetNoDelay(false)
 	defer tcp_conn.Close()
-
-	var sendbytes, recvbytes int64
-	defer func() { log.Println("stream closed.", "send: ", sendbytes, ", recv: ", recvbytes) }()
+	defer log.Println("stream closed")
 
 	udp_conn, err := kcp.DialEncrypted(kcp.MODE_FAST, remote, key)
 
@@ -133,15 +112,13 @@ func handleClient(tcp_conn *net.TCPConn, remote string, key string) {
 	copy(commkey, []byte(key))
 
 	go func() {
-		block, err := aes.NewCipher(commkey)
+		block, _ := aes.NewCipher(commkey)
 		encoder := cipher.NewCTR(block, iv)
 
-		sb, err := CopyFilter(udp_conn, tcp_conn, func(buf []byte) []byte {
+		_, err := CopyFilter(udp_conn, tcp_conn, func(buf []byte) []byte {
 			encoder.XORKeyStream(buf, buf)
 			return buf
 		})
-
-		sendbytes += sb
 
 		select {
 		case <-sess_die:
@@ -155,18 +132,16 @@ func handleClient(tcp_conn *net.TCPConn, remote string, key string) {
 	}()
 
 	go func() {
-		block, err := aes.NewCipher(commkey)
+		block, _ := aes.NewCipher(commkey)
 		decoder := cipher.NewCTR(block, iv)
 
 		udp_conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
 
-		rb, err := CopyFilter(tcp_conn, udp_conn, func(buf []byte) []byte {
+		_, err := CopyFilter(tcp_conn, udp_conn, func(buf []byte) []byte {
 			decoder.XORKeyStream(buf, buf)
 			udp_conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
 			return buf
 		})
-
-		recvbytes += rb
 
 		select {
 		case <-sess_die:
