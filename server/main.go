@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -73,128 +74,107 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-func peer(conn net.Conn, sess_die chan struct{}, key string) chan []byte {
-	ch := make(chan []byte, 1024)
-	go func() {
-		defer func() {
-			close(ch)
-		}()
-
-		//decoder
-		commkey := make([]byte, 32)
-		copy(commkey, []byte(key))
-		block, err := aes.NewCipher(commkey)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		decoder := cipher.NewCTR(block, iv)
-
-		for {
-			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
-			bts := <-ch_buf
-			if n, err := conn.Read(bts); err == nil {
-				bts = bts[:n]
-				decoder.XORKeyStream(bts, bts)
-			} else {
-				log.Println(err)
-				return
-			}
-
-			select {
-			case ch <- bts:
-			case <-sess_die:
-				return
-			}
-		}
-	}()
-	return ch
+func CopyFilter(dst io.Writer, src io.Reader, filter func([]byte) []byte) (written int64, err error) {
+	return copyBuffer(dst, src, nil, filter)
 }
 
-func endpoint(sess_die chan struct{}, target string, key string) (net.Conn, <-chan []byte) {
-	conn, err := net.Dial("tcp", target)
+func copyBuffer(dst io.Writer, src io.Reader, buf []byte, filter func([]byte) []byte) (written int64, err error) {
+	if 0 == len(buf) {
+		buf = make([]byte, 32*1024)
+	}
+	if nil == filter {
+		filter = func(data []byte) []byte { return data }
+	}
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			nw, ew := dst.Write(filter(buf[:nr]))
+			if nw > 0 {
+				written += int64(nw)
+			}
+			if ew != nil {
+				err = ew
+				break
+			}
+			if nr != nw {
+				err = io.ErrShortWrite
+				break
+			}
+		}
+		if nil != er {
+			err = er
+			break
+		}
+	}
+	return written, err
+}
+
+func handleClient(udp_conn net.Conn, target string, key string) {
+	log.Println("stream open")
+	defer udp_conn.Close()
+
+	var sendbytes, recvbytes int64
+	defer func() { log.Println("stream closed.", "send: ", sendbytes, ", recv: ", recvbytes) }()
+
+	tcp_conn, err := net.Dial("tcp", target)
 	if err != nil {
 		log.Println(err)
-		return nil, nil
-	}
-
-	if tcpconn, ok := conn.(*net.TCPConn); ok {
-		tcpconn.SetNoDelay(false)
-	} else {
-		log.Println("not tcp connection")
-	}
-
-	ch := make(chan []byte, 1024)
-	go func() {
-		defer func() {
-			close(ch)
-		}()
-
-		// encoder
-		commkey := make([]byte, 32)
-		copy(commkey, []byte(key))
-		block, err := aes.NewCipher(commkey)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		encoder := cipher.NewCTR(block, iv)
-
-		for {
-			bts := <-ch_buf
-			n, err := conn.Read(bts)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			bts = bts[:n]
-			encoder.XORKeyStream(bts, bts)
-			select {
-			case ch <- bts:
-			case <-sess_die:
-				return
-			}
-		}
-	}()
-	return conn, ch
-}
-
-func handleClient(conn net.Conn, target string, key string) {
-	log.Println("stream open")
-	defer log.Println("stream close")
-	sess_die := make(chan struct{})
-	defer func() {
-		close(sess_die)
-		conn.Close()
-	}()
-
-	////
-	ch_peer := peer(conn, sess_die, key)
-	conn_ep, ch_ep := endpoint(sess_die, target, key)
-	if conn_ep == nil {
 		return
 	}
-	defer conn_ep.Close()
 
-	for {
+	tcp_conn.(*net.TCPConn).SetNoDelay(false)
+	defer tcp_conn.Close()
+
+	sess_die := make(chan struct{})
+
+	commkey := make([]byte, 32)
+	copy(commkey, []byte(key))
+
+	go func() {
+		block, _ := aes.NewCipher(commkey)
+
+		udp_conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
+		rb, err := CopyFilter(tcp_conn, udp_conn, func(buf []byte) []byte {
+			decoder := cipher.NewCTR(block, iv)
+			decoder.XORKeyStream(buf, buf)
+			udp_conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
+			return buf
+		})
+
+		recvbytes += rb
+
 		select {
-		case bts, ok := <-ch_peer:
-			if !ok {
-				return
-			}
-			if _, err := conn_ep.Write(bts); err != nil {
-				log.Println(err)
-				return
-			}
-		case bts, ok := <-ch_ep:
-			if !ok {
-				return
-			}
-			if _, err := conn.Write(bts); err != nil {
-				log.Println(err)
-				return
-			}
+		case <-sess_die:
+		default:
+			close(sess_die)
 		}
-	}
+
+		if nil != err {
+			log.Println(err)
+		}
+	}()
+
+	go func() {
+		block, _ := aes.NewCipher(commkey)
+
+		sb, err := CopyFilter(udp_conn, tcp_conn, func(buf []byte) []byte {
+			encoder := cipher.NewCTR(block, iv)
+			encoder.XORKeyStream(buf, buf)
+			return buf
+		})
+
+		sendbytes += sb
+
+		select {
+		case <-sess_die:
+		default:
+			close(sess_die)
+		}
+
+		if nil != err {
+			log.Println(err)
+		}
+	}()
+
+	<-sess_die
 }
