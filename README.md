@@ -33,7 +33,9 @@ TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtac
 客户端: ./client_darwin_amd64 -r "服务器IP地址:554" -l ":1080" -mode fast2    // 监听本地1080端口
 ```
 
-### *使用の方法* :lollipop:
+### *使用方法* :lollipop:
+在Mac OS X El Capitan下的帮助输出: 
+
 ![client](client.png)
 ![server](server.png)
 
