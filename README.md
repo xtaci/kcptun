@@ -25,7 +25,7 @@ TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtac
 
 ![kcptun](kcptun.png)
 
-***kcptun是[kcp-go](https://github.com/xtaci/kcp-go)的一个测试应用，可以用于任意tcp网络程序的传输承载(尤其用于游戏数据传输测试)，用于优化丢包环境下的网络流畅度。***   
+***kcptun是[kcp-go](https://github.com/xtaci/kcp-go)的一个端口转发工具，可以用于任意tcp网络程序的传输承载(尤其用于游戏数据传输测试)，用于优化丢包环境下的网络流畅度。***   
 
 ### *快速设定* :lollipop:
 ```
