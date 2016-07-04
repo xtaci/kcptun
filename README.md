@@ -140,4 +140,4 @@ TCP window size: 4.00 MByte (default)
 ### *捐赠* :dollar:
 ![donate](donate.png)          
 
-对该项目的捐款将用于gonet/2游戏服务器框架的研发。
+对该项目的捐款将用于[gonet/2](http://gonet2.github.io/)游戏服务器框架的研发。
