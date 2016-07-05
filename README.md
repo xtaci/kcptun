@@ -21,6 +21,8 @@
 [19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
 [20]: https://hub.docker.com/r/xtaci/kcptun/
 
+[English](README.en.md)
+
 TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtaci/kcptun/releases/latest)***:zap:工作示意图：  
 
 ![kcptun](kcptun.png)
