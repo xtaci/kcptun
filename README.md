@@ -154,3 +154,4 @@ TCP window size: 4.00 MByte (default)
 9. https://github.com/hashicorp/yamux -- Connection multiplexing library.
 10. https://tools.ietf.org/html/rfc6937 -- Proportional Rate Reduction for TCP.
 11. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
+12. http://http2.github.io/ -- What is HTTP/2?
