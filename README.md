@@ -141,3 +141,16 @@ TCP window size: 4.00 MByte (default)
 ![donate](donate.png)          
 
 对该项目的捐款将用于[gonet/2](http://gonet2.github.io/)游戏服务器框架的研发。
+
+### *参考资料* :paperclip:
+1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
+2. https://github.com/klauspost/reedsolomon -- Reed-Solomon Erasure Coding in Go.
+3. https://en.wikipedia.org/wiki/Differentiated_services -- DSCP.
+4. http://google.github.io/snappy/ -- A fast compressor/decompressor.
+5. https://www.backblaze.com/blog/reed-solomon/ -- Reed-Solomon Explained.
+6. http://www.qualcomm.cn/products/raptorq -- RaptorQ Forward Error Correction Scheme for Object Delivery.
+7. https://en.wikipedia.org/wiki/PBKDF2 -- Key stretching.
+8. http://blog.appcanary.com/2016/encrypt-or-compress.html -- Should you encrypt or compress first?
+9. https://github.com/hashicorp/yamux -- Connection multiplexing library.
+10. https://tools.ietf.org/html/rfc6937 -- Proportional Rate Reduction for TCP.
+11. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
