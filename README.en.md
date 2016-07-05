@@ -21,13 +21,13 @@
 [19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
 [20]: https://hub.docker.com/r/xtaci/kcptun/
 
-A tool for converting tcp stream into kcp+udp stream, :zap: ***[offical download address](https://github.com/xtaci/kcptun/releases/latest)***:zap:workflow：  
+A tool for converting tcp stream into kcp+udp stream, :zap: ***[download address](https://github.com/xtaci/kcptun/releases/latest)***:zap:
 
 ![kcptun](kcptun.png)
 
-***kcptun is based on [kcp-go](https://github.com/xtaci/kcp-go), A remote port forwarder***   
+***kcptun is based on [kcp-go](https://github.com/xtaci/kcp-go)***   
 
-### *Quickstart* :lollipop:
+### *QuickStart* :lollipop:
 ```
 Server Side: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // forwarding to local port 1080
 Client Side: ./client_darwin_amd64 -r "SERVERIP:554" -l ":1080" -mode fast2  // listening on port 1080
@@ -38,7 +38,7 @@ Client Side: ./client_darwin_amd64 -r "SERVERIP:554" -l ":1080" -mode fast2  // 
 ![server](server.png)
 
 ### *Applications* :lollipop:   
-1. RealTime gaming.
+1. Real-time gaming.
 2. Cross-ISP data exchange in PRC.
 3. Other lossy network.
 
@@ -50,8 +50,8 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 ```
 
 *How to optimize*：
-> Step 1：Increase client rcvwnd & server sndwnd simultaneously in small step。
-> Step 2：Try download something，if the bandwidth usage is close the limit stop, otherwise goto step 1.
+> Step 1：Increase client rcvwnd & server sndwnd simultaneously & gradually。       
+> Step 2：Try download something and observer, if the bandwidth usage is close the limit then stop, otherwise goto step 1.      
 
 ### *DSCP* :lollipop: 
 Differentiated services or DiffServ is a computer networking architecture that specifies a simple, scalable and coarse-grained mechanism for classifying and managing network traffic and providing quality of service (QoS) on modern IP networks. DiffServ can, for example, be used to provide low-latency to critical network traffic such as voice or streaming media while providing simple best-effort service to non-critical services such as web traffic or file transfers.
@@ -76,7 +76,7 @@ It is able to detect and correct multiple symbol errors. By adding t check symbo
 
 ![reed-solomon](rs.png)
 
-Adjust parameters of RS-Code with ```-datashard 10 -parityshard 3``` 
+Setting parameters of RS-Code with ```-datashard 10 -parityshard 3``` 
 
 ### *Snappy Stream Compression* :lollipop: 
 > Snappy is a compression/decompression library. It does not aim for maximum
