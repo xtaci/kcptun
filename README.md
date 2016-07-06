@@ -49,15 +49,17 @@ TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtac
 ### *推荐参数* :lollipop: 
 ```
 适用大部分ADSL接入（非对称上下行）的参数（实验环境电信100M ADSL）
+其它带宽请按比例调整，比如 50M ADSL，把 CLIENT 的 -sndwnd -rcvwnd 减掉一半，SERVER 不变
+
 SERVER:   -mtu 1400 -sndwnd 2048 -rcvwnd 2048 -mode fast2
 CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 ```
 
-*简易调优方法*：
+*简易自我调优方法*：
 > 第一步：同时在两端逐步增大client rcvwnd和server sndwnd;        
-> 第二步：尝试下载，观察如果带宽利用率接近物理带宽则停止，否则跳转到第一步。
+> 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
 
-（***注意，SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费服务器带宽。更好的办法是，在server通过linux tc限制带宽***)         
+（***注意，SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。更好的办法是，在server通过linux tc限制带宽***)         
 
 *巭孬嫑乱动*        
 
