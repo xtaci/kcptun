@@ -62,7 +62,7 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 
 （***注意，SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。更好的办法是，在server通过linux tc限制带宽***)       
 ```
-用linux tc限制server发送带宽为32mbit/s: 
+举例:  用linux tc限制server发送带宽为32mbit/s: 
 tc qdisc del dev ens3 root
 tc qdisc add dev ens3 root handle 1: htb
 tc class add dev ens3 parent 1: classid 1:1 htb rate 32mbit
