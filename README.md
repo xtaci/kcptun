@@ -53,15 +53,23 @@ TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtac
 
 SERVER:   -mtu 1400 -sndwnd 2048 -rcvwnd 2048 -mode fast2
 CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
+*巭孬嫑乱动* 
 ```
 
 *简易自我调优方法*：
 > 第一步：同时在两端逐步增大client rcvwnd和server sndwnd;        
 > 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
 
-（***注意，SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。更好的办法是，在server通过linux tc限制带宽***)         
-
-*巭孬嫑乱动*        
+（***注意，SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。更好的办法是，在server通过linux tc限制带宽***)       
+```
+用linux tc限制server发送带宽为32mbit/s: 
+tc qdisc del dev ens3 root
+tc qdisc add dev ens3 root handle 1: htb
+tc class add dev ens3 parent 1: classid 1:1 htb rate 32mbit
+tc filter add dev ens3 protocol ip parent 1:0 prio 1 handle 10 fw flowid 1:1
+iptables -t mangle -A POSTROUTING -o ens3 -j MARK --set-mark 10
+ens3为网卡，有些服务器为eth0，有些为p2p1，通过ifconfig查询。
+```
 
 ### *DSCP* :lollipop: 
 DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998年12月发布了Diff-Serv（Differentiated Service）的QoS分类标准。它在每个数据包IP头部的服务类别TOS标识字节中，利用已使用的6比特和未使用的2比特，通过编码值来区分优先级。     
