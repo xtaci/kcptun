@@ -61,8 +61,11 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 > 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
 
 ### *流量控制* :lollipop: 
-***基本原则: SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。***      
-***在server通过linux tc，可以限制服务器发送带宽。***      
+***必要性: 针对流量敏感的服务器，做双保险。***      
+
+> 基本原则: SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。  
+
+在server通过linux tc，可以限制服务器发送带宽。   
 举例:  用linux tc限制server发送带宽为32mbit/s: 
 ```
 root@kcptun:~# cat tc.sh
