@@ -51,7 +51,21 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 
 *How to optimize*：
 > Step 1：Increase client rcvwnd & server sndwnd simultaneously & gradually。       
-> Step 2：Try download something and observer, if the bandwidth usage is close the limit then stop, otherwise goto step 1.      
+> Step 2：Try download something and observer, if the bandwidth usage is close the limit then stop, otherwise goto step 1.     
+
+### *Traffic Control* :lollipop: 
+***Intended audience : for those server's bandwidth is quite limited.***      
+
+Example: To limit outgoing bandwidth to 32mbit/s on server. 
+```
+root@kcptun:~# cat tc.sh
+tc qdisc del dev eth0 root
+tc qdisc add dev eth0 root handle 1: htb
+tc class add dev eth0 parent 1: classid 1:1 htb rate 32mbit
+tc filter add dev eth0 protocol ip parent 1:0 prio 1 handle 10 fw flowid 1:1
+iptables -t mangle -A POSTROUTING -o eth0  -j MARK --set-mark 10
+root@kcptun:~#
+```
 
 ### *DSCP* :lollipop: 
 Differentiated services or DiffServ is a computer networking architecture that specifies a simple, scalable and coarse-grained mechanism for classifying and managing network traffic and providing quality of service (QoS) on modern IP networks. DiffServ can, for example, be used to provide low-latency to critical network traffic such as voice or streaming media while providing simple best-effort service to non-critical services such as web traffic or file transfers.
@@ -149,4 +163,4 @@ All donations to this project will be used on the R&D of [gonet/2](http://gonet2
 10. https://tools.ietf.org/html/rfc6937 -- Proportional Rate Reduction for TCP.
 11. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
 12. http://http2.github.io/ -- What is HTTP/2?
-13. http://www.lartc.org/LARTC-zh_CN.GB2312.pdf -- Linux Advanced Routing & Traffic Control
+13. http://www.lartc.org/ -- Linux Advanced Routing & Traffic Control
