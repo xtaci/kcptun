@@ -149,3 +149,4 @@ All donations to this project will be used on the R&D of [gonet/2](http://gonet2
 10. https://tools.ietf.org/html/rfc6937 -- Proportional Rate Reduction for TCP.
 11. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
 12. http://http2.github.io/ -- What is HTTP/2?
+13. http://www.lartc.org/LARTC-zh_CN.GB2312.pdf -- Linux Advanced Routing & Traffic Control
