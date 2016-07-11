@@ -23,7 +23,7 @@
 
 [English](README.en.md)
 
-TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtaci/kcptun/releases/latest)***:zap:工作示意图：  
+TCP端口加速器 :zap:***[官方下载地址](https://github.com/xtaci/kcptun/releases/latest)***:zap: 工作示意图：  
 
 ![kcptun](kcptun.png)
 
