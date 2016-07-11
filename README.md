@@ -20,13 +20,9 @@
 [18]: https://github.com/skywind3000/kcp
 [19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
 [20]: https://hub.docker.com/r/xtaci/kcptun/
-
-[English](README.en.md)
-
 TCP端口加速器 :zap:***[官方下载地址](https://github.com/xtaci/kcptun/releases/latest)***:zap: 工作示意图：  
-
 ![kcptun](kcptun.png)
-
+[English Readme](README.en.md)
 ### *快速设定* :lollipop:
 ```
 服务器: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // 转发到本地1080端口
