@@ -72,6 +72,8 @@ Differentiated services or DiffServ is a computer networking architecture that s
 
 DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit differentiated services field (DS field) in the IP header for packet classification purposes. The DS field and ECN field replace the outdated IPv4 TOS field.[1]
 
+setting each side with ```-dscp value```.
+
 ### *Embeded Mode* :lollipop: 
 Latency:     
 *fast3 >* ***[fast2]*** *> fast > normal > default*        
@@ -100,7 +102,9 @@ Setting parameters of RS-Code with ```-datashard 10 -parityshard 3```
 > for most inputs, but the resulting compressed files are anywhere from 20% to
 > 100% bigger.
 
-Reference: http://google.github.io/snappy/
+> Reference: http://google.github.io/snappy/
+
+disable compression by setting ```-nocomp``` on both side.
 
 ### *SNMP* :lollipop:
 ```go

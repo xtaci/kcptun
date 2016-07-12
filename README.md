@@ -20,15 +20,10 @@
 [18]: https://github.com/skywind3000/kcp
 [19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
 [20]: https://hub.docker.com/r/xtaci/kcptun/
-
-[English](README.en.md)
-
-TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtaci/kcptun/releases/latest)***:zap:工作示意图：  
+***TCP端口加速器 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
 
 ![kcptun](kcptun.png)
-
-***kcptun是[kcp-go](https://github.com/xtaci/kcp-go)实现的一个端口转发工具，可以用于任意tcp网络程序的传输承载(尤其用于udp游戏通信测试)，用于优化丢包环境下的网络流畅度。***   
-
+[English Readme](README.en.md)
 ### *快速设定* :lollipop:
 ```
 服务器: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // 转发到本地1080端口
@@ -40,11 +35,6 @@ TCP流转换为KCP+UDP流，:zap:***[官方下载地址](https://github.com/xtac
 
 ![client](client.png)
 ![server](server.png)
-
-### *适用范围限定* :lollipop:   
-1. 实时网络游戏的数据传输        
-2. 跨运营商的流量传输               
-3. 其他高丢包通信链路的TCP承载      
 
 ### *推荐参数* :lollipop: 
 ```
@@ -81,7 +71,28 @@ root@kcptun:~#
 
 ### *DSCP* :lollipop: 
 DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998年12月发布了Diff-Serv（Differentiated Service）的QoS分类标准。它在每个数据包IP头部的服务类别TOS标识字节中，利用已使用的6比特和未使用的2比特，通过编码值来区分优先级。     
-常用DSCP值可以参考[Wikipedia DSCP](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values)，至于有没有用，完全取决于数据包经过的设备。
+常用DSCP值可以参考[Wikipedia DSCP](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values)，至于有没有用，完全取决于数据包经过的设备。 
+
+通过 ```-dscp ``` 参数指定dscp值，两端可分别设定。
+
+### *前向纠错* :lollipop: 
+前向纠错采用Reed Solomon纠删码, 它的基本原理如下： 给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多容忍m个数据块或者校验块同时丢失。
+
+![reed-solomon](rs.png)
+
+通过参数```-datashard 10 -parityshard 3``` 在两端同时设定。
+
+### *Snappy数据流压缩* :lollipop: 
+> Snappy is a compression/decompression library. It does not aim for maximum
+> compression, or compatibility with any other compression library; instead,
+> it aims for very high speeds and reasonable compression. For instance,
+> compared to the fastest mode of zlib, Snappy is an order of magnitude faster
+> for most inputs, but the resulting compressed files are anywhere from 20% to
+> 100% bigger.
+
+> Reference: http://google.github.io/snappy/
+
+通过参数 ```-nocomp``` 在两端同时设定以关闭压缩。
 
 ### *内置模式* :lollipop: 
 响应速度:     
@@ -93,23 +104,6 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
-
-### *前向纠错* :lollipop: 
-前向纠错采用Reed Solomon纠删码, 它的基本原理如下： 给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多容忍m个数据块或者校验块同时丢失。
-
-![reed-solomon](rs.png)
-
-通过```-datashard 10 -parityshard 3``` 可以调整Reed Solomon参数。
-
-### *Snappy数据流压缩* :lollipop: 
-> Snappy is a compression/decompression library. It does not aim for maximum
-> compression, or compatibility with any other compression library; instead,
-> it aims for very high speeds and reasonable compression. For instance,
-> compared to the fastest mode of zlib, Snappy is an order of magnitude faster
-> for most inputs, but the resulting compressed files are anywhere from 20% to
-> 100% bigger.
-
-Reference: http://google.github.io/snappy/
 
 ### *SNMP* :lollipop:
 ```go
@@ -153,6 +147,16 @@ TCP window size: 4.00 MByte (default)
 [  5] local 45.32.xxx.xxx port 5001 connected with 218.88.xxx.xxx port 17220
 [  5]  0.0-17.9 sec  2.12 MBytes   997 Kbits/sec     <-- direct connnection via tcp
 ```
+
+### *故障排除* :lollipop:
+> Q: 客户端和服务器端***皆无*** ```stream opened```信息。       
+> A: 连接客户端程序的端口设置错误。     
+
+> Q: 客户端有 ```stream opened```信息，服务器端没有。     
+> A: 连接服务器的端口设置错误，或者被防火墙拦截。     
+
+> Q: 客户端服务器***皆有*** ```stream opened```信息，但无法通信。      
+> A: 上层软件的设定错误。     
 
 ### *免责申明* :warning:
 用户以各种方式使用本软件（包括但不限于修改使用、直接使用、通过第三方使用）的过程中，不得以任何方式利用本软件直接或间接从事违反中国法律、以及社会公德的行为。软件的使用者需对自身行为负责，因使用软件引发的一切纠纷，由使用者承担全部法律及连带责任。作者不承担任何法律及连带责任。       
