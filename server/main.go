@@ -205,7 +205,7 @@ func main() {
 			Hidden: true,
 		},
 	}
-	myApp.Action = func(c *cli.Context) {
+	myApp.Action = func(c *cli.Context) error {
 		log.Println("version:", VERSION)
 		nodelay, interval, resend, nc := c.Int("nodelay"), c.Int("interval"), c.Int("resend"), c.Int("nc")
 		switch c.String("mode") {
@@ -263,6 +263,7 @@ func main() {
 				log.Println(err)
 			}
 		}
+		return nil
 	}
 	myApp.Run(os.Args)
 }

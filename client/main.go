@@ -182,7 +182,7 @@ func main() {
 			Hidden: true,
 		},
 	}
-	myApp.Action = func(c *cli.Context) {
+	myApp.Action = func(c *cli.Context) error {
 		log.Println("version:", VERSION)
 		addr, err := net.ResolveTCPAddr("tcp", c.String("localaddr"))
 		checkError(err)
@@ -277,6 +277,7 @@ func main() {
 			go handleClient(p1, p2)
 			rr++
 		}
+		return nil
 	}
 	myApp.Run(os.Args)
 }
