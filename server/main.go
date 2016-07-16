@@ -176,8 +176,9 @@ func main() {
 			Usage: "set reed-solomon erasure coding - parityshard",
 		},
 		cli.BoolFlag{
-			Name:  "acknodelay",
-			Usage: "flush ack immediately when a packet is received",
+			Name:   "acknodelay",
+			Usage:  "flush ack immediately when a packet is received",
+			Hidden: true,
 		},
 		cli.IntFlag{
 			Name:  "dscp",
