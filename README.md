@@ -50,6 +50,20 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 > 第一步：同时在两端逐步增大client rcvwnd和server sndwnd;        
 > 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
 
+*带宽计算*：
+```
+在不丢包的情况下，有最大-rcvwnd 个数据包在网络上正在向你传输，以平均数据包大小avgsize计算，在任意时刻，有：     
+
+                  network_cap = rcvwnd*avgsize
+
+数据流向你，这个值再除以ping值(rtt)，等于最大可达到的带宽。
+
+		max_bandwidth = network_cap/rtt = rcvwnd*avgsize/rtt
+		
+举例，假设rcvwnd = 1024, avgsize = 1KB, rtt = 400ms, 
+max_bandwidth = 1024 * 1KB / 400ms = 2.5MB/s ~= 25Mbps
+```
+
 ### *流量控制* :lollipop: 
 ***必要性: 针对流量敏感的服务器，做双保险。***      
 
