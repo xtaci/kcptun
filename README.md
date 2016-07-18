@@ -60,19 +60,19 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 
 		max_bandwidth = network_cap/rtt = rcvwnd*avgsize/rtt
 		
-举例，设rcvwnd = 1024, avgsize = 1KB, rtt = 400ms, 
+举例，设rcvwnd = 1024, avgsize = 1KB, rtt = 400ms，则：
 
 		max_bandwidth = 1024 * 1KB / 400ms = 2.5MB/s ~= 25Mbps
 		
 （注：以上计算不包括前向纠错的数据量）
 
-前向纠错是相当于最大带宽量的一个固定比列增加：
+前向纠错是最大带宽量的一个固定比例增加：
 
 		max_bandwidth_fec = max_bandwidth*(datashard+parityshard)/datashard
 
-举例，设datashard = 10 , partiyshard = 3
+举例，设datashard = 10 , partiyshard = 3，则：
 
-		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth
+		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth ＝ 1.3 * 25Mbps = 32.5Mbps
 ```
 
 ### *流量控制* :lollipop: 
