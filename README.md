@@ -14,7 +14,7 @@
 [12]: https://github.com/xtaci/kcptun/network
 [13]: https://img.shields.io/github/release/xtaci/kcptun.svg
 [14]: https://github.com/xtaci/kcptun/releases/latest
-[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=2592000
+[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
