@@ -54,14 +54,25 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 ```
 在不丢包的情况下，有最大-rcvwnd 个数据包在网络上正在向你传输，以平均数据包大小avgsize计算，在任意时刻，有：     
 
-                  network_cap = rcvwnd*avgsize
+		network_cap = rcvwnd*avgsize
 
-数据流向你，这个值再除以ping值(rtt)，等于最大可达到的带宽。
+数据流向你，这个值再除以ping值(rtt)，等于最大带宽使用量。
 
 		max_bandwidth = network_cap/rtt = rcvwnd*avgsize/rtt
 		
-举例，假设rcvwnd = 1024, avgsize = 1KB, rtt = 400ms, 
-max_bandwidth = 1024 * 1KB / 400ms = 2.5MB/s ~= 25Mbps
+举例，设rcvwnd = 1024, avgsize = 1KB, rtt = 400ms, 
+
+		max_bandwidth = 1024 * 1KB / 400ms = 2.5MB/s ~= 25Mbps
+		
+（注：以上计算不包括前向纠错的数据量）
+
+前向纠错是相当于最大带宽量的一个固定比列增加：
+
+		max_bandwidth_fec = max_bandwidth*(datashard+parityshard)/datashard
+
+举例，设datashard = 10 , partiyshard = 3
+
+		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth
 ```
 
 ### *流量控制* :lollipop: 
