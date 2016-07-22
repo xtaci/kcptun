@@ -20,14 +20,15 @@
 [18]: https://github.com/skywind3000/kcp
 [19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
 [20]: https://hub.docker.com/r/xtaci/kcptun/
-***TCP端口加速器 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
+***TCP端口加速器，用于KCP协议测试 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
 
 ![kcptun](kcptun.png)
 [English Readme](README.en.md)
 ### *快速设定* :lollipop:
 ```
-服务器: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // 转发到本地1080端口
-客户端: ./client_darwin_amd64 -r "服务器IP地址:554" -l ":1080" -mode fast2    // 监听本地1080端口
+服务器: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // 转发到服务器的本地1080端口
+客户端: ./client_darwin_amd64 -r "服务器IP地址:554" -l ":1080" -mode fast2    // 监听客户端的本地1080端口
+注: 服务器端需要有服务监听1080端口
 ```
 
 ### *使用方法* :lollipop:
