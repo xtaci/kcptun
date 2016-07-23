@@ -20,7 +20,7 @@
 [18]: https://github.com/skywind3000/kcp
 [19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
 [20]: https://hub.docker.com/r/xtaci/kcptun/
-***TCP端口加速器，用于[KCP](https://github.com/xtaci/kcp-go)协议测试 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
+***TCP端口加速器，用于[kcp-go](https://github.com/xtaci/kcp-go)协议测试 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
 
 ![kcptun](kcptun.png)
 [English Readme](README.en.md)
