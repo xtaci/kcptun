@@ -161,18 +161,9 @@ type Snmp struct {
 观察```RetransSegs,FastRetransSegs,LostSegs,OutSegs```这几者的数值比例，用于参考调整```-mode manual,fec```的参数。        
 
 ### *性能对比* :lollipop:
-```
-root@vultr:~# iperf -s
-------------------------------------------------------------
-Server listening on TCP port 5001
-TCP window size: 4.00 MByte (default)
-------------------------------------------------------------
-[  4] local 172.7.7.1 port 5001 connected with 172.7.7.2 port 55453
-[ ID] Interval       Transfer     Bandwidth
-[  4]  0.0-18.0 sec  5.50 MBytes  2.56 Mbits/sec     <-- connection via kcptun
-[  5] local 45.32.xxx.xxx port 5001 connected with 218.88.xxx.xxx port 17220
-[  5]  0.0-17.9 sec  2.12 MBytes   997 Kbits/sec     <-- direct connnection via tcp
-```
+<img src="fast.png" alt="fast.com" height="256px" /> 
+
+http://fast.com
 
 ### *故障排除* :lollipop:
 > Q: 客户端和服务器端***皆无*** ```stream opened```信息。       
