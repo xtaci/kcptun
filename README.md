@@ -160,10 +160,9 @@ type Snmp struct {
 使用```kill -SIGUSR1 pid``` 可以在控制台打印出SNMP信息，通常用于精细调整***当前链路的有效载荷比***。        
 观察```RetransSegs,FastRetransSegs,LostSegs,OutSegs```这几者的数值比例，用于参考调整```-mode manual,fec```的参数。        
 
-### *性能对比* :lollipop:
-<img src="fast.png" alt="fast.com" height="256px" /> 
-
-http://fast.com
+### *速度对比* :lollipop:
+<img src="fast.png" alt="fast.com" height="256px" />       
+测速网站: http://fast.com
 
 ### *故障排除* :lollipop:
 > Q: 客户端和服务器端***皆无*** ```stream opened```信息。       
