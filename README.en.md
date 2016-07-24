@@ -35,7 +35,7 @@ Client Side: ./client_darwin_amd64 -r "SERVERIP:554" -l ":1080" -mode fast2  // 
 
 ### *Performance* :lollipop:
 <img src="fast.png" alt="fast.com" height="256px" />       
-Speed tested with: http://fast.com
+Speed tested with: https://fast.com
 
 ### *Usage* :lollipop:
 ![client](client.png)
