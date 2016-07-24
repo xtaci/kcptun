@@ -26,9 +26,9 @@
 [English Readme](README.en.md)
 ### *快速设定* :lollipop:
 ```
-服务器: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // 转发到服务器的本地1080端口
-客户端: ./client_darwin_amd64 -r "服务器IP地址:554" -l ":1080" -mode fast2    // 监听客户端的本地1080端口
-注: 服务器端需要有服务监听1080端口
+服务器: ./server_linux_amd64 -t "127.0.0.1:8388" -l ":554" -mode fast2  // 转发到服务器的本地8388端口
+客户端: ./client_darwin_amd64 -r "服务器IP地址:554" -l ":8388" -mode fast2    // 监听客户端的本地8388端口
+注: 服务器端需要有服务监听8388端口
 ```
 
 ### *使用方法* :lollipop:
