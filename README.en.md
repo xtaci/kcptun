@@ -33,6 +33,10 @@ Server Side: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // 
 Client Side: ./client_darwin_amd64 -r "SERVERIP:554" -l ":1080" -mode fast2  // listening on port 1080
 ```
 
+### *Performance* :lollipop:
+<img src="fast.png" alt="fast.com" height="256px" />       
+Speed tested with: http://fast.com
+
 ### *Usage* :lollipop:
 ![client](client.png)
 ![server](server.png)
@@ -134,11 +138,6 @@ type Snmp struct {
 
 Sending a signal by ```kill -SIGUSR1 pid``` will give SNMP information for KCP，useful for fine-grained adjustment.
 Of which ```RetransSegs,FastRetransSegs,LostSegs,OutSegs``` is the most useful.
-
-### *Performance* :lollipop:
-<img src="fast.png" alt="fast.com" height="256px" />       
-Speed tested with: http://fast.com
-
 
 ### *Donations* :dollar:
 ![donate](donate.png)          
