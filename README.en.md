@@ -14,11 +14,11 @@
 [12]: https://github.com/xtaci/kcptun/network
 [13]: https://img.shields.io/github/release/xtaci/kcptun.svg
 [14]: https://github.com/xtaci/kcptun/releases/latest
-[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=2592000
+[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
-[19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
+[19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=1800
 [20]: https://hub.docker.com/r/xtaci/kcptun/
 
 A tool for converting tcp stream into kcp+udp stream, :zap: ***[download address](https://github.com/xtaci/kcptun/releases/latest)***:zap:
@@ -136,18 +136,9 @@ Sending a signal by ```kill -SIGUSR1 pid``` will give SNMP information for KCPï¼
 Of which ```RetransSegs,FastRetransSegs,LostSegs,OutSegs``` is the most useful.
 
 ### *Performance* :lollipop:
-```
-root@vultr:~# iperf -s
-------------------------------------------------------------
-Server listening on TCP port 5001
-TCP window size: 4.00 MByte (default)
-------------------------------------------------------------
-[  4] local 172.7.7.1 port 5001 connected with 172.7.7.2 port 55453
-[ ID] Interval       Transfer     Bandwidth
-[  4]  0.0-18.0 sec  5.50 MBytes  2.56 Mbits/sec     <-- connection via kcptun
-[  5] local 45.32.xxx.xxx port 5001 connected with 218.88.xxx.xxx port 17220
-[  5]  0.0-17.9 sec  2.12 MBytes   997 Kbits/sec     <-- direct connnection via tcp
-```
+<img src="fast.png" alt="fast.com" height="256px" />       
+Speed tested with: http://fast.com
+
 
 ### *Donations* :dollar:
 ![donate](donate.png)          
