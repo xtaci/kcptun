@@ -231,6 +231,7 @@ func main() {
 			}
 			kcpconn, err := kcp.DialWithOptions(c.String("remoteaddr"), block, c.Int("datashard"), c.Int("parityshard"))
 			checkError(err)
+			kcpconn.SetStreamMode(true)
 			kcpconn.SetNoDelay(nodelay, interval, resend, nc)
 			kcpconn.SetWindowSize(c.Int("sndwnd"), c.Int("rcvwnd"))
 			kcpconn.SetMtu(c.Int("mtu"))

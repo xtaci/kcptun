@@ -249,6 +249,7 @@ func main() {
 		for {
 			if conn, err := lis.Accept(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
+				conn.SetStreamMode(true)
 				conn.SetNoDelay(nodelay, interval, resend, nc)
 				conn.SetMtu(c.Int("mtu"))
 				conn.SetWindowSize(c.Int("sndwnd"), c.Int("rcvwnd"))
