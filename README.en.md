@@ -110,6 +110,8 @@ Setting parameters of RS-Code with ```-datashard 10 -parityshard 3```
 
 disable compression by setting ```-nocomp``` on both side.
 
+> Tips: Turning off compression may reduce latency.
+
 ### *SNMP* :lollipop:
 ```go
 // Snmp defines network statistics indicator
