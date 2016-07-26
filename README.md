@@ -33,7 +33,9 @@
 
 ### *速度对比* :lollipop:
 <img src="fast.png" alt="fast.com" height="256px" />       
-测速网站: https://fast.com
+* 测速网站: https://fast.com
+* 接入: 100M ADSL
+* WIFI: 5GHz TL-WDR3320
 
 ### *使用方法* :lollipop:
 在Mac OS X El Capitan下的帮助输出: 
