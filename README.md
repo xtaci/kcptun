@@ -123,6 +123,7 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 > Reference: http://google.github.io/snappy/
 
 通过参数 ```-nocomp``` 在两端同时设定以关闭压缩。
+> 提示: 关闭压缩可能会降低延迟。
 
 ### *内置模式* :lollipop: 
 响应速度:     
