@@ -1,4 +1,6 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
+
+[![Join the chat at https://gitter.im/xtaci/kcptun](https://badges.gitter.im/xtaci/kcptun.svg)](https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Codewake][19]][20]
 [1]: https://godoc.org/github.com/xtaci/kcptun?status.svg
 [2]: https://godoc.org/github.com/xtaci/kcptun
