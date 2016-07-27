@@ -1,5 +1,5 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
-[![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] 
+[![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20]
 [1]: https://godoc.org/github.com/xtaci/kcptun?status.svg
 [2]: https://godoc.org/github.com/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
@@ -18,8 +18,8 @@
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
-[19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=1800
-[20]: https://hub.docker.com/r/xtaci/kcptun/
+[19]: https://badges.gitter.im/xtaci/kcptun.svg
+[20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
 A tool for converting tcp stream into kcp+udp stream, :zap: ***[download address](https://github.com/xtaci/kcptun/releases/latest)***:zap:
 
