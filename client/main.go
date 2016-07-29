@@ -279,7 +279,6 @@ func main() {
 			go handleClient(p1, p2)
 			rr++
 		}
-		return nil
 	}
 	myApp.Run(os.Args)
 }

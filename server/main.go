@@ -265,7 +265,6 @@ func main() {
 				log.Println(err)
 			}
 		}
-		return nil
 	}
 	myApp.Run(os.Args)
 }
