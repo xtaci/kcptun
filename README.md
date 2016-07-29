@@ -1,5 +1,5 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
-[![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] 
+[![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20]
 [1]: https://godoc.org/github.com/xtaci/kcptun?status.svg
 [2]: https://godoc.org/github.com/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
@@ -18,9 +18,10 @@
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
-[19]: https://img.shields.io/docker/pulls/xtaci/kcptun.svg?maxAge=2592000
-[20]: https://hub.docker.com/r/xtaci/kcptun/
-***TCP端口加速器，用于[kcp-go](https://github.com/xtaci/kcp-go)协议测试 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
+[19]: https://badges.gitter.im/xtaci/kcptun.svg
+[20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
+
+***[kcp-go](https://github.com/xtaci/kcp-go)协议测试小工具 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
 
 ![kcptun](kcptun.png)
 [English Readme](README.en.md)
@@ -33,7 +34,9 @@
 
 ### *速度对比* :lollipop:
 <img src="fast.png" alt="fast.com" height="256px" />       
-测速网站: https://fast.com
+* 测速网站: https://fast.com
+* 接入: 100M ADSL
+* WIFI: 5GHz TL-WDR3320
 
 ### *使用方法* :lollipop:
 在Mac OS X El Capitan下的帮助输出: 
@@ -123,6 +126,7 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 > Reference: http://google.github.io/snappy/
 
 通过参数 ```-nocomp``` 在两端同时设定以关闭压缩。
+> 提示: 关闭压缩可能会降低延迟。
 
 ### *内置模式* :lollipop: 
 响应速度:     
