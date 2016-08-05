@@ -182,6 +182,11 @@ func main() {
 			Value:  0,
 			Hidden: true,
 		},
+		cli.IntFlag{
+			Name:   "sockbuf",
+			Value:  16777216,
+			Hidden: true,
+		},
 	}
 	myApp.Action = func(c *cli.Context) error {
 		log.Println("version:", VERSION)
@@ -215,6 +220,7 @@ func main() {
 		log.Println("datashard:", c.Int("datashard"), "parityshard:", c.Int("parityshard"))
 		log.Println("acknodelay:", c.Bool("acknodelay"))
 		log.Println("dscp:", c.Int("dscp"))
+		log.Println("sockbuf:", c.Int("sockbuf"))
 		log.Println("conn:", c.Int("conn"))
 
 		createConn := func() *yamux.Session {
@@ -237,6 +243,8 @@ func main() {
 			kcpconn.SetMtu(c.Int("mtu"))
 			kcpconn.SetACKNoDelay(c.Bool("acknodelay"))
 			kcpconn.SetDSCP(c.Int("dscp"))
+			kcpconn.SetReadBuffer(c.Int("sockbuf"))
+			kcpconn.SetWriteBuffer(c.Int("sockbuf"))
 
 			// stream multiplex
 			config := &yamux.Config{

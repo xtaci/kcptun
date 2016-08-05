@@ -205,6 +205,11 @@ func main() {
 			Value:  0,
 			Hidden: true,
 		},
+		cli.IntFlag{
+			Name:   "sockbuf",
+			Value:  16777216,
+			Hidden: true,
+		},
 	}
 	myApp.Action = func(c *cli.Context) error {
 		log.Println("version:", VERSION)
@@ -246,6 +251,11 @@ func main() {
 		log.Println("datashard:", c.Int("datashard"), "parityshard:", c.Int("parityshard"))
 		log.Println("acknodelay:", c.Bool("acknodelay"))
 		log.Println("dscp:", c.Int("dscp"))
+		log.Println("sockbuf:", c.Int("sockbuf"))
+
+		lis.SetReadBuffer(c.Int("sockbuf"))
+		lis.SetWriteBuffer(c.Int("sockbuf"))
+
 		for {
 			if conn, err := lis.Accept(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
