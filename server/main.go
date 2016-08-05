@@ -207,7 +207,12 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:   "sockbuf",
-			Value:  16777216,
+			Value:  16777216, // socket buffer size in bytes
+			Hidden: true,
+		},
+		cli.IntFlag{
+			Name:   "ping",
+			Value:  10, // nat ping interval in seconds
 			Hidden: true,
 		},
 	}
@@ -252,6 +257,7 @@ func main() {
 		log.Println("acknodelay:", c.Bool("acknodelay"))
 		log.Println("dscp:", c.Int("dscp"))
 		log.Println("sockbuf:", c.Int("sockbuf"))
+		log.Println("ping:", c.Int("ping"))
 
 		lis.SetReadBuffer(c.Int("sockbuf"))
 		lis.SetWriteBuffer(c.Int("sockbuf"))
@@ -265,6 +271,7 @@ func main() {
 				conn.SetWindowSize(c.Int("sndwnd"), c.Int("rcvwnd"))
 				conn.SetACKNoDelay(c.Bool("acknodelay"))
 				conn.SetDSCP(c.Int("dscp"))
+				conn.SetPing(c.Int("ping"))
 
 				if c.Bool("nocomp") {
 					go handleMux(conn, c.String("target"))
