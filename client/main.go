@@ -188,8 +188,8 @@ func main() {
 			Hidden: true,
 		},
 		cli.IntFlag{
-			Name:   "ping",
-			Value:  10, // nat ping interval in seconds
+			Name:   "keepalive",
+			Value:  10, // nat keepalive interval in seconds
 			Hidden: true,
 		},
 	}
@@ -226,7 +226,7 @@ func main() {
 		log.Println("acknodelay:", c.Bool("acknodelay"))
 		log.Println("dscp:", c.Int("dscp"))
 		log.Println("sockbuf:", c.Int("sockbuf"))
-		log.Println("ping:", c.Int("ping"))
+		log.Println("keepalive:", c.Int("keepalive"))
 		log.Println("conn:", c.Int("conn"))
 
 		createConn := func() *yamux.Session {
@@ -251,7 +251,7 @@ func main() {
 			kcpconn.SetDSCP(c.Int("dscp"))
 			kcpconn.SetReadBuffer(c.Int("sockbuf"))
 			kcpconn.SetWriteBuffer(c.Int("sockbuf"))
-			kcpconn.SetPing(c.Int("ping"))
+			kcpconn.SetPing(c.Int("keepalive"))
 
 			// stream multiplex
 			config := &yamux.Config{
