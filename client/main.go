@@ -251,7 +251,7 @@ func main() {
 			kcpconn.SetDSCP(c.Int("dscp"))
 			kcpconn.SetReadBuffer(c.Int("sockbuf"))
 			kcpconn.SetWriteBuffer(c.Int("sockbuf"))
-			kcpconn.SetPing(c.Int("keepalive"))
+			kcpconn.SetKeepAlive(c.Int("keepalive"))
 
 			// stream multiplex
 			config := &yamux.Config{

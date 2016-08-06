@@ -271,7 +271,7 @@ func main() {
 				conn.SetWindowSize(c.Int("sndwnd"), c.Int("rcvwnd"))
 				conn.SetACKNoDelay(c.Bool("acknodelay"))
 				conn.SetDSCP(c.Int("dscp"))
-				conn.SetPing(c.Int("keepalive"))
+				conn.SetKeepAlive(c.Int("keepalive"))
 
 				if c.Bool("nocomp") {
 					go handleMux(conn, c.String("target"))
