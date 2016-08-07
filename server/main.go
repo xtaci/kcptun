@@ -14,7 +14,7 @@ import (
 	"github.com/golang/snappy"
 	"github.com/hashicorp/yamux"
 	"github.com/urfave/cli"
-	"github.com/xtaci/kcp-go"
+	kcp "github.com/xtaci/kcp-go"
 )
 
 var (
@@ -230,9 +230,10 @@ func main() {
 			nodelay, interval, resend, nc = 1, 10, 2, 1
 		}
 
+		crypt := c.String("crypt")
 		pass := pbkdf2.Key([]byte(c.String("key")), []byte(SALT), 4096, 32, sha1.New)
 		var block kcp.BlockCrypt
-		switch c.String("crypt") {
+		switch crypt {
 		case "tea":
 			block, _ = kcp.NewTEABlockCrypt(pass[:16])
 		case "xor":
@@ -243,40 +244,47 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		lis, err := kcp.ListenWithOptions(c.String("listen"), block, c.Int("datashard"), c.Int("parityshard"))
+		datashard, parityshard := c.Int("datashard"), c.Int("parityshard")
+		lis, err := kcp.ListenWithOptions(c.String("listen"), block, datashard, parityshard)
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("listening on ", lis.Addr())
-		log.Println("encryption:", c.String("crypt"))
-		log.Println("nodelay parameters:", nodelay, interval, resend, nc)
-		log.Println("sndwnd:", c.Int("sndwnd"), "rcvwnd:", c.Int("rcvwnd"))
-		log.Println("compression:", !c.Bool("nocomp"))
-		log.Println("mtu:", c.Int("mtu"))
-		log.Println("datashard:", c.Int("datashard"), "parityshard:", c.Int("parityshard"))
-		log.Println("acknodelay:", c.Bool("acknodelay"))
-		log.Println("dscp:", c.Int("dscp"))
-		log.Println("sockbuf:", c.Int("sockbuf"))
-		log.Println("keepalive:", c.Int("keepalive"))
 
-		lis.SetReadBuffer(c.Int("sockbuf"))
-		lis.SetWriteBuffer(c.Int("sockbuf"))
+		mtu, sndwnd, rcvwnd := c.Int("mtu"), c.Int("sndwnd"), c.Int("rcvwnd")
+		nocomp, acknodelay := c.Bool("nocomp"), c.Bool("acknodelay")
+		dscp, sockbuf, keepalive := c.Int("dscp"), c.Int("sockbuf"), c.Int("keepalive")
+		target := c.String("target")
+
+		log.Println("listening on ", lis.Addr())
+		log.Println("encryption:", crypt)
+		log.Println("nodelay parameters:", nodelay, interval, resend, nc)
+		log.Println("sndwnd:", sndwnd, "rcvwnd:", rcvwnd)
+		log.Println("compression:", !nocomp)
+		log.Println("mtu:", mtu)
+		log.Println("datashard:", datashard, "parityshard:", parityshard)
+		log.Println("acknodelay:", acknodelay)
+		log.Println("dscp:", dscp)
+		log.Println("sockbuf:", sockbuf)
+		log.Println("keepalive:", keepalive)
+
+		lis.SetReadBuffer(sockbuf)
+		lis.SetWriteBuffer(sockbuf)
 
 		for {
 			if conn, err := lis.Accept(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
 				conn.SetStreamMode(true)
 				conn.SetNoDelay(nodelay, interval, resend, nc)
-				conn.SetMtu(c.Int("mtu"))
-				conn.SetWindowSize(c.Int("sndwnd"), c.Int("rcvwnd"))
-				conn.SetACKNoDelay(c.Bool("acknodelay"))
-				conn.SetDSCP(c.Int("dscp"))
-				conn.SetKeepAlive(c.Int("keepalive"))
+				conn.SetMtu(mtu)
+				conn.SetWindowSize(sndwnd, rcvwnd)
+				conn.SetACKNoDelay(acknodelay)
+				conn.SetDSCP(dscp)
+				conn.SetKeepAlive(keepalive)
 
-				if c.Bool("nocomp") {
-					go handleMux(conn, c.String("target"))
+				if nocomp {
+					go handleMux(conn, target)
 				} else {
-					go handleMux(newCompStream(conn), c.String("target"))
+					go handleMux(newCompStream(conn), target)
 				}
 			} else {
 				log.Println(err)

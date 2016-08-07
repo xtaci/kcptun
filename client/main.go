@@ -14,7 +14,7 @@ import (
 	"github.com/golang/snappy"
 	"github.com/hashicorp/yamux"
 	"github.com/urfave/cli"
-	"github.com/xtaci/kcp-go"
+	kcp "github.com/xtaci/kcp-go"
 )
 
 var (
@@ -199,7 +199,6 @@ func main() {
 		checkError(err)
 		listener, err := net.ListenTCP("tcp", addr)
 		checkError(err)
-		pass := pbkdf2.Key([]byte(c.String("key")), []byte(SALT), 4096, 32, sha1.New)
 
 		// kcp server
 		nodelay, interval, resend, nc := c.Int("nodelay"), c.Int("interval"), c.Int("resend"), c.Int("nc")
@@ -215,43 +214,52 @@ func main() {
 			nodelay, interval, resend, nc = 1, 10, 2, 1
 		}
 
+		crypt := c.String("crypt")
+		pass := pbkdf2.Key([]byte(c.String("key")), []byte(SALT), 4096, 32, sha1.New)
+		var block kcp.BlockCrypt
+		switch c.String("crypt") {
+		case "tea":
+			block, _ = kcp.NewTEABlockCrypt(pass[:16])
+		case "xor":
+			block, _ = kcp.NewSimpleXORBlockCrypt(pass)
+		case "none":
+			block, _ = kcp.NewNoneBlockCrypt(pass)
+		default:
+			block, _ = kcp.NewAESBlockCrypt(pass)
+		}
+
+		remoteaddr := c.String("remoteaddr")
+		datashard, parityshard := c.Int("datashard"), c.Int("parityshard")
+		mtu, sndwnd, rcvwnd := c.Int("mtu"), c.Int("sndwnd"), c.Int("rcvwnd")
+		nocomp, acknodelay := c.Bool("nocomp"), c.Bool("acknodelay")
+		dscp, sockbuf, keepalive, conn := c.Int("dscp"), c.Int("sockbuf"), c.Int("keepalive"), c.Int("conn")
+
 		log.Println("listening on:", listener.Addr())
-		log.Println("encryption:", c.String("crypt"))
+		log.Println("encryption:", crypt)
 		log.Println("nodelay parameters:", nodelay, interval, resend, nc)
-		log.Println("remote address:", c.String("remoteaddr"))
-		log.Println("sndwnd:", c.Int("sndwnd"), "rcvwnd:", c.Int("rcvwnd"))
-		log.Println("compression:", !c.Bool("nocomp"))
-		log.Println("mtu:", c.Int("mtu"))
-		log.Println("datashard:", c.Int("datashard"), "parityshard:", c.Int("parityshard"))
-		log.Println("acknodelay:", c.Bool("acknodelay"))
-		log.Println("dscp:", c.Int("dscp"))
-		log.Println("sockbuf:", c.Int("sockbuf"))
-		log.Println("keepalive:", c.Int("keepalive"))
-		log.Println("conn:", c.Int("conn"))
+		log.Println("remote address:", remoteaddr)
+		log.Println("sndwnd:", sndwnd, "rcvwnd:", rcvwnd)
+		log.Println("compression:", !nocomp)
+		log.Println("mtu:", mtu)
+		log.Println("datashard:", datashard, "parityshard:", parityshard)
+		log.Println("acknodelay:", acknodelay)
+		log.Println("dscp:", dscp)
+		log.Println("sockbuf:", sockbuf)
+		log.Println("keepalive:", keepalive)
+		log.Println("conn:", conn)
 
 		createConn := func() *yamux.Session {
-			var block kcp.BlockCrypt
-			switch c.String("crypt") {
-			case "tea":
-				block, _ = kcp.NewTEABlockCrypt(pass[:16])
-			case "xor":
-				block, _ = kcp.NewSimpleXORBlockCrypt(pass)
-			case "none":
-				block, _ = kcp.NewNoneBlockCrypt(pass)
-			default:
-				block, _ = kcp.NewAESBlockCrypt(pass)
-			}
-			kcpconn, err := kcp.DialWithOptions(c.String("remoteaddr"), block, c.Int("datashard"), c.Int("parityshard"))
+			kcpconn, err := kcp.DialWithOptions(remoteaddr, block, datashard, parityshard)
 			checkError(err)
 			kcpconn.SetStreamMode(true)
 			kcpconn.SetNoDelay(nodelay, interval, resend, nc)
-			kcpconn.SetWindowSize(c.Int("sndwnd"), c.Int("rcvwnd"))
-			kcpconn.SetMtu(c.Int("mtu"))
-			kcpconn.SetACKNoDelay(c.Bool("acknodelay"))
-			kcpconn.SetDSCP(c.Int("dscp"))
-			kcpconn.SetReadBuffer(c.Int("sockbuf"))
-			kcpconn.SetWriteBuffer(c.Int("sockbuf"))
-			kcpconn.SetKeepAlive(c.Int("keepalive"))
+			kcpconn.SetWindowSize(sndwnd, rcvwnd)
+			kcpconn.SetMtu(mtu)
+			kcpconn.SetACKNoDelay(acknodelay)
+			kcpconn.SetDSCP(dscp)
+			kcpconn.SetReadBuffer(sockbuf)
+			kcpconn.SetWriteBuffer(sockbuf)
+			kcpconn.SetKeepAlive(keepalive)
 
 			// stream multiplex
 			config := &yamux.Config{
@@ -263,7 +271,7 @@ func main() {
 				LogOutput:              os.Stderr,
 			}
 			var session *yamux.Session
-			if c.Bool("nocomp") {
+			if nocomp {
 				session, err = yamux.Client(kcpconn, config)
 			} else {
 				session, err = yamux.Client(newCompStream(kcpconn), config)
@@ -272,7 +280,7 @@ func main() {
 			return session
 		}
 
-		numconn := uint16(c.Int("conn"))
+		numconn := uint16(conn)
 		var muxes []*yamux.Session
 		for i := uint16(0); i < numconn; i++ {
 			muxes = append(muxes, createConn())
