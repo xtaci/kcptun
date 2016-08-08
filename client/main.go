@@ -256,10 +256,17 @@ func main() {
 			kcpconn.SetWindowSize(sndwnd, rcvwnd)
 			kcpconn.SetMtu(mtu)
 			kcpconn.SetACKNoDelay(acknodelay)
-			kcpconn.SetDSCP(dscp)
-			kcpconn.SetReadBuffer(sockbuf)
-			kcpconn.SetWriteBuffer(sockbuf)
 			kcpconn.SetKeepAlive(keepalive)
+
+			if err := kcpconn.SetDSCP(dscp); err != nil {
+				log.Println("SetDSCP:", err)
+			}
+			if err := kcpconn.SetReadBuffer(sockbuf); err != nil {
+				log.Println("SetReadBuffer:", err)
+			}
+			if err := kcpconn.SetWriteBuffer(sockbuf); err != nil {
+				log.Println("SetWriteBuffer:", err)
+			}
 
 			// stream multiplex
 			config := &yamux.Config{

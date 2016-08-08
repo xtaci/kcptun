@@ -267,8 +267,15 @@ func main() {
 		log.Println("sockbuf:", sockbuf)
 		log.Println("keepalive:", keepalive)
 
-		lis.SetReadBuffer(sockbuf)
-		lis.SetWriteBuffer(sockbuf)
+		if err := lis.SetDSCP(dscp); err != nil {
+			log.Println("SetDSCP:", err)
+		}
+		if err := lis.SetReadBuffer(sockbuf); err != nil {
+			log.Println("SetReadBuffer:", err)
+		}
+		if err := lis.SetWriteBuffer(sockbuf); err != nil {
+			log.Println("SetWriteBuffer:", err)
+		}
 
 		for {
 			if conn, err := lis.Accept(); err == nil {
@@ -278,7 +285,6 @@ func main() {
 				conn.SetMtu(mtu)
 				conn.SetWindowSize(sndwnd, rcvwnd)
 				conn.SetACKNoDelay(acknodelay)
-				conn.SetDSCP(dscp)
 				conn.SetKeepAlive(keepalive)
 
 				if nocomp {
