@@ -207,7 +207,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:   "sockbuf",
-			Value:  16777216, // socket buffer size in bytes
+			Value:  4194304, // socket buffer size in bytes
 			Hidden: true,
 		},
 		cli.IntFlag{
