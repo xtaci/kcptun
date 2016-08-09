@@ -59,6 +59,8 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 > Step 1：Increase client rcvwnd & server sndwnd simultaneously & gradually。       
 > Step 2：Try download something and observer, if the bandwidth usage is close the limit then stop, otherwise goto step 1.     
 
+***NOTICE: if too much retranmission happens, it's quite possible the windows are too large***
+
 ### *Traffic Control* :lollipop: 
 ***Intended audience : for those server's bandwidth is quite limited.***      
 
