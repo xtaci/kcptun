@@ -1,5 +1,5 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
-[![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20]
+[![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20]
 [1]: https://godoc.org/github.com/xtaci/kcptun?status.svg
 [2]: https://godoc.org/github.com/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
@@ -8,10 +8,8 @@
 [6]: https://goreportcard.com/report/github.com/xtaci/kcptun
 [7]: https://img.shields.io/badge/license-MIT-blue.svg
 [8]: https://raw.githubusercontent.com/xtaci/kcptun/master/LICENSE.md
-[9]: https://img.shields.io/github/stars/xtaci/kcptun.svg
-[10]: https://github.com/xtaci/kcptun/stargazers
-[11]: https://img.shields.io/github/forks/xtaci/kcptun.svg
-[12]: https://github.com/xtaci/kcptun/network
+[11]: https://img.shields.io/badge/license-MIT-blue.svg
+[12]: LICENSE.md
 [13]: https://img.shields.io/github/release/xtaci/kcptun.svg
 [14]: https://github.com/xtaci/kcptun/releases/latest
 [15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800
