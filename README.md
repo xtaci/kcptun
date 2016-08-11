@@ -58,7 +58,7 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 * nocomp
 * key
 * crypt
-* 
+
 其余为两边可独立设定的参数
 
 *简易自我调优方法*：
