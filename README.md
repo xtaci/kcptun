@@ -42,17 +42,8 @@
 ![client](client.png)
 ![server](server.png)
 
-### *推荐参数* :lollipop: 
-```
-适用大部分ADSL接入（非对称上下行）的参数（实验环境电信100M ADSL）
-其它带宽请按比例调整，比如 50M ADSL，把 CLIENT 的 -sndwnd -rcvwnd 减掉一半，SERVER 不变
-
-SERVER:   -mtu 1400 -sndwnd 2048 -rcvwnd 2048 -mode fast2
-CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
-*巭孬嫑乱动* 
-```
-
-两端参数必须一致的有:
+### *参数调整* :lollipop: 
+***两端参数必须一致的有:***
 * datashard
 * parityshard
 * nocomp
