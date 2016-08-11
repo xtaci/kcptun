@@ -56,7 +56,6 @@ func newCompStream(conn net.Conn) *compStream {
 func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
 	// stream multiplex
 	var mux *yamux.Session
-
 	m, err := yamux.Server(conn, config)
 	if err != nil {
 		log.Println(err)
