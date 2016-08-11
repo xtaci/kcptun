@@ -55,13 +55,11 @@ func newCompStream(conn net.Conn) *compStream {
 // handle multiplex-ed connection
 func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
 	// stream multiplex
-	var mux *yamux.Session
-	m, err := yamux.Server(conn, config)
+	mux, err := yamux.Server(conn, config)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	mux = m
 	defer mux.Close()
 
 	for {
@@ -107,6 +105,10 @@ func handleClient(p1, p2 io.ReadWriteCloser) {
 
 func main() {
 	rand.Seed(int64(time.Now().Nanosecond()))
+	if VERSION == "SELFBUILD" {
+		// add more log flags for debugging
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	}
 	myApp := cli.NewApp()
 	myApp.Name = "kcptun"
 	myApp.Usage = "kcptun server"
