@@ -197,7 +197,7 @@ type Snmp struct {
 
 对该项目的捐款将用于[gonet/2](http://gonet2.github.io/)游戏服务器框架的研发。     
 
-> 特别感谢: 郑H立, 南D风, Li, 七q, 凌J，昶，Les*ables 等，名字已做特殊处理。
+> 特别感谢: 郑H立, 南D风, Li, 七q, 凌J，昶，Les*ables, Ky*n等，名字已做特殊处理。
 
 ### *参考资料* :paperclip:
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
