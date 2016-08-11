@@ -302,40 +302,14 @@ func main() {
 			p1, err := listener.AcceptTCP()
 			checkError(err)
 
-			var p2 net.Conn
-			if mux := muxes[rr%numconn]; mux == nil {
-				// mux cache miss, create one
-				mux = createConn()
-				p2, err = mux.Open()
-				if err != nil {
-					// new mux open failed, close
-					log.Printf("yamux open failed: %s, close", err)
-					mux.Close()
-					p1.Close()
-					continue
-				}
-				// new mux open succ, put into cache
-				muxes[rr%numconn] = mux
-			} else {
-				// cache hit, try to open the mux in cache
-				p2, err = mux.Open()
-				if err != nil {
-					// cached mux open failed, close it and create a new one
-					log.Printf("yamux open failed: %s, retry", err)
-					mux.Close()
-					muxes[rr%numconn] = nil // clear cache
-					mux = createConn()
-					p2, err = mux.Open()
-					if err != nil {
-						// new mux open fail again, close
-						log.Printf("yamux open failed again: %s, close", err)
-						mux.Close()
-						p1.Close()
-						continue
-					}
-					// new mux open succ, put into cache
-					muxes[rr%numconn] = mux
-				}
+			mux := muxes[rr%numconn]
+			p2, err := mux.Open()
+			if err != nil { // yamux failure
+				log.Println(err)
+				p1.Close()
+				mux.Close()
+				muxes[rr%numconn] = createConn()
+				continue
 			}
 			go handleClient(p1, p2)
 			rr++
