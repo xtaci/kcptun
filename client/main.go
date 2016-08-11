@@ -87,6 +87,10 @@ func checkError(err error) {
 
 func main() {
 	rand.Seed(int64(time.Now().Nanosecond()))
+	if VERSION == "SELFBUILD" {
+		// add more log flags for debugging
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	}
 	myApp := cli.NewApp()
 	myApp.Name = "kcptun"
 	myApp.Usage = "kcptun client"
@@ -248,6 +252,14 @@ func main() {
 		log.Println("keepalive:", keepalive)
 		log.Println("conn:", conn)
 
+		config := &yamux.Config{
+			AcceptBacklog:          256,
+			EnableKeepAlive:        true,
+			KeepAliveInterval:      30 * time.Second,
+			ConnectionWriteTimeout: 30 * time.Second,
+			MaxStreamWindowSize:    uint32(sockbuf),
+			LogOutput:              os.Stderr,
+		}
 		createConn := func() *yamux.Session {
 			kcpconn, err := kcp.DialWithOptions(remoteaddr, block, datashard, parityshard)
 			checkError(err)
@@ -269,14 +281,6 @@ func main() {
 			}
 
 			// stream multiplex
-			config := &yamux.Config{
-				AcceptBacklog:          256,
-				EnableKeepAlive:        true,
-				KeepAliveInterval:      30 * time.Second,
-				ConnectionWriteTimeout: 30 * time.Second,
-				MaxStreamWindowSize:    uint32(sockbuf),
-				LogOutput:              os.Stderr,
-			}
 			var session *yamux.Session
 			if nocomp {
 				session, err = yamux.Client(kcpconn, config)
@@ -297,14 +301,41 @@ func main() {
 		for {
 			p1, err := listener.AcceptTCP()
 			checkError(err)
-			mux := muxes[rr%numconn]
-			p2, err := mux.Open()
-			if err != nil { // yamux failure
-				log.Println(err)
-				p1.Close()
-				mux.Close()
-				muxes[rr%numconn] = createConn()
-				continue
+
+			var p2 net.Conn
+			if mux := muxes[rr%numconn]; mux == nil {
+				// mux cache miss, create one
+				mux = createConn()
+				p2, err = mux.Open()
+				if err != nil {
+					// new mux open failed, close
+					log.Printf("yamux open failed: %s, close", err)
+					mux.Close()
+					p1.Close()
+					continue
+				}
+				// new mux open succ, put into cache
+				muxes[rr%numconn] = mux
+			} else {
+				// cache hit, try to open the mux in cache
+				p2, err = mux.Open()
+				if err != nil {
+					// cached mux open failed, close it and create a new one
+					log.Printf("yamux open failed: %s, retry", err)
+					mux.Close()
+					muxes[rr%numconn] = nil // clear cache
+					mux = createConn()
+					p2, err = mux.Open()
+					if err != nil {
+						// new mux open fail again, close
+						log.Printf("yamux open failed again: %s, close", err)
+						mux.Close()
+						p1.Close()
+						continue
+					}
+					// new mux open succ, put into cache
+					muxes[rr%numconn] = mux
+				}
 			}
 			go handleClient(p1, p2)
 			rr++
