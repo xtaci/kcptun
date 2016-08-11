@@ -52,6 +52,15 @@ CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
 *巭孬嫑乱动* 
 ```
 
+两端参数必须一致的有:
+* datashard
+* parityshard
+* nocomp
+* key
+* crypt
+* 
+其余为两边可独立设定的参数
+
 *简易自我调优方法*：
 > 第一步：同时在两端逐步增大client rcvwnd和server sndwnd;        
 > 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
