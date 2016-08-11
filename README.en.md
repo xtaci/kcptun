@@ -48,12 +48,15 @@ Client Side: ./client_darwin_amd64 -r "SERVERIP:554" -l ":1080" -mode fast2  // 
 2. Cross-ISP data exchange in PRC.
 3. Other lossy network.
 
-### *Parameters Recommended* :lollipop: 
-```
-Test Environment: China Telecom 100M ADSL(100mbps up/8mbps down)
-SERVER:   -mtu 1400 -sndwnd 2048 -rcvwnd 2048 -mode fast2
-CLIENT:   -mtu 1400 -sndwnd 256 -rcvwnd 2048 -mode fast2 -dscp 46
-```
+### *Parameters* :lollipop: 
+***Both sides must agree on the following parameters:***
+* datashard
+* parityshard
+* nocomp
+* key
+* crypt
+
+other parameters can be set independently.
 
 *How to optimize*：
 > Step 1：Increase client rcvwnd & server sndwnd simultaneously & gradually。       
