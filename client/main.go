@@ -274,7 +274,7 @@ func main() {
 				EnableKeepAlive:        true,
 				KeepAliveInterval:      30 * time.Second,
 				ConnectionWriteTimeout: 30 * time.Second,
-				MaxStreamWindowSize:    16777216,
+				MaxStreamWindowSize:    uint32(sockbuf),
 				LogOutput:              os.Stderr,
 			}
 			var session *yamux.Session
