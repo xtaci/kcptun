@@ -301,14 +301,13 @@ func main() {
 		for {
 			p1, err := listener.AcceptTCP()
 			checkError(err)
-
 			mux := muxes[rr%numconn]
 			p2, err := mux.Open()
 			if err != nil { // yamux failure
 				log.Println(err)
 				p1.Close()
-				mux.Close()
 				muxes[rr%numconn] = createConn()
+				mux.Close()
 				continue
 			}
 			go handleClient(p1, p2)
