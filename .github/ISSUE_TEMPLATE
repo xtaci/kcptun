@@ -1,4 +1,4 @@
-# Before firing issue, make sure you figured out the following common questions.
+Before firing issue, make sure you figured out the following common questions.
 
 1. Are you using the **latest release**?
 2. Which **OS** do you use?
@@ -7,4 +7,4 @@
 5. Did you correctly set the ***-target value, -t value	target server address (default: "127.0.0.1:12948")*** on the server side?
 6. Can ```telnet target port``` successful?
 7. ```-nocomp, -datashard, -parityshard,  -key, -crypt``` ***must be the same*** on both side.
-8. Does your ***firewall allows UDP*** communications?
+8. Does your ***firewall allows UDP*** communications? (including your ISP Cable-Modem)
