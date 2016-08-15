@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"runtime"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -50,6 +51,17 @@ func newCompStream(conn net.Conn) *compStream {
 	c.w = snappy.NewBufferedWriter(conn)
 	c.r = snappy.NewReader(conn)
 	return c
+}
+
+func gcTask(interval int) {
+	if interval > 0 {
+		ticker := time.NewTicker(time.Duration(interval) * time.Minute)
+		defer ticker.Stop()
+		for {
+			<-ticker.C
+			runtime.GC()
+		}
+	}
 }
 
 func handleClient(p1, p2 io.ReadWriteCloser) {
@@ -156,6 +168,11 @@ func main() {
 			Value: 3,
 			Usage: "set reed-solomon erasure coding - parityshard",
 		},
+		cli.IntFlag{
+			Name:  "gcinterval",
+			Value: 0,
+			Usage: "manual GC interval(in minutes), set 0 to turn off manual GC",
+		},
 		cli.BoolFlag{
 			Name:   "acknodelay",
 			Usage:  "flush ack immediately when a packet is received",
@@ -237,6 +254,7 @@ func main() {
 		mtu, sndwnd, rcvwnd := c.Int("mtu"), c.Int("sndwnd"), c.Int("rcvwnd")
 		nocomp, acknodelay := c.Bool("nocomp"), c.Bool("acknodelay")
 		dscp, sockbuf, keepalive, conn := c.Int("dscp"), c.Int("sockbuf"), c.Int("keepalive"), c.Int("conn")
+		gcinterval := c.Int("gcinterval")
 
 		log.Println("listening on:", listener.Addr())
 		log.Println("encryption:", crypt)
@@ -250,8 +268,10 @@ func main() {
 		log.Println("dscp:", dscp)
 		log.Println("sockbuf:", sockbuf)
 		log.Println("keepalive:", keepalive)
+		log.Println("gcinterval:", gcinterval)
 		log.Println("conn:", conn)
 
+		go gcTask(gcinterval)
 		config := &yamux.Config{
 			AcceptBacklog:          256,
 			EnableKeepAlive:        true,
