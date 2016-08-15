@@ -83,6 +83,10 @@
 		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth ＝ 1.3 * 25Mbps = 32.5Mbps
 ```
 
+### *内存控制* :lollipop: 
+路由器，手机等嵌入式设备通常对内存用量敏感，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
+参考：https://blog.golang.org/go15gc
+
 ### *流量控制* :lollipop: 
 ***必要性: 针对流量敏感的服务器，做双保险。***      
 
@@ -188,7 +192,7 @@ type Snmp struct {
 
 对该项目的捐款将用于[gonet/2](http://gonet2.github.io/)游戏服务器框架的研发。     
 
-```特别感谢: 郑H立, 南D风, Li, 七q, 凌J，昶，Les*ables, Ky*n等，名字已做特殊处理。```
+```特别感谢: 郑H立, 南D风, Li, 七q, 凌J，昶，Les*ables, Ky*n, 噼**啦, 等，名字已做特殊处理。```
 
 ### *参考资料* :paperclip:
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.

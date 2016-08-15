@@ -64,6 +64,10 @@ other parameters can be set independently.
 
 ***NOTICE: if too much retranmission happens, it's quite possible the windows are too large***
 
+### *Memory Control* :lollipop: 
+Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
+Reference: https://blog.golang.org/go15gc
+
 ### *Traffic Control* :lollipop: 
 ***Intended audience : for those server's bandwidth is quite limited.***      
 
