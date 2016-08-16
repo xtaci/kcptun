@@ -29,8 +29,8 @@ A tool for converting tcp stream into kcp+udp stream, :zap: ***[download address
 
 ### *QuickStart* :lollipop:
 ```
-Server Side: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":554" -mode fast2  // forwarding to local port 1080
-Client Side: ./client_darwin_amd64 -r "SERVERIP:554" -l ":1080" -mode fast2  // listening on port 1080
+Server Side: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":4000" -mode fast2  // forwarding to local port 1080
+Client Side: ./client_darwin_amd64 -r "SERVERIP:4000" -l ":1080" -mode fast2  // listening on port 1080
 ```
 
 ### *Performance* :lollipop:
