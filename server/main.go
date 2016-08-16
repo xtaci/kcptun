@@ -133,7 +133,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "crypt",
 			Value: "aes",
-			Usage: "methods for encryption: aes, tea, xor, none",
+			Usage: "methods for encryption: aes, aes-128, aes-192, tea, xor, none",
 		},
 		cli.StringFlag{
 			Name:  "mode",
@@ -234,6 +234,10 @@ func main() {
 			block, _ = kcp.NewSimpleXORBlockCrypt(pass)
 		case "none":
 			block, _ = kcp.NewNoneBlockCrypt(pass)
+		case "aes-128":
+			block, _ = kcp.NewAESBlockCrypt(pass[:16])
+		case "aes-192":
+			block, _ = kcp.NewAESBlockCrypt(pass[:24])
 		default:
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
