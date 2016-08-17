@@ -2,12 +2,12 @@ Before firing issue, make sure you figured out the following common questions.
 
 PLEASE DO SEARCH FIRST.
 
-0. Check your ```-key``` for at least 3 times, MAKE SURE both sides share this same secret.
-1. Are you using the **latest release**?
-2. Which **OS** do you use?
-3. Which end for this issue related to, **client or server**?
-4. Are you using the **same version** for both client & server
-5. Did you correctly set the ***-target value, -t value	target server address (default: "127.0.0.1:12948")*** on the server side?
-6. Can ```telnet target port``` successful?
-7. ```-nocomp, -datashard, -parityshard,  -key, -crypt``` ***must be the same*** on both side.
-8. Does your ***firewall allows UDP*** communications? (including your ISP Cable-Modem)
+1. Check your ```-key xxx``` for at least 3 times, ***MAKE SURE*** both sides share the same secret.
+2. ```-nocomp, -datashard, -parityshard,  -key, -crypt``` ***must be the same*** on both side.
+3. Did you correctly set the ***-target*** on the server side?
+4. ***MAKE SURE*** ```telnet target port``` on your server successful(don't ask me why couldn't).
+5. Does your ***firewall allows UDP*** communications? (including your ISP Cable-Modem)
+6. Are you using the **same version** for both client & server
+7. Are you using the **latest release**?
+8. Which **OS** do you use?
+9. Which end for this issue related to, **client or server**?
