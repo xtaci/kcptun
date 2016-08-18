@@ -199,6 +199,7 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
+高丢包率的网络建议采用fast2, 低丢包率的网络，建议采用normal。
 
 ### *SNMP* :lollipop:
 ```go
