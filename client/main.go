@@ -209,13 +209,13 @@ func main() {
 
 		switch c.String("mode") {
 		case "normal":
-			nodelay, interval, resend, nc = 0, 30, 3, 1
+			nodelay, interval, resend, nc = 0, 30, 2, 1
 		case "fast":
-			nodelay, interval, resend, nc = 0, 20, 3, 1
+			nodelay, interval, resend, nc = 0, 20, 2, 1
 		case "fast2":
-			nodelay, interval, resend, nc = 1, 20, 3, 1
+			nodelay, interval, resend, nc = 1, 20, 2, 1
 		case "fast3":
-			nodelay, interval, resend, nc = 1, 10, 3, 1
+			nodelay, interval, resend, nc = 1, 10, 2, 1
 		}
 
 		crypt := c.String("crypt")
