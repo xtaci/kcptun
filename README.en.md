@@ -157,6 +157,7 @@ Manual control is supported with hidden parameters, you must understand KCP prot
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
+I suggest fast2 for high-loss network, normal for low-loss network.
 
 ### *Forward Error Correction* :lollipop: 
 In coding theory, the Reed–Solomon code belongs to the class of non-binary cyclic error-correcting codes. The Reed–Solomon code is based on univariate polynomials over finite fields.
