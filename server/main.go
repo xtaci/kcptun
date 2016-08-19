@@ -133,7 +133,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "crypt",
 			Value: "aes",
-			Usage: "methods for encryption: aes, aes-128, aes-192, tea, xor, none",
+			Usage: "aes, aes-128, aes-192, blowfish, cast5, 3des, tea, xor, none",
 		},
 		cli.StringFlag{
 			Name:  "mode",
@@ -238,6 +238,12 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass[:16])
 		case "aes-192":
 			block, _ = kcp.NewAESBlockCrypt(pass[:24])
+		case "blowfish":
+			block, _ = kcp.NewBlowfishBlockCrypt(pass)
+		case "cast5":
+			block, _ = kcp.NewCast5BlockCrypt(pass[:16])
+		case "3des":
+			block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
 		default:
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
