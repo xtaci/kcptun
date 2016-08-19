@@ -138,7 +138,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "mode",
 			Value: "fast",
-			Usage: "embeded modes: fast3, fast2, fast, normal",
+			Usage: "profiles: fast3, fast2, fast, normal",
 		},
 		cli.IntFlag{
 			Name:  "mtu",
@@ -155,13 +155,9 @@ func main() {
 			Value: 1024,
 			Usage: "set receive window size(num of packets)",
 		},
-		cli.BoolFlag{
-			Name:  "nocomp",
-			Usage: "disable compression",
-		},
 		cli.IntFlag{
 			Name:  "datashard",
-			Value: 10,
+			Value: 7,
 			Usage: "set reed-solomon erasure coding - datashard",
 		},
 		cli.IntFlag{
@@ -178,6 +174,10 @@ func main() {
 			Name:  "dscp",
 			Value: 0,
 			Usage: "set DSCP(6bit)",
+		},
+		cli.BoolFlag{
+			Name:  "nocomp",
+			Usage: "disable compression",
 		},
 		cli.IntFlag{
 			Name:   "nodelay",
@@ -284,7 +284,7 @@ func main() {
 			AcceptBacklog:          256,
 			EnableKeepAlive:        true,
 			KeepAliveInterval:      30 * time.Second,
-			ConnectionWriteTimeout: 30 * time.Second,
+			ConnectionWriteTimeout: 10 * time.Second,
 			MaxStreamWindowSize:    uint32(sockbuf),
 			LogOutput:              os.Stderr,
 		}
