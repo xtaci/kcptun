@@ -144,7 +144,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "datashard",
-			Value: 7,
+			Value: 10,
 			Usage: "set reed-solomon erasure coding - datashard",
 		},
 		cli.IntFlag{
