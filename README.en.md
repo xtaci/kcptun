@@ -124,6 +124,10 @@ other parameters can be set independently.
 
 ***NOTICE: if too much retranmission happens, it's quite possible the windows are too large***
 
+### *Security* :lollipop: 
+No matter what encryption you are using for application layer, if you specify ```-crypt none``` to kcptun, 
+the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` for encryption at least .
+
 ### *Memory Control* :lollipop: 
 Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
 Reference: https://blog.golang.org/go15gc

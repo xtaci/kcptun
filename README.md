@@ -141,6 +141,9 @@ GLOBAL OPTIONS:
 		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth ＝ 1.3 * 25Mbps = 32.5Mbps
 ```
 
+### *安全* :lollipop: 
+无论你上层如何加密，如果```-crypt none```，那么协议头部都是***明文***的，建议至少采用```-crypt aes-128```加密。
+
 ### *内存控制* :lollipop: 
 路由器，手机等嵌入式设备通常对内存用量敏感，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
 参考：https://blog.golang.org/go15gc
