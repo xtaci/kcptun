@@ -1,7 +1,7 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
-[![GoDoc][1]][2] [![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20]
-[1]: https://godoc.org/github.com/xtaci/kcptun?status.svg
-[2]: https://godoc.org/github.com/xtaci/kcptun
+[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20] [![Docker][1]][2]
+[1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
+[2]: https://microbadger.com/images/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
 [4]: https://travis-ci.org/xtaci/kcptun
 [5]: https://goreportcard.com/badge/github.com/xtaci/kcptun
@@ -143,6 +143,8 @@ GLOBAL OPTIONS:
 
 ### *安全* :lollipop: 
 无论你上层如何加密，如果```-crypt none```，那么协议头部都是***明文***的，建议至少采用```-crypt aes-128```加密。
+
+注意: ```-crypt xor``` 也是不安全的，除非你知道你在做什么。
 
 ### *内存控制* :lollipop: 
 路由器，手机等嵌入式设备通常对内存用量敏感，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
