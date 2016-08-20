@@ -128,6 +128,8 @@ other parameters can be set independently.
 No matter what encryption you are using for application layer, if you specify ```-crypt none``` to kcptun, 
 the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` for encryption at least .
 
+NOTICE: ```-crypt xor``` is also insecure, do not use this unless you know what you are doing.
+
 ### *Memory Control* :lollipop: 
 Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
 Reference: https://blog.golang.org/go15gc
