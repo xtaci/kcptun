@@ -144,6 +144,8 @@ GLOBAL OPTIONS:
 ### *安全* :lollipop: 
 无论你上层如何加密，如果```-crypt none```，那么协议头部都是***明文***的，建议至少采用```-crypt aes-128```加密。
 
+注意: ```-crypt xor``` 也是不安全的，除非你知道你在做什么。
+
 ### *内存控制* :lollipop: 
 路由器，手机等嵌入式设备通常对内存用量敏感，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
 参考：https://blog.golang.org/go15gc
