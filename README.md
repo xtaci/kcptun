@@ -144,6 +144,8 @@ GLOBAL OPTIONS:
 ### *安全* :lollipop: 
 无论你上层如何加密，如果```-crypt none```，那么协议头部都是***明文***的，建议至少采用```-crypt aes-128```加密。
 
+  推荐使用salsa20加密，服务器负载较低且较为安全。
+
 注意: ```-crypt xor``` 也是不安全的，除非你知道你在做什么。
 
 ### *内存控制* :lollipop: 
@@ -166,7 +168,7 @@ tc filter add dev eth0 protocol ip parent 1:0 prio 1 handle 10 fw flowid 1:1
 iptables -t mangle -A POSTROUTING -o eth0  -j MARK --set-mark 10
 root@kcptun:~#
 ```
-其中eth0为网卡，有些服务器为ens3，有些为p2p1，通过ifconfig查询修改。
+其中eth0为网卡，有些服务器为ens3，有些为p2p1，有些为venet0，通过ifconfig查询修改。
 
 
 ### *DSCP* :lollipop: 
@@ -181,6 +183,8 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 ![reed-solomon](rs.png)
 
 通过参数```-datashard 10 -parityshard 3``` 在两端同时设定。
+
+表示每发送10个数据包，有3个纠错包。
 
 ### *Snappy数据流压缩* :lollipop: 
 > Snappy is a compression/decompression library. It does not aim for maximum
@@ -205,6 +209,9 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
+
+手动参数调整详情请参阅 [KCP协议Readme](https://github.com/skywind3000/kcp/blob/master/README.md)
+
 高丢包率的网络建议采用fast2, 低丢包率的网络，建议采用normal。
 
 ### *SNMP* :lollipop:
