@@ -109,7 +109,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "key",
 			Value:  "it's a secrect",
-			Usage:  "pre-shared secret for client and server",
+			Usage:  "pre-shared secret between client and server",
 			EnvVar: "KCPTUN_KEY",
 		},
 		cli.StringFlag{
@@ -130,7 +130,7 @@ func main() {
 		cli.IntFlag{
 			Name:  "mtu",
 			Value: 1350,
-			Usage: "set maximum transmission unit of UDP packets",
+			Usage: "set maximum transmission unit for UDP packets",
 		},
 		cli.IntFlag{
 			Name:  "sndwnd",
