@@ -385,10 +385,10 @@ func handshake(conn io.ReadWriteCloser, session *kcp.UDPSession) {
 	mac.Reset()
 	mac.Write(SFINISHED)
 	if !hmac.Equal(mac.Sum(nil), sfinished) {
-		log.Println("hmac wrong")
+		log.Fatalln("hmac wrong")
 		return
 	}
 
-	session.SetBlock(block)
+	// session.SetBlock(block)
 	log.Printf("SetBlock: %x", block)
 }

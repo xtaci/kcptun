@@ -93,7 +93,6 @@ func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config, ses
 		if !session.Established() {
 			handshake(p1, session)
 		}
-
 		go handleClient(p1, p2)
 	}
 }
@@ -147,7 +146,7 @@ func handshake(conn io.ReadWriteCloser, session *kcp.UDPSession) {
 	mac := hmac.New(sha256.New, pass)
 	mac.Write(CFINISHED)
 	if !hmac.Equal(mac.Sum(nil), cfinished) {
-		log.Println("hmac wrong")
+		log.Fatalln("hmac wrong")
 		return
 	}
 
@@ -158,7 +157,7 @@ func handshake(conn io.ReadWriteCloser, session *kcp.UDPSession) {
 	conn.Write(sfinished)
 	log.Printf("Write sfinished: %x", sfinished)
 
-	session.SetBlock(block)
+	// session.SetBlock(block)
 	log.Printf("SetBlock: %x", block)
 }
 
