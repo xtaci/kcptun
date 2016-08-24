@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/hmac"
 	"crypto/sha1"
+	"crypto/sha256"
 	"io"
 	"log"
 	"math/rand"
@@ -20,8 +22,15 @@ import (
 var (
 	// VERSION is injected by buildflags
 	VERSION = "SELFBUILD"
-	// SALT is use for pbkdf2 key expansion
-	SALT = "kcp-go"
+	// sec params
+	snonce []byte
+	cnonce []byte
+	pass   []byte
+	key    []byte
+	crypt  string
+	// Finished message
+	SFINISHED = []byte("SFINISHED")
+	CFINISHED = []byte("CFINISHED")
 )
 
 type compStream struct {
@@ -53,7 +62,7 @@ func newCompStream(conn net.Conn) *compStream {
 }
 
 // handle multiplex-ed connection
-func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
+func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config, session *kcp.UDPSession) {
 	// stream multiplex
 	mux, err := yamux.Server(conn, config)
 	if err != nil {
@@ -81,8 +90,75 @@ func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
 			log.Println("TCP SetWriteBuffer:", err)
 		}
 
+		if !session.Established() {
+			handshake(p1, session)
+		}
 		go handleClient(p1, p2)
 	}
+}
+
+func handshake(conn io.ReadWriteCloser, session *kcp.UDPSession) {
+	// handshake
+	cnonce := make([]byte, 16)
+	snonce := make([]byte, 16)
+	conn.Read(cnonce)
+	log.Printf("cnonce: %x", cnonce)
+
+	rand.Read(snonce)
+	pass = pbkdf2.Key(key, append(snonce, cnonce...), 4096, 32, sha1.New)
+	log.Printf("pass: %x", pass)
+	var block kcp.BlockCrypt
+	switch crypt {
+	case "tea":
+		block, _ = kcp.NewTEABlockCrypt(pass[:16])
+	case "xor":
+		block, _ = kcp.NewSimpleXORBlockCrypt(pass)
+	case "none":
+		block, _ = kcp.NewNoneBlockCrypt(pass)
+	case "aes-128":
+		block, _ = kcp.NewAESBlockCrypt(pass[:16])
+	case "aes-192":
+		block, _ = kcp.NewAESBlockCrypt(pass[:24])
+	case "blowfish":
+		block, _ = kcp.NewBlowfishBlockCrypt(pass)
+	case "twofish":
+		block, _ = kcp.NewTwofishBlockCrypt(pass)
+	case "cast5":
+		block, _ = kcp.NewCast5BlockCrypt(pass[:16])
+	case "3des":
+		block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
+	case "xtea":
+		block, _ = kcp.NewXTEABlockCrypt(pass[:16])
+	case "salsa20":
+		block, _ = kcp.NewSalsa20BlockCrypt(pass)
+	default:
+		crypt = "aes"
+		block, _ = kcp.NewAESBlockCrypt(pass)
+	}
+	conn.Write(snonce)
+	log.Printf("snonce: %x", snonce)
+
+	cfinished := make([]byte, sha256.Size)
+	log.Printf("Reading cfinished...")
+	conn.Read(cfinished)
+	log.Printf("Read cfinished: %x", cfinished)
+
+	mac := hmac.New(sha256.New, pass)
+	mac.Write(CFINISHED)
+	if !hmac.Equal(mac.Sum(nil), cfinished) {
+		log.Fatalln("hmac wrong")
+		return
+	}
+
+	mac.Reset()
+	mac.Write(SFINISHED)
+	sfinished := mac.Sum(nil)
+	log.Printf("Writing sfinished...")
+	conn.Write(sfinished)
+	log.Printf("Write sfinished: %x", sfinished)
+
+	// session.SetBlock(block)
+	log.Printf("SetBlock: %x", block)
 }
 
 func handleClient(p1, p2 io.ReadWriteCloser) {
@@ -232,39 +308,11 @@ func main() {
 			nodelay, interval, resend, nc = 1, 10, 2, 1
 		}
 
-		crypt := c.String("crypt")
-		pass := pbkdf2.Key([]byte(c.String("key")), []byte(SALT), 4096, 32, sha1.New)
-		var block kcp.BlockCrypt
-		switch crypt {
-		case "tea":
-			block, _ = kcp.NewTEABlockCrypt(pass[:16])
-		case "xor":
-			block, _ = kcp.NewSimpleXORBlockCrypt(pass)
-		case "none":
-			block, _ = kcp.NewNoneBlockCrypt(pass)
-		case "aes-128":
-			block, _ = kcp.NewAESBlockCrypt(pass[:16])
-		case "aes-192":
-			block, _ = kcp.NewAESBlockCrypt(pass[:24])
-		case "blowfish":
-			block, _ = kcp.NewBlowfishBlockCrypt(pass)
-		case "twofish":
-			block, _ = kcp.NewTwofishBlockCrypt(pass)
-		case "cast5":
-			block, _ = kcp.NewCast5BlockCrypt(pass[:16])
-		case "3des":
-			block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
-		case "xtea":
-			block, _ = kcp.NewXTEABlockCrypt(pass[:16])
-		case "salsa20":
-			block, _ = kcp.NewSalsa20BlockCrypt(pass)
-		default:
-			crypt = "aes"
-			block, _ = kcp.NewAESBlockCrypt(pass)
-		}
+		key = []byte(c.String("key"))
+		crypt = c.String("crypt")
 
 		datashard, parityshard := c.Int("datashard"), c.Int("parityshard")
-		lis, err := kcp.ListenWithOptions(c.String("listen"), block, datashard, parityshard)
+		lis, err := kcp.ListenWithOptions(c.String("listen"), nil, datashard, parityshard)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -314,9 +362,9 @@ func main() {
 				conn.SetKeepAlive(keepalive)
 
 				if nocomp {
-					go handleMux(conn, target, config)
+					go handleMux(conn, target, config, conn)
 				} else {
-					go handleMux(newCompStream(conn), target, config)
+					go handleMux(newCompStream(conn), target, config, conn)
 				}
 			} else {
 				log.Println(err)
