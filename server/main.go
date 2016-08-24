@@ -61,18 +61,26 @@ func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
 		return
 	}
 	defer mux.Close()
-
 	for {
 		p1, err := mux.Accept()
 		if err != nil {
 			log.Println(err)
 			return
 		}
+		sockbuf := int(config.MaxStreamWindowSize)
 		p2, err := net.DialTimeout("tcp", target, 5*time.Second)
 		if err != nil {
 			log.Println(err)
 			return
 		}
+
+		if err := p2.(*net.TCPConn).SetReadBuffer(sockbuf); err != nil {
+			log.Println("TCP SetReadBuffer:", err)
+		}
+		if err := p2.(*net.TCPConn).SetWriteBuffer(sockbuf); err != nil {
+			log.Println("TCP SetWriteBuffer:", err)
+		}
+
 		go handleClient(p1, p2)
 	}
 }

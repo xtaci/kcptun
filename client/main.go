@@ -317,6 +317,12 @@ func main() {
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
+			if err := p1.SetReadBuffer(sockbuf); err != nil {
+				log.Println("TCP SetReadBuffer:", err)
+			}
+			if err := p1.SetWriteBuffer(sockbuf); err != nil {
+				log.Println("TCP SetWriteBuffer:", err)
+			}
 			checkError(err)
 			mux := muxes[rr%numconn]
 			p2, err := mux.Open()
