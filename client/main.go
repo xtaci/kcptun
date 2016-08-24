@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/hmac"
 	"crypto/sha1"
+	"crypto/sha256"
 	"io"
 	"log"
 	"math/rand"
@@ -20,8 +22,15 @@ import (
 var (
 	// VERSION is injected by buildflags
 	VERSION = "SELFBUILD"
-	// SALT is use for pbkdf2 key expansion
-	SALT = "kcp-go"
+	// sec params
+	snonce []byte
+	cnonce []byte
+	pass   []byte
+	key    []byte
+	crypt  string
+	// Finished message
+	SFINISHED = []byte("SFINISHED")
+	CFINISHED = []byte("CFINISHED")
 )
 
 type compStream struct {
@@ -219,35 +228,6 @@ func main() {
 		}
 
 		crypt := c.String("crypt")
-		pass := pbkdf2.Key([]byte(c.String("key")), []byte(SALT), 4096, 32, sha1.New)
-		var block kcp.BlockCrypt
-		switch c.String("crypt") {
-		case "tea":
-			block, _ = kcp.NewTEABlockCrypt(pass[:16])
-		case "xor":
-			block, _ = kcp.NewSimpleXORBlockCrypt(pass)
-		case "none":
-			block, _ = kcp.NewNoneBlockCrypt(pass)
-		case "aes-128":
-			block, _ = kcp.NewAESBlockCrypt(pass[:16])
-		case "aes-192":
-			block, _ = kcp.NewAESBlockCrypt(pass[:24])
-		case "blowfish":
-			block, _ = kcp.NewBlowfishBlockCrypt(pass)
-		case "twofish":
-			block, _ = kcp.NewTwofishBlockCrypt(pass)
-		case "cast5":
-			block, _ = kcp.NewCast5BlockCrypt(pass[:16])
-		case "3des":
-			block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
-		case "xtea":
-			block, _ = kcp.NewXTEABlockCrypt(pass[:16])
-		case "salsa20":
-			block, _ = kcp.NewSalsa20BlockCrypt(pass)
-		default:
-			crypt = "aes"
-			block, _ = kcp.NewAESBlockCrypt(pass)
-		}
 
 		remoteaddr := c.String("remoteaddr")
 		datashard, parityshard := c.Int("datashard"), c.Int("parityshard")
@@ -277,8 +257,10 @@ func main() {
 			MaxStreamWindowSize:    uint32(sockbuf),
 			LogOutput:              os.Stderr,
 		}
-		createConn := func() *yamux.Session {
-			kcpconn, err := kcp.DialWithOptions(remoteaddr, block, datashard, parityshard)
+		key = []byte(c.String("key"))
+		crypt = c.String("crypt")
+		createConn := func() (*yamux.Session, *kcp.UDPSession) {
+			kcpconn, err := kcp.DialWithOptions(remoteaddr, nil, datashard, parityshard)
 			checkError(err)
 			kcpconn.SetStreamMode(true)
 			kcpconn.SetNoDelay(nodelay, interval, resend, nc)
@@ -305,13 +287,16 @@ func main() {
 				session, err = yamux.Client(newCompStream(kcpconn), config)
 			}
 			checkError(err)
-			return session
+			return session, kcpconn
 		}
 
 		numconn := uint16(conn)
 		var muxes []*yamux.Session
+		var sessions []*kcp.UDPSession
 		for i := uint16(0); i < numconn; i++ {
-			muxes = append(muxes, createConn())
+			mux, kcpSession := createConn()
+			muxes = append(muxes, mux)
+			sessions = append(sessions, kcpSession)
 		}
 
 		rr := uint16(0)
@@ -325,17 +310,85 @@ func main() {
 			}
 			checkError(err)
 			mux := muxes[rr%numconn]
+			session := sessions[rr%numconn]
 			p2, err := mux.Open()
 			if err != nil { // yamux failure
 				log.Println(err)
 				p1.Close()
-				muxes[rr%numconn] = createConn()
+				muxes[rr%numconn], sessions[rr%numconn] = createConn()
 				mux.Close()
 				continue
+			}
+			if !session.Established() {
+				handshake(p2, session)
 			}
 			go handleClient(p1, p2)
 			rr++
 		}
 	}
 	myApp.Run(os.Args)
+}
+
+func handshake(conn io.ReadWriteCloser, session *kcp.UDPSession) {
+	// handshake
+	cnonce := make([]byte, 16)
+	snonce := make([]byte, 16)
+	rand.Read(cnonce)
+	conn.Write(cnonce)
+	log.Printf("cnonce: %x", cnonce)
+
+	conn.Read(snonce)
+	log.Printf("snonce: %x", snonce)
+
+	pass := pbkdf2.Key(key, append(snonce, cnonce...), 4096, 32, sha1.New)
+	log.Printf("pass: %x", pass)
+	var block kcp.BlockCrypt
+	switch crypt {
+	case "tea":
+		block, _ = kcp.NewTEABlockCrypt(pass[:16])
+	case "xor":
+		block, _ = kcp.NewSimpleXORBlockCrypt(pass)
+	case "none":
+		block, _ = kcp.NewNoneBlockCrypt(pass)
+	case "aes-128":
+		block, _ = kcp.NewAESBlockCrypt(pass[:16])
+	case "aes-192":
+		block, _ = kcp.NewAESBlockCrypt(pass[:24])
+	case "blowfish":
+		block, _ = kcp.NewBlowfishBlockCrypt(pass)
+	case "twofish":
+		block, _ = kcp.NewTwofishBlockCrypt(pass)
+	case "cast5":
+		block, _ = kcp.NewCast5BlockCrypt(pass[:16])
+	case "3des":
+		block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
+	case "xtea":
+		block, _ = kcp.NewXTEABlockCrypt(pass[:16])
+	case "salsa20":
+		block, _ = kcp.NewSalsa20BlockCrypt(pass)
+	default:
+		crypt = "aes"
+		block, _ = kcp.NewAESBlockCrypt(pass)
+	}
+	mac := hmac.New(sha256.New, pass)
+	mac.Write(CFINISHED)
+	cfinished := mac.Sum(nil)
+	log.Printf("Writing cfinished...")
+	conn.Write(cfinished)
+	log.Printf("Write cfinished: %x", cfinished)
+
+	sfinished := make([]byte, sha256.Size)
+	log.Printf("Reading sfinished...")
+	conn.Read(sfinished)
+	log.Printf("Read sfinished: %x", sfinished)
+
+	mac.Reset()
+	mac.Write(SFINISHED)
+	if !hmac.Equal(mac.Sum(nil), sfinished) {
+		log.Println("hmac wrong")
+		return
+	}
+
+	session.SetBlock(block)
+	log.Printf("SetBlock: %x", block)
 }
