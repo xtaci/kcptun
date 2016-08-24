@@ -103,7 +103,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "remoteaddr, r",
-			Value: "vps:29900",
+			Value: "localhost:29900",
 			Usage: "kcp server address",
 		},
 		cli.StringFlag{
