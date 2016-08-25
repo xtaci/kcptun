@@ -275,6 +275,7 @@ func main() {
 		log.Println("sockbuf:", sockbuf)
 		log.Println("keepalive:", keepalive)
 		log.Println("conn:", conn)
+		log.Println("autoexpire:", autoexpire)
 
 		config := &yamux.Config{
 			AcceptBacklog:          256,
