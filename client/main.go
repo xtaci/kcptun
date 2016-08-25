@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"runtime"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -305,6 +306,9 @@ func main() {
 				session, err = yamux.Client(newCompStream(kcpconn), config)
 			}
 			checkError(err)
+			runtime.SetFinalizer(session, func(sess *yamux.Session) {
+				session.Close()
+			})
 			return session
 		}
 
