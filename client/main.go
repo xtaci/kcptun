@@ -129,6 +129,11 @@ func main() {
 			Usage: "set num of UDP connections to server",
 		},
 		cli.IntFlag{
+			Name:  "autoexpire",
+			Value: 0,
+			Usage: "set auto expiration time(in seconds) for a single UDP connection, 0 to disable",
+		},
+		cli.IntFlag{
 			Name:  "mtu",
 			Value: 1350,
 			Usage: "set maximum transmission unit for UDP packets",
@@ -255,6 +260,7 @@ func main() {
 		mtu, sndwnd, rcvwnd := c.Int("mtu"), c.Int("sndwnd"), c.Int("rcvwnd")
 		nocomp, acknodelay := c.Bool("nocomp"), c.Bool("acknodelay")
 		dscp, sockbuf, keepalive, conn := c.Int("dscp"), c.Int("sockbuf"), c.Int("keepalive"), c.Int("conn")
+		autoexpire := c.Int("autoexpire")
 
 		log.Println("listening on:", listener.Addr())
 		log.Println("encryption:", crypt)
@@ -306,16 +312,21 @@ func main() {
 				session, err = yamux.Client(newCompStream(kcpconn), config)
 			}
 			checkError(err)
-			runtime.SetFinalizer(session, func(sess *yamux.Session) {
-				session.Close()
+			runtime.SetFinalizer(session, func(s *yamux.Session) {
+				s.Close()
 			})
 			return session
 		}
 
 		numconn := uint16(conn)
-		var muxes []*yamux.Session
-		for i := uint16(0); i < numconn; i++ {
-			muxes = append(muxes, createConn())
+		muxes := make([]struct {
+			session *yamux.Session
+			ttl     time.Time
+		}, numconn)
+
+		for k := range muxes {
+			muxes[k].session = createConn()
+			muxes[k].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
 		}
 
 		rr := uint16(0)
@@ -328,13 +339,20 @@ func main() {
 				log.Println("TCP SetWriteBuffer:", err)
 			}
 			checkError(err)
-			mux := muxes[rr%numconn]
-			p2, err := mux.Open()
+			idx := rr % numconn
+			mux := muxes[idx]
+			p2, err := mux.session.Open()
 			if err != nil { // yamux failure
 				log.Println(err)
 				p1.Close()
-				muxes[rr%numconn] = createConn()
+				muxes[idx].session = createConn()
+				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
 				continue
+			}
+			if autoexpire > 0 && time.Now().After(muxes[idx].ttl) { // auto expiration
+				log.Println("autoexpired")
+				muxes[idx].session = createConn()
+				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
 			}
 			go handleClient(p1, p2)
 			rr++
