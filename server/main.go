@@ -304,7 +304,7 @@ func main() {
 			LogOutput:              os.Stderr,
 		}
 		for {
-			if conn, err := lis.Accept(); err == nil {
+			if conn, err := lis.AcceptKCP(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
 				conn.SetStreamMode(true)
 				conn.SetNoDelay(nodelay, interval, resend, nc)
