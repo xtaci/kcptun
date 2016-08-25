@@ -334,7 +334,6 @@ func main() {
 				log.Println(err)
 				p1.Close()
 				muxes[rr%numconn] = createConn()
-				mux.Close()
 				continue
 			}
 			go handleClient(p1, p2)
