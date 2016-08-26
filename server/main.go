@@ -299,7 +299,7 @@ func main() {
 			AcceptBacklog:          256,
 			EnableKeepAlive:        true,
 			KeepAliveInterval:      30 * time.Second,
-			ConnectionWriteTimeout: 30 * time.Second,
+			ConnectionWriteTimeout: 10 * time.Second,
 			MaxStreamWindowSize:    uint32(sockbuf),
 			LogOutput:              os.Stderr,
 		}
