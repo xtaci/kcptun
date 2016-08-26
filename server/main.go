@@ -12,9 +12,9 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/golang/snappy"
-	"github.com/inconshreveable/muxado"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
+	"github.com/xtaci/yamux"
 )
 
 var (
@@ -53,9 +53,13 @@ func newCompStream(conn net.Conn) *compStream {
 }
 
 // handle multiplex-ed connection
-func handleMux(conn io.ReadWriteCloser, target string, config *muxado.Config) {
+func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
 	// stream multiplex
-	mux := muxado.Server(conn, config)
+	mux, err := yamux.Server(conn, config)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	defer mux.Close()
 	for {
 		p1, err := mux.Accept()
@@ -63,7 +67,7 @@ func handleMux(conn io.ReadWriteCloser, target string, config *muxado.Config) {
 			log.Println(err)
 			return
 		}
-		sockbuf := int(config.MaxWindowSize)
+		sockbuf := int(config.MaxStreamWindowSize)
 		p2, err := net.DialTimeout("tcp", target, 5*time.Second)
 		if err != nil {
 			log.Println(err)
@@ -76,6 +80,7 @@ func handleMux(conn io.ReadWriteCloser, target string, config *muxado.Config) {
 		if err := p2.(*net.TCPConn).SetWriteBuffer(sockbuf); err != nil {
 			log.Println("TCP SetWriteBuffer:", err)
 		}
+
 		go handleClient(p1, p2)
 	}
 }
@@ -290,7 +295,14 @@ func main() {
 		if err := lis.SetWriteBuffer(sockbuf); err != nil {
 			log.Println("SetWriteBuffer:", err)
 		}
-		config := &muxado.Config{MaxWindowSize: uint32(sockbuf)}
+		config := &yamux.Config{
+			AcceptBacklog:          256,
+			EnableKeepAlive:        true,
+			KeepAliveInterval:      30 * time.Second,
+			ConnectionWriteTimeout: 30 * time.Second,
+			MaxStreamWindowSize:    uint32(sockbuf),
+			LogOutput:              os.Stderr,
+		}
 		for {
 			if conn, err := lis.AcceptKCP(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())

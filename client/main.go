@@ -7,14 +7,15 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"runtime"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/golang/snappy"
-	"github.com/inconshreveable/muxado"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
+	"github.com/xtaci/yamux"
 )
 
 var (
@@ -276,9 +277,15 @@ func main() {
 		log.Println("conn:", conn)
 		log.Println("autoexpire:", autoexpire)
 
-		config := &muxado.Config{MaxWindowSize: uint32(sockbuf)}
-
-		createConn := func() muxado.Session {
+		config := &yamux.Config{
+			AcceptBacklog:          256,
+			EnableKeepAlive:        true,
+			KeepAliveInterval:      30 * time.Second,
+			ConnectionWriteTimeout: 30 * time.Second,
+			MaxStreamWindowSize:    uint32(sockbuf),
+			LogOutput:              os.Stderr,
+		}
+		createConn := func() *yamux.Session {
 			kcpconn, err := kcp.DialWithOptions(remoteaddr, block, datashard, parityshard)
 			checkError(err)
 			kcpconn.SetStreamMode(true)
@@ -299,19 +306,22 @@ func main() {
 			}
 
 			// stream multiplex
-			var session muxado.Session
+			var session *yamux.Session
 			if nocomp {
-				session = muxado.Client(kcpconn, config)
+				session, err = yamux.Client(kcpconn, config)
 			} else {
-				session = muxado.Client(newCompStream(kcpconn), config)
+				session, err = yamux.Client(newCompStream(kcpconn), config)
 			}
 			checkError(err)
+			runtime.SetFinalizer(session, func(s *yamux.Session) {
+				s.Close()
+			})
 			return session
 		}
 
 		numconn := uint16(conn)
 		muxes := make([]struct {
-			session muxado.Session
+			session *yamux.Session
 			ttl     time.Time
 		}, numconn)
 
@@ -336,14 +346,12 @@ func main() {
 			if err != nil { // yamux failure
 				log.Println(err)
 				p1.Close()
-				muxes[idx].session.Close()
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
 				continue
 			}
 			if autoexpire > 0 && time.Now().After(muxes[idx].ttl) { // auto expiration
 				log.Println("autoexpired")
-				muxes[idx].session.Close()
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
 			}
