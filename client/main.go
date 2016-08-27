@@ -341,19 +341,23 @@ func main() {
 			}
 			checkError(err)
 			idx := rr % numconn
-			mux := muxes[idx]
-			p2, err := mux.session.Open()
+
+		OPEN_P2:
+			// do auto expiration
+			if autoexpire > 0 && time.Now().After(muxes[idx].ttl) {
+				log.Println("autoexpired")
+				muxes[idx].session = createConn()
+				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
+			}
+
+			// do session open
+			p2, err := muxes[idx].session.Open()
 			if err != nil { // yamux failure
 				log.Println(err)
 				p1.Close()
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
-				continue
-			}
-			if autoexpire > 0 && time.Now().After(muxes[idx].ttl) { // auto expiration
-				log.Println("autoexpired")
-				muxes[idx].session = createConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
+				goto OPEN_P2
 			}
 			go handleClient(p1, p2)
 			rr++
