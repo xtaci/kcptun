@@ -353,8 +353,6 @@ func main() {
 			// do session open
 			p2, err := muxes[idx].session.Open()
 			if err != nil { // yamux failure
-				log.Println(err)
-				p1.Close()
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
 				goto OPEN_P2
