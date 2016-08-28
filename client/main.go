@@ -81,7 +81,7 @@ func handleClient(p1, p2 io.ReadWriteCloser) {
 
 func checkError(err error) {
 	if err != nil {
-		log.Println(err)
+		log.Printf("%+v\n", err)
 		os.Exit(-1)
 	}
 }

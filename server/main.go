@@ -111,6 +111,13 @@ func handleClient(p1, p2 io.ReadWriteCloser) {
 	}
 }
 
+func checkError(err error) {
+	if err != nil {
+		log.Printf("%+v\n", err)
+		os.Exit(-1)
+	}
+}
+
 func main() {
 	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
@@ -265,10 +272,7 @@ func main() {
 
 		datashard, parityshard := c.Int("datashard"), c.Int("parityshard")
 		lis, err := kcp.ListenWithOptions(c.String("listen"), block, datashard, parityshard)
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		checkError(err)
 		mtu, sndwnd, rcvwnd := c.Int("mtu"), c.Int("sndwnd"), c.Int("rcvwnd")
 		nocomp, acknodelay := c.Bool("nocomp"), c.Bool("acknodelay")
 		dscp, sockbuf, keepalive := c.Int("dscp"), c.Int("sockbuf"), c.Int("keepalive")
@@ -319,7 +323,7 @@ func main() {
 					go handleMux(newCompStream(conn), target, config)
 				}
 			} else {
-				log.Println(err)
+				log.Printf("%+v", err)
 			}
 		}
 	}
