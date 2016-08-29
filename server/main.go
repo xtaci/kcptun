@@ -180,11 +180,6 @@ func main() {
 			Value: 3,
 			Usage: "set reed-solomon erasure coding - parityshard",
 		},
-		cli.BoolFlag{
-			Name:   "acknodelay",
-			Usage:  "flush ack immediately when a packet is received",
-			Hidden: true,
-		},
 		cli.IntFlag{
 			Name:  "dscp",
 			Value: 0,
@@ -193,6 +188,11 @@ func main() {
 		cli.BoolFlag{
 			Name:  "nocomp",
 			Usage: "disable compression",
+		},
+		cli.BoolFlag{
+			Name:   "acknodelay",
+			Usage:  "flush ack immediately when a packet is received",
+			Hidden: true,
 		},
 		cli.IntFlag{
 			Name:   "nodelay",
@@ -226,23 +226,42 @@ func main() {
 		},
 	}
 	myApp.Action = func(c *cli.Context) error {
-		log.Println("version:", VERSION)
-		nodelay, interval, resend, nc := c.Int("nodelay"), c.Int("interval"), c.Int("resend"), c.Int("nc")
-		switch c.String("mode") {
+		config := Config{}
+		config.Listen = c.String("listen")
+		config.Target = c.String("target")
+		config.Key = c.String("key")
+		config.Crypt = c.String("crypt")
+		config.Mode = c.String("mode")
+		config.MTU = c.Int("mtu")
+		config.SndWnd = c.Int("sndwnd")
+		config.RcvWnd = c.Int("rcvwnd")
+		config.DataShard = c.Int("datashard")
+		config.ParityShard = c.Int("parityshard")
+		config.DSCP = c.Int("dscp")
+		config.NoComp = c.Bool("nocomp")
+		config.AckNodelay = c.Bool("acknodelay")
+		config.NoDelay = c.Int("nodelay")
+		config.Interval = c.Int("interval")
+		config.Resend = c.Int("resend")
+		config.NoCongestion = c.Int("nc")
+		config.SockBuf = c.Int("sockbuf")
+		config.KeepAlive = c.Int("keepalive")
+
+		switch config.Mode {
 		case "normal":
-			nodelay, interval, resend, nc = 0, 30, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 30, 2, 1
 		case "fast":
-			nodelay, interval, resend, nc = 0, 20, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 20, 2, 1
 		case "fast2":
-			nodelay, interval, resend, nc = 1, 20, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 20, 2, 1
 		case "fast3":
-			nodelay, interval, resend, nc = 1, 10, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 10, 2, 1
 		}
 
-		crypt := c.String("crypt")
-		pass := pbkdf2.Key([]byte(c.String("key")), []byte(SALT), 4096, 32, sha1.New)
+		log.Println("version:", VERSION)
+		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		var block kcp.BlockCrypt
-		switch crypt {
+		switch config.Crypt {
 		case "tea":
 			block, _ = kcp.NewTEABlockCrypt(pass[:16])
 		case "xor":
@@ -266,61 +285,56 @@ func main() {
 		case "salsa20":
 			block, _ = kcp.NewSalsa20BlockCrypt(pass)
 		default:
-			crypt = "aes"
+			config.Crypt = "aes"
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		datashard, parityshard := c.Int("datashard"), c.Int("parityshard")
-		lis, err := kcp.ListenWithOptions(c.String("listen"), block, datashard, parityshard)
+		lis, err := kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
 		checkError(err)
-		mtu, sndwnd, rcvwnd := c.Int("mtu"), c.Int("sndwnd"), c.Int("rcvwnd")
-		nocomp, acknodelay := c.Bool("nocomp"), c.Bool("acknodelay")
-		dscp, sockbuf, keepalive := c.Int("dscp"), c.Int("sockbuf"), c.Int("keepalive")
-		target := c.String("target")
+		log.Println("listening on:", lis.Addr())
+		log.Println("target:", config.Target)
+		log.Println("encryption:", config.Crypt)
+		log.Println("nodelay parameters:", config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+		log.Println("sndwnd:", config.SndWnd, "rcvwnd:", config.RcvWnd)
+		log.Println("compression:", !config.NoComp)
+		log.Println("mtu:", config.MTU)
+		log.Println("datashard:", config.DataShard, "parityshard:", config.ParityShard)
+		log.Println("acknodelay:", config.AckNodelay)
+		log.Println("dscp:", config.DSCP)
+		log.Println("sockbuf:", config.SockBuf)
+		log.Println("keepalive:", config.KeepAlive)
 
-		log.Println("listening on ", lis.Addr())
-		log.Println("encryption:", crypt)
-		log.Println("nodelay parameters:", nodelay, interval, resend, nc)
-		log.Println("sndwnd:", sndwnd, "rcvwnd:", rcvwnd)
-		log.Println("compression:", !nocomp)
-		log.Println("mtu:", mtu)
-		log.Println("datashard:", datashard, "parityshard:", parityshard)
-		log.Println("acknodelay:", acknodelay)
-		log.Println("dscp:", dscp)
-		log.Println("sockbuf:", sockbuf)
-		log.Println("keepalive:", keepalive)
-
-		if err := lis.SetDSCP(dscp); err != nil {
+		if err := lis.SetDSCP(config.DSCP); err != nil {
 			log.Println("SetDSCP:", err)
 		}
-		if err := lis.SetReadBuffer(sockbuf); err != nil {
+		if err := lis.SetReadBuffer(config.SockBuf); err != nil {
 			log.Println("SetReadBuffer:", err)
 		}
-		if err := lis.SetWriteBuffer(sockbuf); err != nil {
+		if err := lis.SetWriteBuffer(config.SockBuf); err != nil {
 			log.Println("SetWriteBuffer:", err)
 		}
-		config := &yamux.Config{
+		yconfig := &yamux.Config{
 			AcceptBacklog:          256,
 			EnableKeepAlive:        true,
 			KeepAliveInterval:      30 * time.Second,
 			ConnectionWriteTimeout: 10 * time.Second,
-			MaxStreamWindowSize:    uint32(sockbuf),
+			MaxStreamWindowSize:    uint32(config.SockBuf),
 			LogOutput:              os.Stderr,
 		}
 		for {
 			if conn, err := lis.AcceptKCP(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
 				conn.SetStreamMode(true)
-				conn.SetNoDelay(nodelay, interval, resend, nc)
-				conn.SetMtu(mtu)
-				conn.SetWindowSize(sndwnd, rcvwnd)
-				conn.SetACKNoDelay(acknodelay)
-				conn.SetKeepAlive(keepalive)
+				conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+				conn.SetMtu(config.MTU)
+				conn.SetWindowSize(config.SndWnd, config.RcvWnd)
+				conn.SetACKNoDelay(config.AckNodelay)
+				conn.SetKeepAlive(config.KeepAlive)
 
-				if nocomp {
-					go handleMux(conn, target, config)
+				if config.NoComp {
+					go handleMux(conn, config.Target, yconfig)
 				} else {
-					go handleMux(newCompStream(conn), target, config)
+					go handleMux(newCompStream(conn), config.Target, yconfig)
 				}
 			} else {
 				log.Printf("%+v", err)

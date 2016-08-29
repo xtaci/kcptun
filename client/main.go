@@ -158,11 +158,6 @@ func main() {
 			Value: 3,
 			Usage: "set reed-solomon erasure coding - parityshard",
 		},
-		cli.BoolFlag{
-			Name:   "acknodelay",
-			Usage:  "flush ack immediately when a packet is received",
-			Hidden: true,
-		},
 		cli.IntFlag{
 			Name:  "dscp",
 			Value: 0,
@@ -171,6 +166,11 @@ func main() {
 		cli.BoolFlag{
 			Name:  "nocomp",
 			Usage: "disable compression",
+		},
+		cli.BoolFlag{
+			Name:   "acknodelay",
+			Usage:  "flush ack immediately when a packet is received",
+			Hidden: true,
 		},
 		cli.IntFlag{
 			Name:   "nodelay",
@@ -204,30 +204,49 @@ func main() {
 		},
 	}
 	myApp.Action = func(c *cli.Context) error {
+		config := Config{}
+		config.LocalAddr = c.String("localaddr")
+		config.RemoteAddr = c.String("remoteaddr")
+		config.Key = c.String("key")
+		config.Crypt = c.String("crypt")
+		config.Mode = c.String("mode")
+		config.Conn = c.Int("conn")
+		config.AutoExpire = c.Int("autoexpire")
+		config.MTU = c.Int("mtu")
+		config.SndWnd = c.Int("sndwnd")
+		config.RcvWnd = c.Int("rcvwnd")
+		config.DataShard = c.Int("datashard")
+		config.ParityShard = c.Int("parityshard")
+		config.DSCP = c.Int("dscp")
+		config.NoComp = c.Bool("nocomp")
+		config.AckNodelay = c.Bool("acknodelay")
+		config.NoDelay = c.Int("nodelay")
+		config.Interval = c.Int("interval")
+		config.Resend = c.Int("resend")
+		config.NoCongestion = c.Int("nc")
+		config.SockBuf = c.Int("sockbuf")
+		config.KeepAlive = c.Int("keepalive")
+
+		switch config.Mode {
+		case "normal":
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 30, 2, 1
+		case "fast":
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 20, 2, 1
+		case "fast2":
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 20, 2, 1
+		case "fast3":
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 10, 2, 1
+		}
+
 		log.Println("version:", VERSION)
-		addr, err := net.ResolveTCPAddr("tcp", c.String("localaddr"))
+		addr, err := net.ResolveTCPAddr("tcp", config.LocalAddr)
 		checkError(err)
 		listener, err := net.ListenTCP("tcp", addr)
 		checkError(err)
 
-		// kcp server
-		nodelay, interval, resend, nc := c.Int("nodelay"), c.Int("interval"), c.Int("resend"), c.Int("nc")
-
-		switch c.String("mode") {
-		case "normal":
-			nodelay, interval, resend, nc = 0, 30, 2, 1
-		case "fast":
-			nodelay, interval, resend, nc = 0, 20, 2, 1
-		case "fast2":
-			nodelay, interval, resend, nc = 1, 20, 2, 1
-		case "fast3":
-			nodelay, interval, resend, nc = 1, 10, 2, 1
-		}
-
-		crypt := c.String("crypt")
-		pass := pbkdf2.Key([]byte(c.String("key")), []byte(SALT), 4096, 32, sha1.New)
+		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		var block kcp.BlockCrypt
-		switch c.String("crypt") {
+		switch config.Crypt {
 		case "tea":
 			block, _ = kcp.NewTEABlockCrypt(pass[:16])
 		case "xor":
@@ -251,66 +270,59 @@ func main() {
 		case "salsa20":
 			block, _ = kcp.NewSalsa20BlockCrypt(pass)
 		default:
-			crypt = "aes"
+			config.Crypt = "aes"
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		remoteaddr := c.String("remoteaddr")
-		datashard, parityshard := c.Int("datashard"), c.Int("parityshard")
-		mtu, sndwnd, rcvwnd := c.Int("mtu"), c.Int("sndwnd"), c.Int("rcvwnd")
-		nocomp, acknodelay := c.Bool("nocomp"), c.Bool("acknodelay")
-		dscp, sockbuf, keepalive, conn := c.Int("dscp"), c.Int("sockbuf"), c.Int("keepalive"), c.Int("conn")
-		autoexpire := c.Int("autoexpire")
-
 		log.Println("listening on:", listener.Addr())
-		log.Println("encryption:", crypt)
-		log.Println("nodelay parameters:", nodelay, interval, resend, nc)
-		log.Println("remote address:", remoteaddr)
-		log.Println("sndwnd:", sndwnd, "rcvwnd:", rcvwnd)
-		log.Println("compression:", !nocomp)
-		log.Println("mtu:", mtu)
-		log.Println("datashard:", datashard, "parityshard:", parityshard)
-		log.Println("acknodelay:", acknodelay)
-		log.Println("dscp:", dscp)
-		log.Println("sockbuf:", sockbuf)
-		log.Println("keepalive:", keepalive)
-		log.Println("conn:", conn)
-		log.Println("autoexpire:", autoexpire)
+		log.Println("encryption:", config.Crypt)
+		log.Println("nodelay parameters:", config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+		log.Println("remote address:", config.RemoteAddr)
+		log.Println("sndwnd:", config.SndWnd, "rcvwnd:", config.RcvWnd)
+		log.Println("compression:", !config.NoComp)
+		log.Println("mtu:", config.MTU)
+		log.Println("datashard:", config.DataShard, "parityshard:", config.ParityShard)
+		log.Println("acknodelay:", config.AckNodelay)
+		log.Println("dscp:", config.DSCP)
+		log.Println("sockbuf:", config.SockBuf)
+		log.Println("keepalive:", config.KeepAlive)
+		log.Println("conn:", config.Conn)
+		log.Println("autoexpire:", config.AutoExpire)
 
-		config := &yamux.Config{
+		yconfig := &yamux.Config{
 			AcceptBacklog:          256,
 			EnableKeepAlive:        true,
 			KeepAliveInterval:      30 * time.Second,
 			ConnectionWriteTimeout: 10 * time.Second,
-			MaxStreamWindowSize:    uint32(sockbuf),
+			MaxStreamWindowSize:    uint32(config.SockBuf),
 			LogOutput:              os.Stderr,
 		}
 		createConn := func() *yamux.Session {
-			kcpconn, err := kcp.DialWithOptions(remoteaddr, block, datashard, parityshard)
+			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
 			checkError(err)
 			kcpconn.SetStreamMode(true)
-			kcpconn.SetNoDelay(nodelay, interval, resend, nc)
-			kcpconn.SetWindowSize(sndwnd, rcvwnd)
-			kcpconn.SetMtu(mtu)
-			kcpconn.SetACKNoDelay(acknodelay)
-			kcpconn.SetKeepAlive(keepalive)
+			kcpconn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+			kcpconn.SetWindowSize(config.SndWnd, config.RcvWnd)
+			kcpconn.SetMtu(config.MTU)
+			kcpconn.SetACKNoDelay(config.AckNodelay)
+			kcpconn.SetKeepAlive(config.KeepAlive)
 
-			if err := kcpconn.SetDSCP(dscp); err != nil {
+			if err := kcpconn.SetDSCP(config.DSCP); err != nil {
 				log.Println("SetDSCP:", err)
 			}
-			if err := kcpconn.SetReadBuffer(sockbuf); err != nil {
+			if err := kcpconn.SetReadBuffer(config.SockBuf); err != nil {
 				log.Println("SetReadBuffer:", err)
 			}
-			if err := kcpconn.SetWriteBuffer(sockbuf); err != nil {
+			if err := kcpconn.SetWriteBuffer(config.SockBuf); err != nil {
 				log.Println("SetWriteBuffer:", err)
 			}
 
 			// stream multiplex
 			var session *yamux.Session
-			if nocomp {
-				session, err = yamux.Client(kcpconn, config)
+			if config.NoComp {
+				session, err = yamux.Client(kcpconn, yconfig)
 			} else {
-				session, err = yamux.Client(newCompStream(kcpconn), config)
+				session, err = yamux.Client(newCompStream(kcpconn), yconfig)
 			}
 			checkError(err)
 			runtime.SetFinalizer(session, func(s *yamux.Session) {
@@ -319,7 +331,7 @@ func main() {
 			return session
 		}
 
-		numconn := uint16(conn)
+		numconn := uint16(config.Conn)
 		muxes := make([]struct {
 			session *yamux.Session
 			ttl     time.Time
@@ -327,16 +339,16 @@ func main() {
 
 		for k := range muxes {
 			muxes[k].session = createConn()
-			muxes[k].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
+			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 		}
 
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
-			if err := p1.SetReadBuffer(sockbuf); err != nil {
+			if err := p1.SetReadBuffer(config.SockBuf); err != nil {
 				log.Println("TCP SetReadBuffer:", err)
 			}
-			if err := p1.SetWriteBuffer(sockbuf); err != nil {
+			if err := p1.SetWriteBuffer(config.SockBuf); err != nil {
 				log.Println("TCP SetWriteBuffer:", err)
 			}
 			checkError(err)
@@ -344,17 +356,17 @@ func main() {
 
 		OPEN_P2:
 			// do auto expiration
-			if autoexpire > 0 && time.Now().After(muxes[idx].ttl) {
+			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
 				log.Println("autoexpired")
 				muxes[idx].session = createConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
+				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
 
 			// do session open
 			p2, err := muxes[idx].session.Open()
 			if err != nil { // yamux failure
 				muxes[idx].session = createConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(autoexpire) * time.Second)
+				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				goto OPEN_P2
 			}
 			go handleClient(p1, p2)
