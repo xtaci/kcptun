@@ -70,6 +70,7 @@ func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
 		sockbuf := int(config.MaxStreamWindowSize)
 		p2, err := net.DialTimeout("tcp", target, 5*time.Second)
 		if err != nil {
+			p1.Close()
 			log.Println(err)
 			return
 		}
