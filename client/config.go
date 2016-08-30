@@ -29,16 +29,16 @@ type Config struct {
 	KeepAlive    int    `json:"keepalive"`
 }
 
-func parseJsonConfig(config *Config, path string) (err error) {
+func parseJsonConfig(config *Config, path string) error {
 	file, err := os.Open(path) // For read access.
 	if err != nil {
-		return
+		return err
 	}
 	defer file.Close()
 
 	if err = json.NewDecoder(file).Decode(config); err != nil {
-		return
+		return err
 	}
 
-	return
+	return err
 }
