@@ -225,6 +225,9 @@ func main() {
 			Value:  10, // nat keepalive interval in seconds
 			Hidden: true,
 		},
+		cli.StringFlag{
+			Name: "c",
+		},
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
@@ -247,6 +250,9 @@ func main() {
 		config.NoCongestion = c.Int("nc")
 		config.SockBuf = c.Int("sockbuf")
 		config.KeepAlive = c.Int("keepalive")
+
+		//Now only support json config file
+		parseJsonConfig(&config, c.String("c"))
 
 		switch config.Mode {
 		case "normal":
