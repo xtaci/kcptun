@@ -226,7 +226,9 @@ func main() {
 			Hidden: true,
 		},
 		cli.StringFlag{
-			Name: "c",
+			Name:  "c",
+			Value: "", // when the value is not empty, the config path must exists
+			Usage: "config from json file, which will override the command from shell",
 		},
 	}
 	myApp.Action = func(c *cli.Context) error {
@@ -251,8 +253,11 @@ func main() {
 		config.SockBuf = c.Int("sockbuf")
 		config.KeepAlive = c.Int("keepalive")
 
-		//Now only support json config file
-		parseJsonConfig(&config, c.String("c"))
+		if c.String("c") != "" {
+			//Now only support json config file
+			err := parseJsonConfig(&config, c.String("c"))
+			checkError(err)
+		}
 
 		switch config.Mode {
 		case "normal":
