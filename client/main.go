@@ -202,6 +202,11 @@ func main() {
 			Value:  10, // nat keepalive interval in seconds
 			Hidden: true,
 		},
+		cli.StringFlag{
+			Name:  "c",
+			Value: "", // when the value is not empty, the config path must exists
+			Usage: "config from json file, which will override the command from shell",
+		},
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
@@ -226,6 +231,11 @@ func main() {
 		config.NoCongestion = c.Int("nc")
 		config.SockBuf = c.Int("sockbuf")
 		config.KeepAlive = c.Int("keepalive")
+
+		if c.String("c") != "" {
+			err := parseJsonConfig(&config, c.String("c"))
+			checkError(err)
+		}
 
 		switch config.Mode {
 		case "normal":
