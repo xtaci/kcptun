@@ -72,7 +72,7 @@ func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
 		if err != nil {
 			p1.Close()
 			log.Println(err)
-			return
+			continue
 		}
 
 		if err := p2.(*net.TCPConn).SetReadBuffer(sockbuf); err != nil {
