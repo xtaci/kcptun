@@ -1,5 +1,10 @@
 package main
 
+import (
+	"encoding/json"
+	"os"
+)
+
 type Config struct {
 	LocalAddr    string `json:"localaddr"`
 	RemoteAddr   string `json:"remoteaddr"`
@@ -22,4 +27,18 @@ type Config struct {
 	NoCongestion int    `json:"nc"`
 	SockBuf      int    `json:"sockbuf"`
 	KeepAlive    int    `json:"keepalive"`
+}
+
+func parseJsonConfig(config *Config, path string) error {
+	file, err := os.Open(path) // For read access.
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err = json.NewDecoder(file).Decode(config); err != nil {
+		return err
+	}
+
+	return err
 }
