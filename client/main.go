@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"runtime"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -335,9 +334,6 @@ func main() {
 				session, err = yamux.Client(newCompStream(kcpconn), yconfig)
 			}
 			checkError(err)
-			runtime.SetFinalizer(session, func(s *yamux.Session) {
-				s.Close()
-			})
 			return session
 		}
 
@@ -368,6 +364,7 @@ func main() {
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
 				log.Println("autoexpired")
+				muxes[idx].session.Close()
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
@@ -375,6 +372,7 @@ func main() {
 			// do session open
 			p2, err := muxes[idx].session.Open()
 			if err != nil { // yamux failure
+				muxes[idx].session.Close()
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				goto OPEN_P2
