@@ -322,9 +322,9 @@ func main() {
 			// stream multiplex
 			var session *smux.Session
 			if config.NoComp {
-				session, err = smux.Client(kcpconn, config.RcvWnd, config.SockBuf/config.RcvWnd)
+				session, err = smux.Client(kcpconn, config.SockBuf/config.MTU, config.MTU)
 			} else {
-				session, err = smux.Client(newCompStream(kcpconn), config.RcvWnd, config.SockBuf/config.RcvWnd)
+				session, err = smux.Client(newCompStream(kcpconn), config.SockBuf/config.MTU, config.MTU)
 			}
 			checkError(err)
 			runtime.SetFinalizer(session, func(s *smux.Session) {

@@ -55,7 +55,7 @@ func newCompStream(conn net.Conn) *compStream {
 // handle multiplex-ed connection
 func handleMux(conn io.ReadWriteCloser, config *Config) {
 	// stream multiplex
-	mux, err := smux.Server(conn, config.RcvWnd, config.SockBuf/config.RcvWnd)
+	mux, err := smux.Server(conn, config.SockBuf/config.MTU, config.MTU)
 	if err != nil {
 		log.Println(err)
 		return
