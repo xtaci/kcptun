@@ -390,7 +390,7 @@ func scavenger(ch chan *smux.Session) {
 			for k := range sessionList {
 				sess := sessionList[k]
 				if sess.NumStreams() == 0 {
-					log.Println("autoexpired")
+					log.Println("session scavenged")
 					sess.Close()
 				} else {
 					newList = append(newList, sessionList[k])
