@@ -14,7 +14,7 @@ import (
 	"github.com/golang/snappy"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
-	"github.com/xtaci/yamux"
+	"github.com/xtaci/smux"
 )
 
 var (
@@ -53,35 +53,32 @@ func newCompStream(conn net.Conn) *compStream {
 }
 
 // handle multiplex-ed connection
-func handleMux(conn io.ReadWriteCloser, target string, config *yamux.Config) {
+func handleMux(conn io.ReadWriteCloser, config *Config) {
 	// stream multiplex
-	mux, err := yamux.Server(conn, config)
+	mux, err := smux.Server(conn)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	defer mux.Close()
 	for {
-		p1, err := mux.Accept()
+		p1, err := mux.AcceptStream()
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		sockbuf := int(config.MaxStreamWindowSize)
-		p2, err := net.DialTimeout("tcp", target, 5*time.Second)
+		p2, err := net.DialTimeout("tcp", config.Target, 5*time.Second)
 		if err != nil {
 			p1.Close()
 			log.Println(err)
 			continue
 		}
-
-		if err := p2.(*net.TCPConn).SetReadBuffer(sockbuf); err != nil {
+		if err := p2.(*net.TCPConn).SetReadBuffer(config.SockBuf); err != nil {
 			log.Println("TCP SetReadBuffer:", err)
 		}
-		if err := p2.(*net.TCPConn).SetWriteBuffer(sockbuf); err != nil {
+		if err := p2.(*net.TCPConn).SetWriteBuffer(config.SockBuf); err != nil {
 			log.Println("TCP SetWriteBuffer:", err)
 		}
-
 		go handleClient(p1, p2)
 	}
 }
@@ -325,14 +322,6 @@ func main() {
 		if err := lis.SetWriteBuffer(config.SockBuf); err != nil {
 			log.Println("SetWriteBuffer:", err)
 		}
-		yconfig := &yamux.Config{
-			AcceptBacklog:          256,
-			EnableKeepAlive:        true,
-			KeepAliveInterval:      30 * time.Second,
-			ConnectionWriteTimeout: 10 * time.Second,
-			MaxStreamWindowSize:    uint32(config.SockBuf),
-			LogOutput:              os.Stderr,
-		}
 		for {
 			if conn, err := lis.AcceptKCP(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
@@ -344,9 +333,9 @@ func main() {
 				conn.SetKeepAlive(config.KeepAlive)
 
 				if config.NoComp {
-					go handleMux(conn, config.Target, yconfig)
+					go handleMux(conn, &config)
 				} else {
-					go handleMux(newCompStream(conn), config.Target, yconfig)
+					go handleMux(newCompStream(conn), &config)
 				}
 			} else {
 				log.Printf("%+v", err)

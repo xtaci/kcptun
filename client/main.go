@@ -15,7 +15,7 @@ import (
 	"github.com/golang/snappy"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
-	"github.com/xtaci/yamux"
+	"github.com/xtaci/smux"
 )
 
 var (
@@ -299,15 +299,7 @@ func main() {
 		log.Println("conn:", config.Conn)
 		log.Println("autoexpire:", config.AutoExpire)
 
-		yconfig := &yamux.Config{
-			AcceptBacklog:          256,
-			EnableKeepAlive:        true,
-			KeepAliveInterval:      30 * time.Second,
-			ConnectionWriteTimeout: 10 * time.Second,
-			MaxStreamWindowSize:    uint32(config.SockBuf),
-			LogOutput:              os.Stderr,
-		}
-		createConn := func() *yamux.Session {
+		createConn := func() *smux.Session {
 			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
 			checkError(err)
 			kcpconn.SetStreamMode(true)
@@ -328,14 +320,14 @@ func main() {
 			}
 
 			// stream multiplex
-			var session *yamux.Session
+			var session *smux.Session
 			if config.NoComp {
-				session, err = yamux.Client(kcpconn, yconfig)
+				session, err = smux.Client(kcpconn)
 			} else {
-				session, err = yamux.Client(newCompStream(kcpconn), yconfig)
+				session, err = smux.Client(newCompStream(kcpconn))
 			}
 			checkError(err)
-			runtime.SetFinalizer(session, func(s *yamux.Session) {
+			runtime.SetFinalizer(session, func(s *smux.Session) {
 				s.Close()
 			})
 			return session
@@ -343,7 +335,7 @@ func main() {
 
 		numconn := uint16(config.Conn)
 		muxes := make([]struct {
-			session *yamux.Session
+			session *smux.Session
 			ttl     time.Time
 		}, numconn)
 
@@ -373,7 +365,7 @@ func main() {
 			}
 
 			// do session open
-			p2, err := muxes[idx].session.Open()
+			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // yamux failure
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
