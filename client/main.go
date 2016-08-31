@@ -383,7 +383,6 @@ func scavenger(ch chan *smux.Session) {
 			var newList []*smux.Session
 			for k := range sessionList {
 				sess := sessionList[k]
-				log.Println(sess.NumStreams())
 				if sess.NumStreams() == 0 {
 					log.Println("session scavenged")
 					sess.Close()
