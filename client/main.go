@@ -357,7 +357,6 @@ func main() {
 		OPEN_P2:
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
-				log.Println("autoexpired")
 				chScavenger <- muxes[idx].session
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
@@ -366,7 +365,7 @@ func main() {
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // yamux failure
-				chScavenger <- muxes[idx].session
+				muxes[idx].session.Close()
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				goto OPEN_P2
@@ -391,6 +390,7 @@ func scavenger(ch chan *smux.Session) {
 			for k := range sessionList {
 				sess := sessionList[k]
 				if sess.NumStreams() == 0 {
+					log.Println("autoexpired")
 					sess.Close()
 				} else {
 					newList = append(newList, sessionList[k])
