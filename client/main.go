@@ -378,7 +378,7 @@ func main() {
 }
 
 func scavenger(ch chan *smux.Session) {
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	var sessionList []*smux.Session
 	for {
