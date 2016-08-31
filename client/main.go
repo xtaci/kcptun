@@ -345,12 +345,6 @@ func main() {
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
-			if err := p1.SetReadBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetReadBuffer:", err)
-			}
-			if err := p1.SetWriteBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetWriteBuffer:", err)
-			}
 			checkError(err)
 			idx := rr % numconn
 
@@ -378,7 +372,7 @@ func main() {
 }
 
 func scavenger(ch chan *smux.Session) {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 	var sessionList []*smux.Session
 	for {
@@ -389,6 +383,7 @@ func scavenger(ch chan *smux.Session) {
 			var newList []*smux.Session
 			for k := range sessionList {
 				sess := sessionList[k]
+				log.Println(sess.NumStreams())
 				if sess.NumStreams() == 0 {
 					log.Println("session scavenged")
 					sess.Close()
