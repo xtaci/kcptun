@@ -340,6 +340,8 @@ func main() {
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 		}
 
+		chScavenger := make(chan *smux.Session, 128)
+		go scavenger(chScavenger)
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
@@ -356,7 +358,7 @@ func main() {
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
 				log.Println("autoexpired")
-				muxes[idx].session.Close()
+				chScavenger <- muxes[idx].session
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
@@ -364,7 +366,7 @@ func main() {
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // yamux failure
-				muxes[idx].session.Close()
+				chScavenger <- muxes[idx].session
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				goto OPEN_P2
@@ -374,4 +376,27 @@ func main() {
 		}
 	}
 	myApp.Run(os.Args)
+}
+
+func scavenger(ch chan *smux.Session) {
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+	var sessionList []*smux.Session
+	for {
+		select {
+		case sess := <-ch:
+			sessionList = append(sessionList, sess)
+		case <-ticker.C:
+			var newList []*smux.Session
+			for k := range sessionList {
+				sess := sessionList[k]
+				if sess.NumStreams() == 0 {
+					sess.Close()
+				} else {
+					newList = append(newList, sessionList[k])
+				}
+			}
+			sessionList = newList
+		}
+	}
 }
