@@ -298,6 +298,9 @@ func main() {
 		log.Println("conn:", config.Conn)
 		log.Println("autoexpire:", config.AutoExpire)
 
+		smuxConfig := smux.DefaultConfig()
+		smuxConfig.MaxFrameTokens = config.SockBuf / int(smuxConfig.MaxFrameSize)
+
 		createConn := func() *smux.Session {
 			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
 			checkError(err)
@@ -321,9 +324,9 @@ func main() {
 			// stream multiplex
 			var session *smux.Session
 			if config.NoComp {
-				session, err = smux.Client(kcpconn, nil)
+				session, err = smux.Client(kcpconn, smuxConfig)
 			} else {
-				session, err = smux.Client(newCompStream(kcpconn), nil)
+				session, err = smux.Client(newCompStream(kcpconn), smuxConfig)
 			}
 			checkError(err)
 			return session
