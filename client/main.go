@@ -362,6 +362,7 @@ func main() {
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // yamux failure
+				chScavenger <- muxes[idx].session
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				goto OPEN_P2
