@@ -93,7 +93,7 @@ func main() {
 	}
 	myApp := cli.NewApp()
 	myApp.Name = "kcptun"
-	myApp.Usage = "kcptun client"
+	myApp.Usage = "client(with SMUX)"
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
 		cli.StringFlag{
