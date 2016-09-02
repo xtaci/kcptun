@@ -299,7 +299,7 @@ func main() {
 		log.Println("autoexpire:", config.AutoExpire)
 
 		smuxConfig := smux.DefaultConfig()
-		smuxConfig.MaxFrameTokens = 2 * config.SockBuf / int(smuxConfig.MaxFrameSize)
+		smuxConfig.MaxReceiveBuffer = config.SockBuf
 
 		createConn := func() *smux.Session {
 			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)

@@ -56,7 +56,7 @@ func newCompStream(conn net.Conn) *compStream {
 func handleMux(conn io.ReadWriteCloser, config *Config) {
 	// stream multiplex
 	smuxConfig := smux.DefaultConfig()
-	smuxConfig.MaxFrameTokens = 2 * config.SockBuf / int(smuxConfig.MaxFrameSize)
+	smuxConfig.MaxReceiveBuffer = config.SockBuf
 	mux, err := smux.Server(conn, smuxConfig)
 	if err != nil {
 		log.Println(err)
