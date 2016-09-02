@@ -56,7 +56,7 @@ func newCompStream(conn net.Conn) *compStream {
 func handleMux(conn io.ReadWriteCloser, config *Config) {
 	// stream multiplex
 	smuxConfig := smux.DefaultConfig()
-	smuxConfig.MaxFrameTokens = config.SockBuf / int(smuxConfig.MaxFrameSize)
+	smuxConfig.MaxFrameTokens = 2 * config.SockBuf / int(smuxConfig.MaxFrameSize)
 	mux, err := smux.Server(conn, smuxConfig)
 	if err != nil {
 		log.Println(err)
@@ -74,6 +74,12 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			p1.Close()
 			log.Println(err)
 			continue
+		}
+		if err := p2.(*net.TCPConn).SetReadBuffer(config.SockBuf); err != nil {
+			log.Println("TCP SetReadBuffer:", err)
+		}
+		if err := p2.(*net.TCPConn).SetWriteBuffer(config.SockBuf); err != nil {
+			log.Println("TCP SetWriteBuffer:", err)
 		}
 		go handleClient(p1, p2)
 	}

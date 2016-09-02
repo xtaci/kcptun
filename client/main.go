@@ -299,7 +299,7 @@ func main() {
 		log.Println("autoexpire:", config.AutoExpire)
 
 		smuxConfig := smux.DefaultConfig()
-		smuxConfig.MaxFrameTokens = config.SockBuf / int(smuxConfig.MaxFrameSize)
+		smuxConfig.MaxFrameTokens = 2 * config.SockBuf / int(smuxConfig.MaxFrameSize)
 
 		createConn := func() *smux.Session {
 			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
@@ -348,6 +348,12 @@ func main() {
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
+			if err := p1.SetReadBuffer(config.SockBuf); err != nil {
+				log.Println("TCP SetReadBuffer:", err)
+			}
+			if err := p1.SetWriteBuffer(config.SockBuf); err != nil {
+				log.Println("TCP SetWriteBuffer:", err)
+			}
 			checkError(err)
 			idx := rr % numconn
 
