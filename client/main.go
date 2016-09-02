@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"runtime"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -15,7 +14,7 @@ import (
 	"github.com/golang/snappy"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
-	"github.com/xtaci/yamux"
+	"github.com/xtaci/smux"
 )
 
 var (
@@ -94,7 +93,7 @@ func main() {
 	}
 	myApp := cli.NewApp()
 	myApp.Name = "kcptun"
-	myApp.Usage = "kcptun client"
+	myApp.Usage = "client(with SMUX)"
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
 		cli.StringFlag{
@@ -299,15 +298,10 @@ func main() {
 		log.Println("conn:", config.Conn)
 		log.Println("autoexpire:", config.AutoExpire)
 
-		yconfig := &yamux.Config{
-			AcceptBacklog:          256,
-			EnableKeepAlive:        true,
-			KeepAliveInterval:      30 * time.Second,
-			ConnectionWriteTimeout: 10 * time.Second,
-			MaxStreamWindowSize:    uint32(config.SockBuf),
-			LogOutput:              os.Stderr,
-		}
-		createConn := func() *yamux.Session {
+		smuxConfig := smux.DefaultConfig()
+		smuxConfig.MaxFrameTokens = config.SockBuf / int(smuxConfig.MaxFrameSize)
+
+		createConn := func() *smux.Session {
 			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
 			checkError(err)
 			kcpconn.SetStreamMode(true)
@@ -328,22 +322,19 @@ func main() {
 			}
 
 			// stream multiplex
-			var session *yamux.Session
+			var session *smux.Session
 			if config.NoComp {
-				session, err = yamux.Client(kcpconn, yconfig)
+				session, err = smux.Client(kcpconn, smuxConfig)
 			} else {
-				session, err = yamux.Client(newCompStream(kcpconn), yconfig)
+				session, err = smux.Client(newCompStream(kcpconn), smuxConfig)
 			}
 			checkError(err)
-			runtime.SetFinalizer(session, func(s *yamux.Session) {
-				s.Close()
-			})
 			return session
 		}
 
 		numconn := uint16(config.Conn)
 		muxes := make([]struct {
-			session *yamux.Session
+			session *smux.Session
 			ttl     time.Time
 		}, numconn)
 
@@ -352,28 +343,24 @@ func main() {
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 		}
 
+		chScavenger := make(chan *smux.Session, 128)
+		go scavenger(chScavenger)
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
-			if err := p1.SetReadBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetReadBuffer:", err)
-			}
-			if err := p1.SetWriteBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetWriteBuffer:", err)
-			}
 			checkError(err)
 			idx := rr % numconn
 
 		OPEN_P2:
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
-				log.Println("autoexpired")
+				chScavenger <- muxes[idx].session
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
 
 			// do session open
-			p2, err := muxes[idx].session.Open()
+			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // yamux failure
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
@@ -384,4 +371,28 @@ func main() {
 		}
 	}
 	myApp.Run(os.Args)
+}
+
+func scavenger(ch chan *smux.Session) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	var sessionList []*smux.Session
+	for {
+		select {
+		case sess := <-ch:
+			sessionList = append(sessionList, sess)
+		case <-ticker.C:
+			var newList []*smux.Session
+			for k := range sessionList {
+				sess := sessionList[k]
+				if sess.NumStreams() == 0 {
+					log.Println("session scavenged")
+					sess.Close()
+				} else {
+					newList = append(newList, sessionList[k])
+				}
+			}
+			sessionList = newList
+		}
+	}
 }
