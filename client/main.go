@@ -361,7 +361,7 @@ func main() {
 
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
-			if err != nil { // yamux failure
+			if err != nil { // mux failure
 				chScavenger <- muxes[idx].session
 				muxes[idx].session = createConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
@@ -386,7 +386,7 @@ func scavenger(ch chan *smux.Session) {
 			var newList []*smux.Session
 			for k := range sessionList {
 				sess := sessionList[k]
-				if sess.NumStreams() == 0 {
+				if sess.NumStreams() == 0 || sess.IsClosed() {
 					log.Println("session scavenged")
 					sess.Close()
 				} else {
