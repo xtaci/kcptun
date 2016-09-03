@@ -380,21 +380,30 @@ func main() {
 	myApp.Run(os.Args)
 }
 
+type scavengeSession struct {
+	session *smux.Session
+	ttl     time.Time
+}
+
+const (
+	maxScavengeTTL = 10 * time.Minute
+)
+
 func scavenger(ch chan *smux.Session) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
-	var sessionList []*smux.Session
+	var sessionList []scavengeSession
 	for {
 		select {
 		case sess := <-ch:
-			sessionList = append(sessionList, sess)
+			sessionList = append(sessionList, scavengeSession{sess, time.Now()})
 		case <-ticker.C:
-			var newList []*smux.Session
+			var newList []scavengeSession
 			for k := range sessionList {
-				sess := sessionList[k]
-				if sess.NumStreams() == 0 || sess.IsClosed() {
+				s := sessionList[k]
+				if s.session.NumStreams() == 0 || s.session.IsClosed() || time.Now().Sub(s.ttl) > maxScavengeTTL {
 					log.Println("session scavenged")
-					sess.Close()
+					s.session.Close()
 				} else {
 					newList = append(newList, sessionList[k])
 				}
