@@ -254,7 +254,7 @@ func main() {
 
 		if c.String("c") != "" {
 			//Now only support json config file
-			err := parseJsonConfig(&config, c.String("c"))
+			err := parseJSONConfig(&config, c.String("c"))
 			checkError(err)
 		}
 

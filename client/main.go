@@ -232,7 +232,7 @@ func main() {
 		config.KeepAlive = c.Int("keepalive")
 
 		if c.String("c") != "" {
-			err := parseJsonConfig(&config, c.String("c"))
+			err := parseJSONConfig(&config, c.String("c"))
 			checkError(err)
 		}
 
@@ -401,7 +401,7 @@ func scavenger(ch chan *smux.Session) {
 			var newList []scavengeSession
 			for k := range sessionList {
 				s := sessionList[k]
-				if s.session.NumStreams() == 0 || s.session.IsClosed() || time.Now().Sub(s.ttl) > maxScavengeTTL {
+				if s.session.NumStreams() == 0 || s.session.IsClosed() || time.Since(s.ttl) > maxScavengeTTL {
 					log.Println("session scavenged")
 					s.session.Close()
 				} else {

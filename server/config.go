@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// Config for server
 type Config struct {
 	Listen       string `json:"listen"`
 	Target       string `json:"target"`
@@ -27,16 +28,12 @@ type Config struct {
 	KeepAlive    int    `json:"keepalive"`
 }
 
-func parseJsonConfig(config *Config, path string) error {
+func parseJSONConfig(config *Config, path string) error {
 	file, err := os.Open(path) // For read access.
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	if err = json.NewDecoder(file).Decode(config); err != nil {
-		return err
-	}
-
-	return err
+	return json.NewDecoder(file).Decode(config)
 }
