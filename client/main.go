@@ -337,6 +337,17 @@ func main() {
 			return session, nil
 		}
 
+		// wait until a connection is ready
+		waitConn := func() *smux.Session {
+			for {
+				if session, err := createConn(); err == nil {
+					return session
+				} else {
+					time.Sleep(time.Second)
+				}
+			}
+		}
+
 		numconn := uint16(config.Conn)
 		muxes := make([]struct {
 			session *smux.Session
@@ -367,22 +378,18 @@ func main() {
 		OPEN_P2:
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
-				if sess, err := createConn(); err == nil {
-					chScavenger <- muxes[idx].session
-					muxes[idx].session = sess
-					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				}
+				chScavenger <- muxes[idx].session
+				muxes[idx].session = waitConn()
+				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
 
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // mux failure
-				if sess, err := createConn(); err == nil {
-					chScavenger <- muxes[idx].session
-					muxes[idx].session = sess
-					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-					goto OPEN_P2
-				}
+				chScavenger <- muxes[idx].session
+				muxes[idx].session = waitConn()
+				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				goto OPEN_P2
 			}
 			go handleClient(p1, p2)
 			rr++
