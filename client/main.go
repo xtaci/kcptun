@@ -12,6 +12,7 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/golang/snappy"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
@@ -301,9 +302,11 @@ func main() {
 		smuxConfig := smux.DefaultConfig()
 		smuxConfig.MaxReceiveBuffer = config.SockBuf
 
-		createConn := func() *smux.Session {
+		createConn := func() (*smux.Session, error) {
 			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
-			checkError(err)
+			if err != nil {
+				return nil, errors.Wrap(err, "createConn()")
+			}
 			kcpconn.SetStreamMode(true)
 			kcpconn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
 			kcpconn.SetWindowSize(config.SndWnd, config.RcvWnd)
@@ -328,8 +331,10 @@ func main() {
 			} else {
 				session, err = smux.Client(newCompStream(kcpconn), smuxConfig)
 			}
-			checkError(err)
-			return session
+			if err != nil {
+				return nil, errors.Wrap(err, "createConn()")
+			}
+			return session, nil
 		}
 
 		numconn := uint16(config.Conn)
@@ -339,7 +344,9 @@ func main() {
 		}, numconn)
 
 		for k := range muxes {
-			muxes[k].session = createConn()
+			sess, err := createConn()
+			checkError(err)
+			muxes[k].session = sess
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 		}
 
@@ -360,18 +367,22 @@ func main() {
 		OPEN_P2:
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
-				chScavenger <- muxes[idx].session
-				muxes[idx].session = createConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				if sess, err := createConn(); err == nil {
+					chScavenger <- muxes[idx].session
+					muxes[idx].session = sess
+					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				}
 			}
 
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // mux failure
-				chScavenger <- muxes[idx].session
-				muxes[idx].session = createConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				goto OPEN_P2
+				if sess, err := createConn(); err == nil {
+					chScavenger <- muxes[idx].session
+					muxes[idx].session = sess
+					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+					goto OPEN_P2
+				}
 			}
 			go handleClient(p1, p2)
 			rr++
