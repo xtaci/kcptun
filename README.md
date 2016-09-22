@@ -29,6 +29,8 @@
 客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388" -mode fast2    // 监听客户端的本地8388端口
 注: 服务器端需要有服务监听8388端口
 ```
+Windows用户可以关注GUI客户端管理工具　https://github.com/dfdragon/kcptun_gclient
+
 
 ### *速度对比* :lollipop:
 <img src="fast.png" alt="fast.com" height="256px" />       
