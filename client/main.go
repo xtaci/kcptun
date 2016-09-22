@@ -197,6 +197,11 @@ func main() {
 			Hidden: true,
 		},
 		cli.StringFlag{
+			Name:  "log",
+			Value: "",
+			Usage: "specify a log file to output, default goes to stderr",
+		},
+		cli.StringFlag{
 			Name:  "c",
 			Value: "", // when the value is not empty, the config path must exists
 			Usage: "config from json file, which will override the command from shell",
@@ -225,10 +230,19 @@ func main() {
 		config.NoCongestion = c.Int("nc")
 		config.SockBuf = c.Int("sockbuf")
 		config.KeepAlive = c.Int("keepalive")
+		config.Log = c.String("log")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
 			checkError(err)
+		}
+
+		// log redirect
+		if config.Log != "" {
+			f, err := os.OpenFile(config.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			checkError(err)
+			defer f.Close()
+			log.SetOutput(f)
 		}
 
 		switch config.Mode {
