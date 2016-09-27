@@ -226,7 +226,7 @@ Of which ```RetransSegs,FastRetransSegs,LostSegs,OutSegs``` is the most useful.
 ### *Donations* :dollar:
 ![donate](donate.png)          
 
-All donations to this project will be used on the R&D of [gonet/2](http://gonet2.github.io/).
+Best wishes to you all.
 
 ### *References* :paperclip:
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.

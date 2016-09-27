@@ -258,7 +258,7 @@ type Snmp struct {
 ### *捐赠* :dollar:
 ![donate](donate.png)          
 
-对该项目的捐款将用于[gonet/2](http://gonet2.github.io/)游戏服务器框架的研发。     
+好人一生平安
 
 ```特别感谢: 郑H立, 南D风, Li, 七q, 凌J，昶，Les*ables, Ky*n, 噼**啦, *斌, 小苍**, Ken 等，名字已做特殊处理。```
 
