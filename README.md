@@ -19,24 +19,27 @@
 [19]: https://badges.gitter.im/xtaci/kcptun.svg
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-***[kcp-go](https://github.com/xtaci/kcp-go)协议测试小工具 :zap: [官方下载地址](https://github.com/xtaci/kcptun/releases/latest):zap:***
+**[kcp-go](https://github.com/xtaci/kcp-go)协议测试小工具 --> [官方下载地址](https://github.com/xtaci/kcptun/releases/latest)**
 
 ![kcptun](kcptun.png)
 [English Readme](README.en.md)
-### *快速设定* :lollipop:
+### 快速设定
+
 ```
 服务器: ./server_linux_amd64 -t "服务器IP地址:8388" -l ":4000" -mode fast2     // 转发到服务器的本地8388端口
 客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388" -mode fast2    // 监听客户端的本地8388端口
 注: 服务器端需要有服务监听8388端口
 ```
 
-### *速度对比* :lollipop:
+### 速度对比
+
 <img src="fast.png" alt="fast.com" height="256px" />       
 * 测速网站: https://fast.com
 * 接入: 100M ADSL
 * WIFI: 5GHz TL-WDR3320
 
-### *使用方法* :lollipop:
+### 使用方法
+
 在Mac OS X El Capitan下的帮助输出: 
 ```
 $ ./client_darwin_amd64 -h
@@ -104,23 +107,27 @@ GLOBAL OPTIONS:
    --version, -v             print the version
 ```
 
-### *参数调整* :lollipop: 
-***两端参数必须一致的有:***
-* datashard
-* parityshard
-* nocomp
-* key
-* crypt
+### 参数调整
+
+**两端参数必须一致的有**:
+
+* datashard --前向纠错
+* parityshard --前向纠错
+* nocomp --压缩
+* key --密钥
+* crypt --加密算法
 
 其余为两边可独立设定的参数
 
-*简易自我调优方法*：
+**简易自我调优方法**：
+
 > 第一步：同时在两端逐步增大client rcvwnd和server sndwnd;        
 > 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
 
-***注意：产生大量重传时，一定是窗口偏大了***
+**注意：产生大量重传时，一定是窗口偏大了**
 
-*带宽计算公式*：
+#### 带宽计算公式
+
 ```
 在不丢包的情况下，有最大-rcvwnd 个数据包在网络上正在向你传输，以平均数据包大小avgsize计算，在任意时刻，有：     
 
@@ -145,17 +152,19 @@ GLOBAL OPTIONS:
 		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth ＝ 1.3 * 25Mbps = 32.5Mbps
 ```
 
-### *安全* :lollipop: 
-无论你上层如何加密，如果```-crypt none```，那么协议头部都是***明文***的，建议至少采用```-crypt aes-128```加密。
+### 安全
+
+无论你上层如何加密，如果```-crypt none```，那么**协议头部**都是**明文**的，建议至少采用```-crypt aes-128```加密。
 
 注意: ```-crypt xor``` 也是不安全的，除非你知道你在做什么。
 
-### *内存控制* :lollipop: 
-路由器，手机等嵌入式设备通常对内存用量敏感，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
+### 内存控制
+
+路由器，手机等嵌入式设备通常对**内存用量敏感**，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
 参考：https://blog.golang.org/go15gc
 
-### *流量控制* :lollipop: 
-***必要性: 针对流量敏感的服务器，做双保险。***      
+### 流量控制
+**必要性: 针对流量敏感的服务器，做双保险。**      
 
 > 基本原则: SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。  
 
@@ -172,23 +181,25 @@ root@kcptun:~#
 ```
 其中eth0为网卡，有些服务器为ens3，有些为p2p1，通过ifconfig查询修改。
 
+### DSCP
 
-### *DSCP* :lollipop: 
-DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998年12月发布了Diff-Serv（Differentiated Service）的QoS分类标准。它在每个数据包IP头部的服务类别TOS标识字节中，利用已使用的6比特和未使用的2比特，通过编码值来区分优先级。     
+DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998年12月发布了Diff-Serv（Differentiated Service）的QoS分类标准。它在每个数据包IP头部的服务类别TOS标识字节中，利用已使用的**6比特**和未使用的2比特，通过编码值来区分优先级。     
 常用DSCP值可以参考[Wikipedia DSCP](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values)，至于有没有用，完全取决于数据包经过的设备。 
 
 通过 ```-dscp ``` 参数指定dscp值，两端可分别设定。
 
 注意：设置dscp不一定会更好，需要尝试。
 
-### *前向纠错* :lollipop: 
-前向纠错采用Reed Solomon纠删码, 它的基本原理如下： 给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多容忍m个数据块或者校验块同时丢失。
+### 前向纠错
+
+前向纠错采用Reed Solomon纠删码, 它的基本原理如下： 给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多**容忍m个数据块或者校验块同时丢失**。
 
 ![reed-solomon](rs.png)
 
 通过参数```-datashard 10 -parityshard 3``` 在两端同时设定。
 
-### *Snappy数据流压缩* :lollipop: 
+### Snappy数据流压缩
+
 > Snappy is a compression/decompression library. It does not aim for maximum
 > compression, or compatibility with any other compression library; instead,
 > it aims for very high speeds and reasonable compression. For instance,
@@ -201,19 +212,21 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 通过参数 ```-nocomp``` 在两端同时设定以关闭压缩。
 > 提示: 关闭压缩可能会降低延迟。
 
-### *内置模式* :lollipop: 
+### 内置模式
+
 响应速度:     
-*fast3 >* ***[fast2]*** *> fast > normal > default*        
+*fast3 >* **[fast2]** *> fast > normal > default*        
 有效载荷比:     
-*default > normal > fast >* ***[fast2]*** *> fast3*       
-中间mode参数比较均衡，总之就是越快越浪费带宽，推荐模式 ***fast2***         
-更高级的 ***手动档*** 需要理解KCP协议，并通过 ***隐藏参数*** 调整，例如:
+*default > normal > fast >* **[fast2]** *> fast3*       
+中间mode参数比较均衡，总之就是越快越浪费带宽，推荐模式 **fast2**        
+更高级的 **手动档** 需要理解KCP协议，并通过 **隐藏参数** 调整，例如:
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
 高丢包率的网络建议采用fast2, 低丢包率的网络，建议采用normal。
 
-### *SNMP* :lollipop:
+### SNMP
+
 ```go
 // Snmp defines network statistics indicator
 type Snmp struct {
@@ -239,25 +252,28 @@ type Snmp struct {
 }
 ```
 
-使用```kill -SIGUSR1 pid``` 可以在控制台打印出SNMP信息，通常用于精细调整***当前链路的有效载荷比***。        
+使用```kill -SIGUSR1 pid``` 可以在控制台打印出SNMP信息，通常用于精细调整**当前链路的有效载荷比**。        
 观察```RetransSegs,FastRetransSegs,LostSegs,OutSegs```这几者的数值比例，用于参考调整```-mode manual,fec```的参数。        
 
-### *故障排除* :lollipop:
-> Q: 客户端和服务器端***皆无*** ```stream opened```信息。       
+### 故障排除
+
+> Q: 客户端和服务器端**皆无** ```stream opened```信息。       
 > A: 连接客户端程序的端口设置错误。     
 
 > Q: 客户端有 ```stream opened```信息，服务器端没有。     
 > A: 连接服务器的端口设置错误，或者被防火墙拦截。     
 
-> Q: 客户端服务器***皆有*** ```stream opened```信息，但无法通信。      
+> Q: 客户端服务器**皆有** ```stream opened```信息，但无法通信。      
 > A: 上层软件的设定错误。     
 
-### *免责申明* :warning:
-用户以各种方式使用本软件（包括但不限于修改使用、直接使用、通过第三方使用）的过程中，不得以任何方式利用本软件直接或间接从事违反中国法律、以及社会公德的行为。软件的使用者需对自身行为负责，因使用软件引发的一切纠纷，由使用者承担全部法律及连带责任。作者不承担任何法律及连带责任。       
+### 免责申明
 
-对免责声明的解释、修改及更新权均属于作者本人所有。
+**用户以各种方式使用本软件（包括但不限于修改使用、直接使用、通过第三方使用）的过程中，不得以任何方式利用本软件直接或间接从事违反中国法律、以及社会公德的行为。软件的使用者需对自身行为负责，因使用软件引发的一切纠纷，由使用者承担全部法律及连带责任。作者不承担任何法律及连带责任。**       
 
-### *捐赠* :dollar:
+**对免责声明的解释、修改及更新权均属于作者本人所有。**
+
+### 捐赠
+
 ![donate](donate.png)          
 
 特别感谢: 
@@ -267,7 +283,8 @@ type Snmp struct {
 
 好人一生平安!
 
-### *参考资料* :paperclip:
+### 参考资料
+
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
 2. https://github.com/klauspost/reedsolomon -- Reed-Solomon Erasure Coding in Go.
 3. https://en.wikipedia.org/wiki/Differentiated_services -- DSCP.
