@@ -25,7 +25,7 @@
 [English Readme](README.en.md)
 ### *快速设定* :lollipop:
 ```
-服务器: ./server_linux_amd64 -t "127.0.0.1:8388" -l ":4000" -mode fast2  // 转发到服务器的本地8388端口
+服务器: ./server_linux_amd64 -t "服务器IP地址:8388" -l ":4000" -mode fast2     // 转发到服务器的本地8388端口
 客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388" -mode fast2    // 监听客户端的本地8388端口
 注: 服务器端需要有服务监听8388端口
 ```
@@ -261,10 +261,10 @@ type Snmp struct {
 ![donate](donate.png)          
 
 特别感谢: 
-```
-郑H立, 南D风, Li, 七q, 凌J，昶，Les*ables, Ky*n, 噼**啦, *斌, 小苍**, Ken, 
-乔槁, 佳晨, 猪肉佬, lcx, 昊文W, 冰峰, 凡, alex, 海豹SS, 奥J, 张冰, 司成, 武子, 慎 等，名字已做特殊处理。
-```
+> 郑H立, 南东风, Li, 七七, 凌君, 昶，LesMiserables, KyOn, 噼里啪啦, 继斌, 小苍辛苦, Ken, 
+> 乔槁, 佳晨, 猪肉佬, lcx, 昊文, 冰峰, 凡, alex, 海豹SS, 奥姐, 张冰, 司成, 
+> 武子, 慎
+
 好人一生平安!
 
 ### *参考资料* :paperclip:
