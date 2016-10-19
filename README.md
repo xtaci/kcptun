@@ -26,6 +26,9 @@
 <p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">官方下载</a></strong></p>
 
 [English](README.en.md)
+
+-
+
 ### 快速设定
 
 ```
