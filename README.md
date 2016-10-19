@@ -19,7 +19,7 @@
 [19]: https://badges.gitter.im/xtaci/kcptun.svg
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-**[kcp-go](https://github.com/xtaci/kcp-go)协议测试小工具 --> [官方下载地址](https://github.com/xtaci/kcptun/releases/latest)**
+**[kcp-go](https://github.com/xtaci/kcp-go)协议测试小工具 [官方下载](https://github.com/xtaci/kcptun/releases/latest)**
 
 ![kcptun](kcptun.png)
 [English Readme](README.en.md)
