@@ -21,11 +21,9 @@
 [19]: https://badges.gitter.im/xtaci/kcptun.svg
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-
 ![kcptun](kcptun.png)
 <p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">官方下载</a></strong></p>
-
-[English](README.en.md)
+<p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
 
 -
 
