@@ -1,4 +1,4 @@
-# <img src="logo.png" alt="kcptun" height="60px" /> 
+<p align="center"><img src="logo.png" alt="kcptun" height="60px" /></p>
 [![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20] [![Docker][1]][2]
 [1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
 [2]: https://microbadger.com/images/xtaci/kcptun
@@ -19,10 +19,12 @@
 [19]: https://badges.gitter.im/xtaci/kcptun.svg
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-**[kcp-go](https://github.com/xtaci/kcp-go)协议测试小工具 [官方下载](https://github.com/xtaci/kcptun/releases/latest)**
+<p align="center"><b>也许是世界上最快的UDP传输工具</b></p>
 
 ![kcptun](kcptun.png)
-[English Readme](README.en.md)
+<p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">官方下载</a></strong></p>
+
+[English](README.en.md)
 ### 快速设定
 
 ```
