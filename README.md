@@ -22,7 +22,7 @@
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
 ![kcptun](kcptun.png)
-<p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">官方下载</a></strong></p>
+<p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">下载预编译二进制</a></strong></p>
 <p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
 
 -
