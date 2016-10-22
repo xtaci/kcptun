@@ -22,12 +22,13 @@
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
 ![kcptun](kcptun.png)
-<p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">下载预编译二进制</a></strong></p>
+<p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">下载预编译二进制（支持  macOS/Linux/Windows/FreeBSD）</a></strong></p>
 <p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
 
 -
 
 ### 快速设定
+
 客户端、服务器分别下载对应平台的二进制压缩包，并解压，通过下面的命令启动端口转发。
 ```
 服务器: ./server_linux_amd64 -t "服务器IP地址:8388" -l ":4000" -mode fast2     // 转发到服务器的本地8388端口
