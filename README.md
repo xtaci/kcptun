@@ -290,6 +290,13 @@ type Snmp struct {
 
 好人一生平安!
 
+### 相关软件
+
+1. https://github.com/bettermanbao/openwrt-kcptun
+2. https://github.com/EasyPi/openwrt-kcptun
+3. https://github.com/kuoruan/luci-app-kcptun
+4. https://github.com/dfdragon/kcptun_gclient
+
 ### 参考资料
 
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
