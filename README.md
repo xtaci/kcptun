@@ -21,7 +21,7 @@
 [19]: https://badges.gitter.im/xtaci/kcptun.svg
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-![kcptun](kcptun.png)
+<p align="center"><img src="kcptun.png" alt="kcptun" height="200px"/></p>
 <p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">下载预编译二进制（支持  macOS/Linux/Windows/FreeBSD）</a></strong></p>
 <p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
 
