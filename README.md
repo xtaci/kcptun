@@ -205,6 +205,8 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 
 通过参数```-datashard 10 -parityshard 3``` 在两端同时设定。
 
+数据包发送顺序严格遵循: m个datashard紧接n个parityshard，重复。
+
 ### Snappy数据流压缩
 
 > Snappy is a compression/decompression library. It does not aim for maximum
