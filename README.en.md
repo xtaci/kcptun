@@ -28,10 +28,13 @@ A tool for converting tcp stream into kcp+udp stream, :zap: ***[download address
 ***kcptun is based on [kcp-go](https://github.com/xtaci/kcp-go)***   
 
 ### *QuickStart* :lollipop:
+Client, server, respectively, download the corresponding platform binary compression package, and extract, through the following command to start port forwarding.
 ```
-Server Side: ./server_linux_amd64 -t "127.0.0.1:1080" -l ":4000" -mode fast2  // forwarding to local port 1080
-Client Side: ./client_darwin_amd64 -r "SERVERIP:4000" -l ":1080" -mode fast2  // listening on port 1080
+Server: ./server_linux_amd64 -t "SERVER_IP:8388" -l ":4000" -datashard 5 -parityshard 5
+Client: ./client_darwin_amd64 -r "SERVER_IP:4000" -l ":8388" -datashard 5 -parityshard 5
 ```
+The above command can establish 8388/tcp port forwarding (through 4000/udp port), accompanied by 5: 5 forward error correction.
+
 
 ### *Performance* :lollipop:
 <img src="fast.png" alt="fast.com" height="256px" />       
