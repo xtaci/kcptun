@@ -49,6 +49,7 @@
 
 在Mac OS X El Capitan下的帮助输出: 
 ```
+$ ./client_darwin_amd64 -h
 NAME:
    kcptun - client(with SMUX)
 
@@ -81,6 +82,7 @@ GLOBAL OPTIONS:
    --help, -h                    show help
    --version, -v                 print the version
 
+$ ./server_darwin_amd64 -h
 NAME:
    kcptun - server(with SMUX)
 
