@@ -126,7 +126,7 @@ GLOBAL OPTIONS:
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
 
-* 搭配1. fast + FEC(5:5)
+* 搭配1. fast + FEC(5,5)
 * 搭配2. fast2 + FEC(10,3)
 * 搭配3. fast2 + FEC(0,0)
 
