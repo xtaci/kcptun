@@ -134,7 +134,7 @@ GLOBAL OPTIONS:
 
 ![reed-solomon](rs.png)
 
-通过参数```-datashard m -parityshard m``` 在两端同时设定。
+通过参数```-datashard m -parityshard n``` 在两端同时设定。
 
 数据包发送顺序严格遵循: m个datashard紧接n个parityshard，重复。
 
