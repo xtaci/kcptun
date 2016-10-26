@@ -49,7 +49,6 @@
 
 在Mac OS X El Capitan下的帮助输出: 
 ```
-$ ./client_darwin_amd64 -h
 NAME:
    kcptun - client(with SMUX)
 
@@ -57,7 +56,7 @@ USAGE:
    client_darwin_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20160922
+   20161025
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
@@ -82,7 +81,6 @@ GLOBAL OPTIONS:
    --help, -h                    show help
    --version, -v                 print the version
 
-$ ./server_darwin_amd64 -h
 NAME:
    kcptun - server(with SMUX)
 
@@ -90,7 +88,7 @@ USAGE:
    server_darwin_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20160922
+   20161025
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
@@ -114,7 +112,35 @@ GLOBAL OPTIONS:
    --version, -v             print the version
 ```
 
-### 参数调整
+### 内置模式
+
+响应速度:     
+*fast3 > fast2 >* **[fast]** *> normal > default*        
+有效载荷比:     
+*default > normal >* **[fast]** *> fast2 > fast3*       
+中间mode参数比较均衡，总之就是越快，包重传越激进。       
+更高级的 **手动档** 需要理解KCP协议，并通过 **隐藏参数** 调整，例如:
+```
+ -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
+```
+
+* 搭配1. fast + FEC(5:5)
+* 搭配2. fast2 + FEC(10,3)
+* 搭配3. fast2 + FEC(0,0)
+
+### 前向纠错
+
+前向纠错采用Reed Solomon纠删码, 它的基本原理如下： 给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多**容忍m个数据块或者校验块同时丢失**。
+
+![reed-solomon](rs.png)
+
+通过参数```-datashard m -parityshard m``` 在两端同时设定。
+
+数据包发送顺序严格遵循: m个datashard紧接n个parityshard，重复。
+
+注意：为了发挥FEC最佳效果，设置 parityshard/(parity+datashard) > packet loss，比如5/(5+5) > 30%
+
+### 窗口调整
 
 **两端参数必须一致的有**:
 
@@ -126,42 +152,16 @@ GLOBAL OPTIONS:
 
 其余为两边可独立设定的参数
 
-**简易自我调优方法**：
+**简易窗口自我调优方法**：
 
 > 第一步：同时在两端逐步增大client rcvwnd和server sndwnd;        
 > 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
 
 **注意：产生大量重传时，一定是窗口偏大了**
 
-#### 带宽计算公式
-
-```
-在不丢包的情况下，有最大-rcvwnd 个数据包在网络上正在向你传输，以平均数据包大小avgsize计算，在任意时刻，有：     
-
-		network_cap = rcvwnd*avgsize
-
-数据流向你，这个值再除以ping值(rtt)，等于最大带宽使用量。
-
-		max_bandwidth = network_cap/rtt = rcvwnd*avgsize/rtt
-		
-举例，设rcvwnd = 1024, avgsize = 1KB, rtt = 400ms，则：
-
-		max_bandwidth = 1024 * 1KB / 400ms = 2.5MB/s ~= 25Mbps
-		
-（注：以上计算不包括前向纠错的数据量）
-
-前向纠错是最大带宽量的一个固定比例增加：
-
-		max_bandwidth_fec = max_bandwidth*(datashard+parityshard)/datashard
-
-举例，设datashard = 10 , partiyshard = 3，则：
-
-		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth ＝ 1.3 * 25Mbps = 32.5Mbps
-```
-
 ### 安全
 
-无论你上层如何加密，如果```-crypt none```，那么**协议头部**都是**明文**的，建议至少采用```-crypt aes-128```加密。
+无论你上层如何加密，如果```-crypt none```，那么**协议头部**都是**明文**的，建议至少采用```-crypt aes-128```加密，并修改密码。
 
 注意: ```-crypt xor``` 也是不安全的，除非你知道你在做什么。
 
@@ -170,7 +170,32 @@ GLOBAL OPTIONS:
 路由器，手机等嵌入式设备通常对**内存用量敏感**，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
 参考：https://blog.golang.org/go15gc
 
+
+### DSCP
+
+DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998年12月发布了Diff-Serv（Differentiated Service）的QoS分类标准。它在每个数据包IP头部的服务类别TOS标识字节中，利用已使用的**6比特**和未使用的2比特，通过编码值来区分优先级。     
+常用DSCP值可以参考[Wikipedia DSCP](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values)，至于有没有用，完全取决于数据包经过的设备。 
+
+通过 ```-dscp ``` 参数指定dscp值，两端可分别设定。
+
+注意：设置dscp不一定会更好，需要尝试。
+
+### Snappy数据流压缩
+
+> Snappy is a compression/decompression library. It does not aim for maximum
+> compression, or compatibility with any other compression library; instead,
+> it aims for very high speeds and reasonable compression. For instance,
+> compared to the fastest mode of zlib, Snappy is an order of magnitude faster
+> for most inputs, but the resulting compressed files are anywhere from 20% to
+> 100% bigger.
+
+> Reference: http://google.github.io/snappy/
+
+通过参数 ```-nocomp``` 在两端同时设定以关闭压缩。
+> 提示: 关闭压缩可能会降低延迟。
+
 ### 流量控制
+
 **必要性: 针对流量敏感的服务器，做双保险。**      
 
 > 基本原则: SERVER的发送速率不能超过ADSL下行带宽，否则只会浪费您的服务器带宽。  
@@ -187,54 +212,6 @@ iptables -t mangle -A POSTROUTING -o eth0  -j MARK --set-mark 10
 root@kcptun:~#
 ```
 其中eth0为网卡，有些服务器为ens3，有些为p2p1，通过ifconfig查询修改。
-
-### DSCP
-
-DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998年12月发布了Diff-Serv（Differentiated Service）的QoS分类标准。它在每个数据包IP头部的服务类别TOS标识字节中，利用已使用的**6比特**和未使用的2比特，通过编码值来区分优先级。     
-常用DSCP值可以参考[Wikipedia DSCP](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values)，至于有没有用，完全取决于数据包经过的设备。 
-
-通过 ```-dscp ``` 参数指定dscp值，两端可分别设定。
-
-注意：设置dscp不一定会更好，需要尝试。
-
-### 前向纠错
-
-前向纠错采用Reed Solomon纠删码, 它的基本原理如下： 给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多**容忍m个数据块或者校验块同时丢失**。
-
-![reed-solomon](rs.png)
-
-通过参数```-datashard m -parityshard m``` 在两端同时设定。
-
-数据包发送顺序严格遵循: m个datashard紧接n个parityshard，重复。
-
-注意：为了发挥FEC最佳效果，设置 parityshard/(parity+datashard) > packet loss，比如5/(5+5) > 30%
-
-### Snappy数据流压缩
-
-> Snappy is a compression/decompression library. It does not aim for maximum
-> compression, or compatibility with any other compression library; instead,
-> it aims for very high speeds and reasonable compression. For instance,
-> compared to the fastest mode of zlib, Snappy is an order of magnitude faster
-> for most inputs, but the resulting compressed files are anywhere from 20% to
-> 100% bigger.
-
-> Reference: http://google.github.io/snappy/
-
-通过参数 ```-nocomp``` 在两端同时设定以关闭压缩。
-> 提示: 关闭压缩可能会降低延迟。
-
-### 内置模式
-
-响应速度:     
-*fast3 >* **[fast2]** *> fast > normal > default*        
-有效载荷比:     
-*default > normal > fast >* **[fast2]** *> fast3*       
-中间mode参数比较均衡，总之就是越快越浪费带宽，推荐模式 **fast2**        
-更高级的 **手动档** 需要理解KCP协议，并通过 **隐藏参数** 调整，例如:
-```
- -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
-```
-高丢包率的网络建议采用fast2, 低丢包率的网络，建议采用normal。
 
 ### SNMP
 
@@ -264,7 +241,33 @@ type Snmp struct {
 ```
 
 使用```kill -SIGUSR1 pid``` 可以在控制台打印出SNMP信息，通常用于精细调整**当前链路的有效载荷比**。        
-观察```RetransSegs,FastRetransSegs,LostSegs,OutSegs```这几者的数值比例，用于参考调整```-mode manual,fec```的参数。        
+观察```RetransSegs,FastRetransSegs,LostSegs,OutSegs```这几者的数值比例，用于参考调整```-mode manual,fec```的参数。    
+
+#### 带宽计算公式
+
+```
+在不丢包的情况下，有最大-rcvwnd 个数据包在网络上正在向你传输，以平均数据包大小avgsize计算，在任意时刻，有：     
+
+		network_cap = rcvwnd*avgsize
+
+数据流向你，这个值再除以ping值(rtt)，等于最大带宽使用量。
+
+		max_bandwidth = network_cap/rtt = rcvwnd*avgsize/rtt
+		
+举例，设rcvwnd = 1024, avgsize = 1KB, rtt = 400ms，则：
+
+		max_bandwidth = 1024 * 1KB / 400ms = 2.5MB/s ~= 25Mbps
+		
+（注：以上计算不包括前向纠错的数据量）
+
+前向纠错是最大带宽量的一个固定比例增加：
+
+		max_bandwidth_fec = max_bandwidth*(datashard+parityshard)/datashard
+
+举例，设datashard = 10 , partiyshard = 3，则：
+
+		max_bandwidth_fec = max_bandwidth * (10 + 3) /10 = 1.3*max_bandwidth ＝ 1.3 * 25Mbps = 32.5Mbps
+```
 
 ### 故障排除
 
