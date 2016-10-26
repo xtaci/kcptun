@@ -181,7 +181,7 @@ It is able to detect and correct multiple symbol errors. By adding t check symbo
 
 ![reed-solomon](rs.png)
 
-Setting parameters of RS-Code with ```-datashard 10 -parityshard 3``` 
+Setting parameters of RS-Code with ```-datashard m -parityshard n```
 
 ### *Snappy Stream Compression* :lollipop: 
 > Snappy is a compression/decompression library. It does not aim for maximum
