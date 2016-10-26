@@ -36,7 +36,7 @@
 服务器: ./server_linux_amd64 -t "服务器IP地址:8388" -l ":4000" -datashard 5 -parityshard 5
 客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388" -datashard 5 -parityshard 5
 ```
-以上命令可以实现8388/tcp端口的转发（通过4000/udp端口），配以5:5的前向纠错。
+以上命令可以实现8388/tcp端口的转发（通过4000/udp端口），配以5:5的**[RS前向纠错](https://zh.wikipedia.org/wiki/%E9%87%8C%E5%BE%B7-%E6%89%80%E7%BD%97%E9%97%A8%E7%A0%81)**
 
 ### 速度对比
 
