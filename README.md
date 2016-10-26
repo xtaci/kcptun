@@ -207,7 +207,7 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 
 数据包发送顺序严格遵循: m个datashard紧接n个parityshard，重复。
 
-注意：为了发挥FEC最佳效果， parityshard/(parity+datashard) > packet loss，比如5/(5+5) > 30%
+注意：为了发挥FEC最佳效果，设置 parityshard/(parity+datashard) > packet loss，比如5/(5+5) > 30%
 
 ### Snappy数据流压缩
 
