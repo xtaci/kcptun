@@ -25,7 +25,7 @@
 
 <p align="center"><img src="kcptun.png" alt="kcptun" height="200px"/></p>
 <p align="center"><a href="https://github.com/xtaci/kcptun/releases/latest">立即安装</a></p>
-<p align="center"><em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt(x86)</em></p>
+<p align="center"><em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt</em></p>
 <p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
 
 -
@@ -43,7 +43,7 @@
 
 <img src="fast.png" alt="fast.com" height="256px" />       
 * 测速网站: https://fast.com
-* 接入: 100M ADSL
+* 接入速度: 100Mbps
 * WIFI: 5GHz TL-WDR3320
 
 ### 使用方法
