@@ -299,7 +299,7 @@ type Snmp struct {
 
 > 郑H立, 南东风, Li, 七七, 凌君, 昶，LesMiserables, KyOn, 噼里啪啦, 继斌, 小苍辛苦, **Ken**, 
 > 乔槁, 佳晨, 猪肉佬, lcx, 昊文, 冰峰, 凡, alex, **海豹叔叔**, 奥姐, 张冰, 司成, 
-> 武子, **慎**，Alex43211，**Coxxs**，荣，NeroNg，吴骁
+> 武子, **慎**，Alex43211，**Coxxs**，荣，NeroNg，吴骁，定一
 
 好人一生平安!
 
@@ -325,3 +325,4 @@ type Snmp struct {
 11. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
 12. http://http2.github.io/ -- What is HTTP/2?
 13. http://www.lartc.org/LARTC-zh_CN.GB2312.pdf -- Linux Advanced Routing & Traffic Control
+14. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
