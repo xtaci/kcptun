@@ -30,10 +30,10 @@ A tool for converting tcp stream into kcp+udp stream, :zap: ***[download address
 ### *QuickStart* :lollipop:
 Client, server, respectively, download the corresponding platform binary compression package, and extract, through the following command to start port forwarding.
 ```
-Server: ./server_linux_amd64 -t "SERVER_IP:8388" -l ":4000" -datashard 5 -parityshard 5
-Client: ./client_darwin_amd64 -r "SERVER_IP:4000" -l ":8388" -datashard 5 -parityshard 5
+Server: ./server_linux_amd64 -t "SERVER_IP:8388" -l ":4000"
+Client: ./client_darwin_amd64 -r "SERVER_IP:4000" -l ":8388"
 ```
-The above command can establish 8388/tcp port forwarding (through 4000/udp port), accompanied by 5: 5 forward error correction.
+The above command can establish 8388/tcp port forwarding (through 4000/udp port).
 
 
 ### *Performance* :lollipop:
