@@ -33,10 +33,10 @@
 
 客户端、服务器分别**下载**对应平台的二进制压缩包，并**解压**，通过下面的命令**启动**端口转发。
 ```
-服务器: ./server_linux_amd64 -t "服务器IP地址:8388" -l ":4000" -datashard 5 -parityshard 5
-客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388" -datashard 5 -parityshard 5
+服务器: ./server_linux_amd64 -t "服务器IP地址:8388" -l ":4000"
+客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388"
 ```
-以上命令可以实现8388/tcp端口的转发（通过4000/udp端口），配以5:5的**[Reed-Solomon纠删码](https://en.wikipedia.org/wiki/Erasure_code)**
+以上命令可以实现8388/tcp端口的转发（通过4000/udp端口）。
 
 ### 速度对比
 
@@ -47,7 +47,7 @@
 
 ### 使用方法
 
-在Mac OS X El Capitan下的帮助输出: 
+在Mac OS X El Capitan下的帮助输出，注意默认值: 
 ```
 $ ./client_darwin_amd64 -h
 NAME:
