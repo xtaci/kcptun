@@ -1,5 +1,5 @@
 <p align="center"><img src="logo.png" alt="kcptun" height="60px" /></p>
-<p align="center"><b>也许是世界上最快的UDP传输工具</b></p>
+<p align="center"><em>也许是世界上最快的UDP传输工具</em></p>
 
 -
 
@@ -24,7 +24,8 @@
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
 <p align="center"><img src="kcptun.png" alt="kcptun" height="200px"/></p>
-<p align="center"><strong><a href="https://github.com/xtaci/kcptun/releases/latest">下载预编译二进制（支持  macOS/Linux/Windows/FreeBSD/ARM）</a></strong></p>
+<p align="center"><a href="https://github.com/xtaci/kcptun/releases/latest">立即安装</a></p>
+<p align="center"><em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt(x86)</em></p>
 <p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
 
 -
@@ -292,7 +293,8 @@ type Snmp struct {
 
 ![donate](donate.png)          
 
-特别感谢: 
+### 特别鸣谢
+
 > 郑H立, 南东风, Li, 七七, 凌君, 昶，LesMiserables, KyOn, 噼里啪啦, 继斌, 小苍辛苦, **Ken**, 
 > 乔槁, 佳晨, 猪肉佬, lcx, 昊文, 冰峰, 凡, alex, **海豹叔叔**, 奥姐, 张冰, 司成, 
 > 武子, **慎**，Alex43211，**Coxxs**，荣，NeroNg，吴骁
