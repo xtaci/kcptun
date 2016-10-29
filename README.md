@@ -170,6 +170,23 @@ GLOBAL OPTIONS:
 
 注意: ```-crypt xor``` 也是不安全的，除非你知道你在做什么。 
 
+附加密速度Benchmark：
+
+```
+BenchmarkAES128-4      	  200000	     11182 ns/op
+BenchmarkAES192-4      	  200000	     12699 ns/op
+BenchmarkAES256-4      	  100000	     13757 ns/op
+BenchmarkTEA-4         	   50000	     26441 ns/op
+BenchmarkSimpleXOR-4   	 3000000	       441 ns/op
+BenchmarkBlowfish-4    	   30000	     48036 ns/op
+BenchmarkNone-4        	20000000	       106 ns/op
+BenchmarkCast5-4       	   20000	     60222 ns/op
+BenchmarkTripleDES-4   	    2000	    878759 ns/op
+BenchmarkTwofish-4     	   20000	     68501 ns/op
+BenchmarkXTEA-4        	   20000	     77417 ns/op
+BenchmarkSalsa20-4     	  300000	      4998 ns/op
+```
+
 ### 内存控制
 
 路由器，手机等嵌入式设备通常对**内存用量敏感**，通过调节环境变量GOGC（例如GOGC=20)后启动client，可以降低内存使用。      
