@@ -134,6 +134,8 @@ GLOBAL OPTIONS:
 * 搭配2. fast2 + FEC(10,3)
 * 搭配3. fast2 + FEC(0,0)
 
+默认profile参考: https://github.com/xtaci/kcptun/blob/master/client/main.go#L248
+
 ### 前向纠错
 
 前向纠错采用Reed Solomon纠删码, 它的基本原理如下： 给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多**容忍m个数据块或者校验块同时丢失**。
