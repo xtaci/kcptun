@@ -114,6 +114,9 @@ GLOBAL OPTIONS:
    --help, -h                show help
    --version, -v             print the version
 ```
+#### 参数分层图
+
+<p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
 ### 内置模式
 
