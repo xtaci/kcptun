@@ -109,6 +109,9 @@ GLOBAL OPTIONS:
    --help, -h                show help
    --version, -v             print the version
 ```
+#### *Parameters by Layers* :lollipop:   
+
+<p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
 ### *Applications* :lollipop:   
 1. Real-time gaming.
