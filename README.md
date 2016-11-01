@@ -114,7 +114,7 @@ GLOBAL OPTIONS:
    --help, -h                show help
    --version, -v             print the version
 ```
-#### 参数分层图
+#### 分层参数图
 
 <p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
@@ -319,7 +319,7 @@ type Snmp struct {
 
 > 郑H立, 南东风, Li, 七七, 凌君, 昶，LesMiserables, KyOn, 噼里啪啦, 继斌, 小苍辛苦, **Ken**, 
 > 乔槁, 佳晨, 猪肉佬, lcx, 昊文, 冰峰, 凡, alex, **海豹叔叔**, 奥姐, 张冰, 司成, 
-> 武子, **慎**，Alex43211，**Coxxs**，荣，NeroNg，吴骁，定一
+> 武子, **慎**，Alex43211，**Coxxs**，荣，NeroNg，吴骁，定一，我不是林J
 
 好人一生平安!
 
