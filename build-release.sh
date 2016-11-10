@@ -12,7 +12,7 @@ fi
 
 VERSION=`date -u +%Y%m%d`
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
-GCFLAGS="-B"
+GCFLAGS=""
 
 OSES=(linux darwin windows freebsd)
 ARCHS=(amd64 386)
