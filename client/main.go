@@ -92,6 +92,11 @@ func main() {
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
 		cli.StringFlag{
+			Name: "targetaddr, ta",
+			Value: "-1",
+			Usage: "Target conn address ",
+		},
+		cli.StringFlag{
 			Name:  "localaddr,l",
 			Value: ":12948",
 			Usage: "local listen address",
@@ -209,6 +214,7 @@ func main() {
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
+		config.TargetAddr = c.String("targetaddr")
 		config.LocalAddr = c.String("localaddr")
 		config.RemoteAddr = c.String("remoteaddr")
 		config.Key = c.String("key")
@@ -365,8 +371,18 @@ func main() {
 		for k := range muxes {
 			sess, err := createConn()
 			checkError(err)
+			//Check the ta flags
+			if config.TargetAddr != "-1" {
+				pTellTargetAddr, err := sess.OpenStream()
+				if err != nil {
+					log.Println("Can not open stream:", err)
+				} else {
+					pTellTargetAddr.Write([]byte(config.TargetAddr)) //Write config.TargetAddr to remote
+				}
+			}
 			muxes[k].session = sess
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+
 		}
 
 		chScavenger := make(chan *smux.Session, 128)

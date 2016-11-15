@@ -63,18 +63,35 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		return
 	}
 	defer mux.Close()
+
+	target := config.Target
+	if config.ClientKnowTheTargetAddr != "-1" {
+		ttaBuf := make([]byte, 1024)
+		p1, err := mux.AcceptStream()
+		ttan, err := p1.Read(ttaBuf)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		log.Println(string(ttaBuf))
+		log.Println("ttan was: ", ttan)
+		target = string(ttaBuf)
+	}
+
 	for {
 		p1, err := mux.AcceptStream()
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		p2, err := net.DialTimeout("tcp", config.Target, 5*time.Second)
+
+		p2, err := net.DialTimeout("tcp", target, 5 * time.Second)
 		if err != nil {
 			p1.Close()
 			log.Println(err)
 			continue
 		}
+		log.Println("Success dial with target:", target)
 		if err := p2.(*net.TCPConn).SetReadBuffer(config.SockBuf); err != nil {
 			log.Println("TCP SetReadBuffer:", err)
 		}
@@ -93,10 +110,14 @@ func handleClient(p1, p2 io.ReadWriteCloser) {
 
 	// start tunnel
 	p1die := make(chan struct{})
-	go func() { io.Copy(p1, p2); close(p1die) }()
+	go func() {
+		io.Copy(p1, p2); close(p1die)
+	}()
 
 	p2die := make(chan struct{})
-	go func() { io.Copy(p2, p1); close(p2die) }()
+	go func() {
+		io.Copy(p2, p1); close(p2die)
+	}()
 
 	// wait for tunnel termination
 	select {
@@ -123,6 +144,11 @@ func main() {
 	myApp.Usage = "server(with SMUX)"
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name: "clientknowthetargetaddr, cktta",
+			Value: "-1",
+			Usage: "Client Know the target addr mode",
+		},
 		cli.StringFlag{
 			Name:  "listen,l",
 			Value: ":29900",
@@ -260,7 +286,7 @@ func main() {
 
 		// log redirect
 		if config.Log != "" {
-			f, err := os.OpenFile(config.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			f, err := os.OpenFile(config.Log, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 			checkError(err)
 			defer f.Close()
 			log.SetOutput(f)

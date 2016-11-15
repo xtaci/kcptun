@@ -7,6 +7,7 @@ import (
 
 // Config for client
 type Config struct {
+	TargetAddr   string `json:"targetaddr"`
 	LocalAddr    string `json:"localaddr"`
 	RemoteAddr   string `json:"remoteaddr"`
 	Key          string `json:"key"`

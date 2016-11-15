@@ -7,6 +7,7 @@ import (
 
 // Config for server
 type Config struct {
+	ClientKnowTheTargetAddr string `json:"clientknowthetargetaddr"`
 	Listen       string `json:"listen"`
 	Target       string `json:"target"`
 	Key          string `json:"key"`
