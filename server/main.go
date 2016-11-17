@@ -84,16 +84,18 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			ttan <- ttaBuf
 		}()
 
+		var ttbyte []byte
 		select {
-		case ttan := <- ttan:
-			log.Println("Got ttan:", string(ttan))
+		case res := <- ttan:
+			log.Println("Got ttan:", string(res))
+		        ttbyte = res
 		case <- time.After( 2 * time.Second):
 			log.Println("Read ttan timeout:")
 			return
 		}
 		log.Println(string(ttaBuf))
-		log.Println("ttan was: ", ttan)
-		target = string(ttaBuf)
+		log.Println("ttan was: ", string(ttbyte))
+		target = string(ttbyte)
 		if strings.Contains(target, ":") == false {
 			log.Println("Target flags not right:", ttaBuf)
 			return

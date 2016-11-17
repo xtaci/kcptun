@@ -372,26 +372,15 @@ func main() {
 		}
 
 		numconn := uint16(config.Conn)
-		muxes := make([]struct {
-			session *smux.Session
-			ttl     time.Time
-		}, numconn)
+		type MuxStruct struct {
+				session *smux.Session
+				ttl     time.Time
+		}
+		muxes := make([]MuxStruct, numconn)
 
 		for k := range muxes {
-			sess, err := createConn()
-			checkError(err)
-			//Check the ta flags
-			if config.TargetAddr != "-1" {
-				pTellTargetAddr, err := sess.OpenStream()
-				if err != nil {
-					log.Println("Can not open stream:", err)
-				} else {
-					pTellTargetAddr.Write([]byte(config.TargetAddr)) //Write config.TargetAddr to remote
-				}
-			}
-			muxes[k].session = sess
+			muxes[k].session = waitConn()
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-
 		}
 
 		chScavenger := make(chan *smux.Session, 128)
@@ -406,22 +395,30 @@ func main() {
 				log.Println("TCP SetWriteBuffer:", err)
 			}
 			checkError(err)
-			idx := rr % numconn
 
 		OPEN_P2:
+
+			idx := rand.Int31n(int32(numconn))
+			log.Println("Got rand idx:", idx)
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
 				chScavenger <- muxes[idx].session
-				muxes[idx].session = waitConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				go func(idx int32, muxes []MuxStruct) {
+					muxes[idx].session.Close()
+					muxes[idx].session = waitConn()
+					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				} (idx, muxes)
 			}
 
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // mux failure
 				chScavenger <- muxes[idx].session
-				muxes[idx].session = waitConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				go func(idx int32, muxes []MuxStruct) {
+					muxes[idx].session.Close()
+					muxes[idx].session = waitConn()
+					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				} (idx, muxes)
 				goto OPEN_P2
 			}
 			go handleClient(p1, p2)
