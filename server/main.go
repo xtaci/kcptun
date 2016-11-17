@@ -15,6 +15,7 @@ import (
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
+	"gopkg.in/fatih/pool.v2"
 )
 
 var (
@@ -77,7 +78,26 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		log.Println("ttan was: ", ttan)
 		target = string(ttaBuf)
 	}
+	factory    := func() (net.Conn, error) {
+		conn, err := net.DialTimeout("tcp", target, 5 * time.Second)
+		if err != nil {
+			log.Println("Create tcp conn failed: ", err)
+			return nil, err
+		}
+		return conn, err
+	}
 
+	// create a new channel based pool with an initial capacity of 5 and maximum
+	// capacity of 15. The factory will create 3 initial connections and put it
+	// into the pool.
+	p, err := pool.NewChannelPool(2, 128, factory)
+
+	// now you can get a connection from the pool, if there is no connection
+	// available it will create a new one via the factory function.
+
+	// do something with conn and put it back to the pool by closing the connection
+	// (this doesn't close the underlying connection instead it's putting it back
+	// to the pool).
 	for {
 		p1, err := mux.AcceptStream()
 		if err != nil {
@@ -85,12 +105,14 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			return
 		}
 
-		p2, err := net.DialTimeout("tcp", target, 5 * time.Second)
+		//p2, err := net.DialTimeout("tcp", target, 5 * time.Second)
+		p2c, err := p.Get()
 		if err != nil {
 			p1.Close()
 			log.Println(err)
 			continue
 		}
+		p2 := p2c.(*pool.PoolConn).Conn
 		log.Println("Success dial with target:", target)
 		if err := p2.(*net.TCPConn).SetReadBuffer(config.SockBuf); err != nil {
 			log.Println("TCP SetReadBuffer:", err)
