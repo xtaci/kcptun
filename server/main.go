@@ -308,6 +308,7 @@ func main() {
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
+		config.ClientKnowTheTargetAddr = c.String("clientknowthetargetaddr")
 		config.Listen = c.String("listen")
 		config.Target = c.String("target")
 		config.Key = c.String("key")
