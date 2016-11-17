@@ -16,6 +16,7 @@ import (
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
 	"gopkg.in/fatih/pool.v2"
+	"strings"
 )
 
 var (
@@ -69,14 +70,34 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 	if config.ClientKnowTheTargetAddr != "-1" {
 		ttaBuf := make([]byte, 1024)
 		p1, err := mux.AcceptStream()
-		ttan, err := p1.Read(ttaBuf)
 		if err != nil {
 			log.Println(err)
+			return
+		}
+		ttan := make(chan []byte, 1)
+		go func () {
+			_, err := p1.Read(ttaBuf)
+			if err != nil {
+				log.Println("Read ttaBuf got error", err)
+				return
+			}
+			ttan <- ttaBuf
+		}()
+
+		select {
+		case ttan := <- ttan:
+			log.Println("Got ttan:", string(ttan))
+		case <- time.After( 2 * time.Second):
+			log.Println("Read ttan timeout:")
 			return
 		}
 		log.Println(string(ttaBuf))
 		log.Println("ttan was: ", ttan)
 		target = string(ttaBuf)
+		if strings.Contains(target, ":") == false {
+			log.Println("Target flags not right:", ttaBuf)
+			return
+		}
 	}
 	factory    := func() (net.Conn, error) {
 		conn, err := net.DialTimeout("tcp", target, 5 * time.Second)
@@ -91,6 +112,10 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 	// capacity of 15. The factory will create 3 initial connections and put it
 	// into the pool.
 	p, err := pool.NewChannelPool(2, 128, factory)
+	if err != nil {
+		log.Println("Can not create conn pool")
+		return
+	}
 
 	// now you can get a connection from the pool, if there is no connection
 	// available it will create a new one via the factory function.
@@ -108,9 +133,11 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		//p2, err := net.DialTimeout("tcp", target, 5 * time.Second)
 		p2c, err := p.Get()
 		if err != nil {
-			p1.Close()
+			if pc, ok := p2c.(*pool.PoolConn); ok == true {
+				pc.MarkUnusable()
+			}
 			log.Println(err)
-			continue
+			return
 		}
 		p2 := p2c.(*pool.PoolConn).Conn
 		log.Println("Success dial with target:", target)

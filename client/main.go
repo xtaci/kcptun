@@ -355,6 +355,15 @@ func main() {
 		waitConn := func() *smux.Session {
 			for {
 				if session, err := createConn(); err == nil {
+					//Check the ta flags
+					if config.TargetAddr != "-1" {
+						pTellTargetAddr, err := session.OpenStream()
+						if err != nil {
+							log.Println("Can not open stream:", err)
+						} else {
+							pTellTargetAddr.Write([]byte(config.TargetAddr)) //Write config.TargetAddr to remote
+						}
+					}
 					return session
 				} else {
 					time.Sleep(time.Second)
