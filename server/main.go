@@ -75,14 +75,14 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			return
 		}
 		ttan := make(chan []byte, 1)
-		go func () {
+		go func (p1 *smux.Stream) {
 			_, err := p1.Read(ttaBuf)
 			if err != nil {
 				log.Println("Read ttaBuf got error", err)
 				return
 			}
 			ttan <- ttaBuf
-		}()
+		}(p1)
 
 		var ttbyte []byte
 		select {
