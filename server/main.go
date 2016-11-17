@@ -17,6 +17,7 @@ import (
 	"github.com/xtaci/smux"
 	"gopkg.in/fatih/pool.v2"
 	"strings"
+	"github.com/google/gops/agent"
 )
 
 var (
@@ -185,6 +186,9 @@ func checkError(err error) {
 }
 
 func main() {
+	if err := agent.Start(); err != nil {
+		log.Fatal(err)
+	}
 	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging

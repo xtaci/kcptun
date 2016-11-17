@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
+	"github.com/google/gops/agent"
 	"github.com/klauspost/compress/snappy"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -81,6 +82,9 @@ func checkError(err error) {
 }
 
 func main() {
+	if err := agent.Start(); err != nil {
+		log.Fatal(err)
+	}
 	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
@@ -92,7 +96,7 @@ func main() {
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name: "targetaddr, ta",
+			Name:  "targetaddr, ta",
 			Value: "-1",
 			Usage: "Target conn address ",
 		},
@@ -373,8 +377,8 @@ func main() {
 
 		numconn := uint16(config.Conn)
 		type MuxStruct struct {
-				session *smux.Session
-				ttl     time.Time
+			session *smux.Session
+			ttl     time.Time
 		}
 		muxes := make([]MuxStruct, numconn)
 
@@ -403,22 +407,18 @@ func main() {
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
 				chScavenger <- muxes[idx].session
-				go func(idx int32, muxes []MuxStruct) {
-					muxes[idx].session.Close()
-					muxes[idx].session = waitConn()
-					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				} (idx, muxes)
+				muxes[idx].session.Close()
+				muxes[idx].session = waitConn()
+				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
 
 			// do session open
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // mux failure
 				chScavenger <- muxes[idx].session
-				go func(idx int32, muxes []MuxStruct) {
-					muxes[idx].session.Close()
-					muxes[idx].session = waitConn()
-					muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				} (idx, muxes)
+				muxes[idx].session.Close()
+				muxes[idx].session = waitConn()
+				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				goto OPEN_P2
 			}
 			go handleClient(p1, p2)
