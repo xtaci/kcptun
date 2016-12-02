@@ -44,7 +44,11 @@ $MD5 kcptun-linux-arm-$VERSION.tar.gz
 #MIPS32LE
 env CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_linux_mipsle github.com/xtaci/kcptun/client
 env CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_linux_mipsle github.com/xtaci/kcptun/server
+env CGO_ENABLED=0 GOOS=linux GOARCH=mips go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_linux_mips github.com/xtaci/kcptun/client
+env CGO_ENABLED=0 GOOS=linux GOARCH=mips go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_linux_mips github.com/xtaci/kcptun/server
 
-if $UPX; then upx -9 client_linux_mipsle server_linux_mipsle;fi
+if $UPX; then upx -9 client_linux_mips* server_linux_mips*;fi
 tar -zcf kcptun-linux-mipsle-$VERSION.tar.gz client_linux_mipsle server_linux_mipsle
+tar -zcf kcptun-linux-mips-$VERSION.tar.gz client_linux_mips server_linux_mips
 $MD5 kcptun-linux-mipsle-$VERSION.tar.gz
+$MD5 kcptun-linux-mips-$VERSION.tar.gz
