@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
+	"github.com/google/gops/agent"
 	"github.com/klauspost/compress/snappy"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -81,6 +82,9 @@ func checkError(err error) {
 }
 
 func main() {
+	if err := agent.Start(); err != nil {
+		log.Fatal(err)
+	}
 	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
@@ -91,6 +95,11 @@ func main() {
 	myApp.Usage = "client(with SMUX)"
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "targetaddr, ta",
+			Value: "-1",
+			Usage: "Target conn address ",
+		},
 		cli.StringFlag{
 			Name:  "localaddr,l",
 			Value: ":12948",
@@ -209,6 +218,7 @@ func main() {
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
+		config.TargetAddr = c.String("targetaddr")
 		config.LocalAddr = c.String("localaddr")
 		config.RemoteAddr = c.String("remoteaddr")
 		config.Key = c.String("key")
@@ -349,6 +359,15 @@ func main() {
 		waitConn := func() *smux.Session {
 			for {
 				if session, err := createConn(); err == nil {
+					//Check the ta flags
+					if config.TargetAddr != "-1" {
+						pTellTargetAddr, err := session.OpenStream()
+						if err != nil {
+							log.Println("Can not open stream:", err)
+						} else {
+							pTellTargetAddr.Write([]byte(config.TargetAddr)) //Write config.TargetAddr to remote
+						}
+					}
 					return session
 				} else {
 					time.Sleep(time.Second)
@@ -357,15 +376,14 @@ func main() {
 		}
 
 		numconn := uint16(config.Conn)
-		muxes := make([]struct {
+		type MuxStruct struct {
 			session *smux.Session
 			ttl     time.Time
-		}, numconn)
+		}
+		muxes := make([]MuxStruct, numconn)
 
 		for k := range muxes {
-			sess, err := createConn()
-			checkError(err)
-			muxes[k].session = sess
+			muxes[k].session = waitConn()
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 		}
 
@@ -381,12 +399,15 @@ func main() {
 				log.Println("TCP SetWriteBuffer:", err)
 			}
 			checkError(err)
-			idx := rr % numconn
 
 		OPEN_P2:
+
+			idx := rand.Int31n(int32(numconn))
+			log.Println("Got rand idx:", idx)
 			// do auto expiration
 			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
 				chScavenger <- muxes[idx].session
+				muxes[idx].session.Close()
 				muxes[idx].session = waitConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
@@ -395,6 +416,7 @@ func main() {
 			p2, err := muxes[idx].session.OpenStream()
 			if err != nil { // mux failure
 				chScavenger <- muxes[idx].session
+				muxes[idx].session.Close()
 				muxes[idx].session = waitConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				goto OPEN_P2

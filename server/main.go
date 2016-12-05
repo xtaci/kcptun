@@ -15,6 +15,9 @@ import (
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
+	"gopkg.in/fatih/pool.v2"
+	"strings"
+	"github.com/google/gops/agent"
 )
 
 var (
@@ -63,18 +66,84 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		return
 	}
 	defer mux.Close()
+
+	target := config.Target
+	if config.ClientKnowTheTargetAddr != "-1" {
+		ttaBuf := make([]byte, 1024)
+		p1, err := mux.AcceptStream()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		ttan := make(chan []byte, 1)
+		go func (p1 *smux.Stream) {
+			_, err := p1.Read(ttaBuf)
+			if err != nil {
+				log.Println("Read ttaBuf got error", err)
+				return
+			}
+			ttan <- ttaBuf
+		}(p1)
+
+		var ttbyte []byte
+		select {
+		case res := <- ttan:
+			log.Println("Got ttan:", string(res))
+		        ttbyte = res
+		case <- time.After( 2 * time.Second):
+			log.Println("Read ttan timeout:")
+			return
+		}
+		log.Println(string(ttaBuf))
+		log.Println("ttan was: ", string(ttbyte))
+		target = string(ttbyte)
+		if strings.Contains(target, ":") == false {
+			log.Println("Target flags not right:", ttaBuf)
+			return
+		}
+	}
+	factory    := func() (net.Conn, error) {
+		conn, err := net.DialTimeout("tcp", target, 5 * time.Second)
+		if err != nil {
+			log.Println("Create tcp conn failed: ", err)
+			return nil, err
+		}
+		return conn, err
+	}
+
+	// create a new channel based pool with an initial capacity of 5 and maximum
+	// capacity of 15. The factory will create 3 initial connections and put it
+	// into the pool.
+	p, err := pool.NewChannelPool(2, 128, factory)
+	if err != nil {
+		log.Println("Can not create conn pool")
+		return
+	}
+
+	// now you can get a connection from the pool, if there is no connection
+	// available it will create a new one via the factory function.
+
+	// do something with conn and put it back to the pool by closing the connection
+	// (this doesn't close the underlying connection instead it's putting it back
+	// to the pool).
 	for {
 		p1, err := mux.AcceptStream()
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		p2, err := net.DialTimeout("tcp", config.Target, 5*time.Second)
+
+		//p2, err := net.DialTimeout("tcp", target, 5 * time.Second)
+		p2c, err := p.Get()
 		if err != nil {
-			p1.Close()
+			if pc, ok := p2c.(*pool.PoolConn); ok == true {
+				pc.MarkUnusable()
+			}
 			log.Println(err)
-			continue
+			return
 		}
+		p2 := p2c.(*pool.PoolConn).Conn
+		log.Println("Success dial with target:", target)
 		if err := p2.(*net.TCPConn).SetReadBuffer(config.SockBuf); err != nil {
 			log.Println("TCP SetReadBuffer:", err)
 		}
@@ -93,10 +162,14 @@ func handleClient(p1, p2 io.ReadWriteCloser) {
 
 	// start tunnel
 	p1die := make(chan struct{})
-	go func() { io.Copy(p1, p2); close(p1die) }()
+	go func() {
+		io.Copy(p1, p2); close(p1die)
+	}()
 
 	p2die := make(chan struct{})
-	go func() { io.Copy(p2, p1); close(p2die) }()
+	go func() {
+		io.Copy(p2, p1); close(p2die)
+	}()
 
 	// wait for tunnel termination
 	select {
@@ -113,6 +186,9 @@ func checkError(err error) {
 }
 
 func main() {
+	if err := agent.Start(); err != nil {
+		log.Fatal(err)
+	}
 	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
@@ -123,6 +199,11 @@ func main() {
 	myApp.Usage = "server(with SMUX)"
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name: "clientknowthetargetaddr, cktta",
+			Value: "-1",
+			Usage: "Client Know the target addr mode",
+		},
 		cli.StringFlag{
 			Name:  "listen,l",
 			Value: ":29900",
@@ -231,6 +312,7 @@ func main() {
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
+		config.ClientKnowTheTargetAddr = c.String("clientknowthetargetaddr")
 		config.Listen = c.String("listen")
 		config.Target = c.String("target")
 		config.Key = c.String("key")
@@ -260,7 +342,7 @@ func main() {
 
 		// log redirect
 		if config.Log != "" {
-			f, err := os.OpenFile(config.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			f, err := os.OpenFile(config.Log, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 			checkError(err)
 			defer f.Close()
 			log.SetOutput(f)
