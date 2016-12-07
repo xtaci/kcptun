@@ -53,7 +53,12 @@ func newCompStream(conn net.Conn) *compStream {
 	return c
 }
 
-func handleClient(p1, p2 io.ReadWriteCloser) {
+func handleClient(sess *smux.Session, p1 io.ReadWriteCloser) {
+	p2, err := sess.OpenStream()
+	if err != nil {
+		return
+	}
+
 	log.Println("stream opened")
 	defer log.Println("stream closed")
 	defer p1.Close()
@@ -383,23 +388,14 @@ func main() {
 			checkError(err)
 			idx := rr % numconn
 
-		OPEN_P2:
-			// do auto expiration
-			if config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl) {
+			// do auto expiration && reconnection
+			if muxes[idx].session.IsClosed() || (config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl)) {
 				chScavenger <- muxes[idx].session
 				muxes[idx].session = waitConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
 
-			// do session open
-			p2, err := muxes[idx].session.OpenStream()
-			if err != nil { // mux failure
-				chScavenger <- muxes[idx].session
-				muxes[idx].session = waitConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				goto OPEN_P2
-			}
-			go handleClient(p1, p2)
+			go handleClient(muxes[idx].session, p1)
 			rr++
 		}
 	}
