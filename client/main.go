@@ -379,6 +379,9 @@ func main() {
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
+			if err != nil {
+				log.Fatalln(err)
+			}
 			if err := p1.SetReadBuffer(config.SockBuf); err != nil {
 				log.Println("TCP SetReadBuffer:", err)
 			}
