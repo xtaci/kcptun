@@ -27,6 +27,8 @@ type Config struct {
 	SockBuf      int    `json:"sockbuf"`
 	KeepAlive    int    `json:"keepalive"`
 	Log          string `json:"log"`
+	SnmpLog      string `json:"snmplog"`
+	SnmpPeriod   int    `json:"snmpperiod"`
 }
 
 func parseJSONConfig(config *Config, path string) error {
