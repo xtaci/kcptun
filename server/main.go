@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha1"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -389,11 +390,11 @@ func snmpLogger(path string, interval int) {
 			w := csv.NewWriter(f)
 			// write header in empty file
 			if stat, err := f.Stat(); err == nil && stat.Size() == 0 {
-				if err := w.Write(kcp.DefaultSnmp.Header()); err != nil {
+				if err := w.Write(append([]string{"Unix"}, kcp.DefaultSnmp.Header()...)); err != nil {
 					log.Println(err)
 				}
 			}
-			if err := w.Write(kcp.DefaultSnmp.ToSlice()); err != nil {
+			if err := w.Write(append([]string{fmt.Sprint(time.Now().Unix())}, kcp.DefaultSnmp.ToSlice()...)); err != nil {
 				log.Println(err)
 			}
 			w.Flush()
