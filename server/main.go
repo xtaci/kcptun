@@ -373,7 +373,7 @@ func main() {
 }
 
 func snmpLogger(path string, interval int) {
-	if path == "" && interval != 0 {
+	if path == "" || interval == 0 {
 		return
 	}
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
