@@ -397,6 +397,7 @@ func snmpLogger(path string, interval int) {
 			if err := w.Write(append([]string{fmt.Sprint(time.Now().Unix())}, kcp.DefaultSnmp.ToSlice()...)); err != nil {
 				log.Println(err)
 			}
+			kcp.DefaultSnmp.Reset()
 			w.Flush()
 			f.Close()
 		}
