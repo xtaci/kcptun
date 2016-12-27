@@ -146,7 +146,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "rcvwnd",
-			Value: 1024,
+			Value: 512,
 			Usage: "set receive window size(num of packets)",
 		},
 		cli.IntFlag{
