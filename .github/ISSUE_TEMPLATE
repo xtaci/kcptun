@@ -1,3 +1,15 @@
+问问题前先搜索ISSUE，并搞清楚下面的问题:
+
+1. 检查 ```-key xxx``` 至少三遍, ***保证***两边一致。
+2. 保证```-nocomp, -datashard, -parityshard,  -key, -crypt```两边一致。
+3. 是否在服务器端，正确设定了转发的目标服务器地址 ***--target***。
+4. 如果第3条不确定，尝试在服务器上telnet target port试试。
+5. 防火墙是否关闭了UDP通信。
+6. 两端的版本是否一致？
+7. 是不是最新版本？
+8. 两端分别是什么操作系统？
+9. 两端的输出日志是什么？
+
 Before firing issue, make sure you figured out the following common questions.
 
 PLEASE DO SEARCH FIRST.
@@ -11,3 +23,5 @@ PLEASE DO SEARCH FIRST.
 7. Are you using the **latest release**?
 8. Which **OS** do you use?
 9. Which end for this issue related to, **client or server**?
+
+
