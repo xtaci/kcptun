@@ -13,7 +13,7 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/klauspost/compress/snappy"
+	"github.com/golang/snappy"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
