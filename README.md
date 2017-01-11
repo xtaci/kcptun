@@ -118,13 +118,23 @@ GLOBAL OPTIONS:
 
 <p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
+**两端参数必须一致的有**:
+
+* datashard --前向纠错
+* parityshard --前向纠错
+* nocomp --压缩
+* key --密钥
+* crypt --加密算法
+
+其余为两边可独立设定的参数
+
 ### 内置模式
 
 响应速度:     
 *fast3 > fast2 >* **[fast]** *> normal > default*        
 有效载荷比:     
 *default > normal >* **[fast]** *> fast2 > fast3*       
-中间mode参数比较均衡，总之就是越快，包重传越激进。       
+中间-mode参数比较均衡，总之就是越快，包重传越激进。       
 更高级的 **手动档** 需要理解KCP协议，并通过 **隐藏参数** 调整，例如:
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
@@ -149,21 +159,10 @@ GLOBAL OPTIONS:
 注意：为了发挥FEC最佳效果，设置 parityshard/(parity+datashard) > packet loss，比如5/(5+5) > 30%
 
 ### 窗口调整
-
-**两端参数必须一致的有**:
-
-* datashard --前向纠错
-* parityshard --前向纠错
-* nocomp --压缩
-* key --密钥
-* crypt --加密算法
-
-其余为两边可独立设定的参数
-
 **简易窗口自我调优方法**：
 
 > 第一步：同时在两端逐步增大client rcvwnd和server sndwnd;        
-> 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）接近物理带宽则停止，否则跳转到第一步。
+> 第二步：尝试下载，观察如果带宽利用率（服务器＋客户端两端都要观察）到达预期则停止，否则跳转到第一步。
 
 **注意：产生大量重传时，一定是窗口偏大了**
 
@@ -217,6 +216,8 @@ DSCP差分服务代码点（Differentiated Services Code Point），IETF于1998�
 > 100% bigger.
 
 > Reference: http://google.github.io/snappy/
+
+压缩对于非加密，非压缩的数据能降低传输数据量，比如点对点的HTTP数据转发。
 
 通过参数 ```-nocomp``` 在两端同时设定以关闭压缩。
 > 提示: 关闭压缩可能会降低延迟。
@@ -322,8 +323,8 @@ type Snmp struct {
 > 郑H立, 南东风, Li, 七七, 凌君, 昶，LesMiserables, KyOn, 噼里啪啦, 继斌, 小苍辛苦, **Ken**, 
 > 乔槁, 佳晨, 猪肉佬, lcx, 昊文, 冰峰, 凡, alex, **海豹叔叔**, 奥姐, 张冰, 司成, 
 > 武子, **慎**，Alex43211，**Coxxs**，荣，NeroNg，吴骁，定一，我不是林J，Patrick, 超, 陈，windfarer, 宇,
-> 今晶,斌,晓东,最后一缕阳光,亮,Ethan,一心不乱,allenm,冬卯,GELATO,用户1,Butterfly,光子曲面,
-> 丞佳,捉鱼。
+> 今晶，斌，晓东，最后一缕阳光，亮，Ethan，一心不乱，allenm，冬卯，GELATO，用户1，Butterfly，光子曲面，
+> 丞佳，捉鱼，Talon，Biny，李勇，***阿彪***
 
 好人一生平安!
 
