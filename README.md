@@ -1,6 +1,6 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
 
-*基于KCP协议的简易UDP隧道*
+*A Simple UDP Tunnel Based On KCP*
 
 ![kcptun](kcptun.png)
 
