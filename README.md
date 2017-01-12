@@ -1,6 +1,6 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
 
-*基于[KCP协议](https://github.com/skywind3000/kcp)的简易UDP隧道* :zap: ***[立即安装](https://github.com/xtaci/kcptun/releases/latest)***:zap:
+*基于KCP协议的简易UDP隧道* :zap: ***[立即安装](https://github.com/xtaci/kcptun/releases/latest)***:zap:
 
 ![kcptun](kcptun.png)
 
