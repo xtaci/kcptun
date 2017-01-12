@@ -1,8 +1,10 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
 
-*基于KCP协议的简易UDP隧道* :zap: ***[立即安装](https://github.com/xtaci/kcptun/releases/latest)***:zap:
+*基于KCP协议的简易UDP隧道*
 
 ![kcptun](kcptun.png)
+
+[立即安装](https://github.com/xtaci/kcptun/releases/latest)
 
 -
 ### 手动编译
