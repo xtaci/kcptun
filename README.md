@@ -1,6 +1,7 @@
 # <img src="logo.png" alt="kcptun" height="60px" /> 
+<em>A Simple UDP Tunnel Based On KCP</em>
 
-*A Simple UDP Tunnel Based On KCP*
+-
 
 [![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6]
 
@@ -27,7 +28,7 @@
 
 [立即安装](https://github.com/xtaci/kcptun/releases/latest)
 
-*支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt*
+<em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt</em>
 
 [ENGLISH](https://github.com/xtaci/kcptun/blob/master/README.en.md)
 
