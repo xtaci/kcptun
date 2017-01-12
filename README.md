@@ -1,9 +1,10 @@
-<p align="center"><img src="logo.png" alt="kcptun" height="60px" /></p>
-<p align="center"><em>A Simple UDP Tunnel Based On KCP</em></p>
+# <img src="logo.png" alt="kcptun" height="60px" /> 
+<em>A Simple UDP Tunnel Based On KCP</em>
 
 -
 
-[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20] [![Docker][1]][2]
+[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6]
+
 [1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
 [2]: https://microbadger.com/images/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
@@ -23,10 +24,13 @@
 [19]: https://badges.gitter.im/xtaci/kcptun.svg
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-<p align="center"><img src="kcptun.png" alt="kcptun" height="200px"/></p>
-<p align="center"><a href="https://github.com/xtaci/kcptun/releases/latest">立即安装</a></p>
-<p align="center"><em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt</em></p>
-<p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
+![kcptun](kcptun.png)
+
+[立即安装](https://github.com/xtaci/kcptun/releases/latest)
+
+<em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt</em>
+
+[ENGLISH](https://github.com/xtaci/kcptun/blob/master/README.en.md)
 
 -
 ### 手动编译
