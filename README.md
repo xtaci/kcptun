@@ -6,6 +6,10 @@
 
 [立即安装](https://github.com/xtaci/kcptun/releases/latest)
 
+*支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt*
+
+[ENGLISH](https://github.com/xtaci/kcptun/blob/master/README.en.md)
+
 -
 ### 手动编译
 ```
