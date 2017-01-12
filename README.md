@@ -29,6 +29,14 @@
 <p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENG</a></p>
 
 -
+### 手动编译
+```
+$go get -u github.com/xtaci/kcptun/client
+$go get -u github.com/xtaci/kcptun/server
+```
+注意: 如果出现错误提示，请确保依赖库能正确访问到。
+
+Release中的所有二进制版本，是通过 `build-release.sh` 脚本生成并优化。
 
 ### 快速设定
 
