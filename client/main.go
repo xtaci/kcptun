@@ -150,12 +150,12 @@ func main() {
 			Usage: "set receive window size(num of packets)",
 		},
 		cli.IntFlag{
-			Name:  "datashard",
+			Name:  "datashard,ds",
 			Value: 10,
 			Usage: "set reed-solomon erasure coding - datashard",
 		},
 		cli.IntFlag{
-			Name:  "parityshard",
+			Name:  "parityshard,ps",
 			Value: 3,
 			Usage: "set reed-solomon erasure coding - parityshard",
 		},
