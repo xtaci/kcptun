@@ -6,6 +6,6 @@ import (
 	"net"
 )
 
-func SetNetCallback(callback Callback) {
+func SetNetCallback(callback net.DialCallback) {
 	net.Callback = callback
 }

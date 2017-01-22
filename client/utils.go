@@ -1,3 +1,5 @@
+// +build !android
+
 package main
 
 type Callback func(int)
