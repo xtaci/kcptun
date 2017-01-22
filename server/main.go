@@ -289,7 +289,7 @@ func main() {
 		}
 
 		opts, err := parseEnv()
-		if err != nil {
+		if err == nil {
 			if c, b := opts.Get("listen"); b {
 				config.Listen = c
 			}

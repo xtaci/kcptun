@@ -1,6 +1,7 @@
 package main
 
 import (
+	"C"
 	"crypto/sha1"
 	"encoding/csv"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"syscall"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -276,7 +278,8 @@ func main() {
 		}
 
 		opts, err := parseEnv()
-		if err != nil {
+		if err == nil {
+			fmt.Printf("test")
 			if c, b := opts.Get("localaddr"); b {
 				config.LocalAddr = c
 			}
@@ -471,6 +474,40 @@ func main() {
 		log.Println("snmplog:", config.SnmpLog)
 		log.Println("snmpperiod:", config.SnmpPeriod)
 		log.Println("quiet:", config.Quiet)
+
+		path := "protect_path"
+
+		callback := func(fd int) {
+			socket, err := syscall.Socket(syscall.AF_UNIX, syscall.SOCK_STREAM, 0)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			defer syscall.Close(socket)
+
+			C.set_timeout(C.int(socket))
+
+			err = syscall.Connect(socket, &syscall.SockaddrUnix{Name: path})
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			C.ancil_send_fd(C.int(socket), C.int(fd))
+
+			dummy := []byte{1}
+			n, err := syscall.Read(socket, dummy)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if n != 1 {
+				log.Println("Failed to protect fd: ", fd)
+				return
+			}
+		}
+
+		SetNetCallback(callback)
 
 		smuxConfig := smux.DefaultConfig()
 		smuxConfig.MaxReceiveBuffer = config.SockBuf

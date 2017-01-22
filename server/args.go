@@ -116,10 +116,16 @@ func parsePluginOptions(s string) (opts Args, err error) {
 		if err != nil {
 			return
 		}
+		if len(key) == 0 {
+			err = fmt.Errorf("empty key in %q", s[begin:i])
+			return
+		}
 		i += offset
 		// End of string or no equals sign?
 		if i >= len(s) || s[i] != '=' {
-			value = "1"
+			opts.Add(key, "1")
+			// Skip the semicolon.
+			i++
 			continue
 		}
 		// Skip the equals sign.
@@ -130,10 +136,6 @@ func parsePluginOptions(s string) (opts Args, err error) {
 			return
 		}
 		i += offset
-		if len(key) == 0 {
-			err = fmt.Errorf("empty key in %q", s[begin:i])
-			return
-		}
 		opts.Add(key, value)
 		// Skip the semicolon.
 		i++
