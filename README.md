@@ -73,6 +73,7 @@ COMMANDS:
 
 GLOBAL OPTIONS:
    --localaddr value, -l value   local listen address (default: ":12948")
+   --localtype value             tcp, unix (default: "tcp")
    --remoteaddr value, -r value  kcp server address (default: "vps:29900")
    --key value                   pre-shared secret between client and server (default: "it's a secrect") [$KCPTUN_KEY]
    --crypt value                 aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, none (default: "aes")
@@ -107,6 +108,7 @@ COMMANDS:
 GLOBAL OPTIONS:
    --listen value, -l value  kcp server listen address (default: ":29900")
    --target value, -t value  target server address (default: "127.0.0.1:12948")
+   --targettype value        tcp, unix (default: "tcp")
    --key value               pre-shared secret between client and server (default: "it's a secrect") [$KCPTUN_KEY]
    --crypt value             aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, none (default: "aes")
    --mode value              profiles: fast3, fast2, fast, normal (default: "fast")

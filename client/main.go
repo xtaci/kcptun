@@ -18,6 +18,8 @@ import (
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
+	"strings"
+	"syscall"
 )
 
 var (
@@ -87,6 +89,28 @@ func checkError(err error) {
 	}
 }
 
+type GenericConn interface {
+	net.Conn
+	SetReadBuffer(int) error
+	SetWriteBuffer(int) error
+}
+
+func getGenericConn(conn net.Conn) GenericConn {
+	var c GenericConn
+
+	c, ok := conn.(*net.TCPConn)
+	if ok {
+		return c
+	}
+
+	c, ok = conn.(*net.UnixConn)
+	if ok {
+		return c
+	}
+
+	return nil
+}
+
 func main() {
 	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
@@ -102,6 +126,11 @@ func main() {
 			Name:  "localaddr,l",
 			Value: ":12948",
 			Usage: "local listen address",
+		},
+		cli.StringFlag{
+			Name:  "localtype",
+			Value: "tcp",
+			Usage: "tcp, unix",
 		},
 		cli.StringFlag{
 			Name:  "remoteaddr, r",
@@ -227,6 +256,7 @@ func main() {
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
 		config.LocalAddr = c.String("localaddr")
+		config.LocalType = c.String("localtype")
 		config.RemoteAddr = c.String("remoteaddr")
 		config.Key = c.String("key")
 		config.Crypt = c.String("crypt")
@@ -276,10 +306,15 @@ func main() {
 		}
 
 		log.Println("version:", VERSION)
-		addr, err := net.ResolveTCPAddr("tcp", config.LocalAddr)
-		checkError(err)
-		listener, err := net.ListenTCP("tcp", addr)
-		checkError(err)
+
+		if strings.HasPrefix(config.LocalType, "unix") {
+			err := syscall.Unlink(config.LocalAddr)
+			if err != nil {
+				log.Println("Unilnk()", err);
+			}
+		}
+		listener, err := net.Listen(config.LocalType, config.LocalAddr);
+		checkError(err);
 
 		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		var block kcp.BlockCrypt
@@ -395,17 +430,22 @@ func main() {
 		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
 		rr := uint16(0)
 		for {
-			p1, err := listener.AcceptTCP()
+			p1, err := listener.Accept()
 			if err != nil {
 				log.Fatalln(err)
 			}
-			if err := p1.SetReadBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetReadBuffer:", err)
+
+			p := getGenericConn(p1);
+			if p != nil {
+				if err := p.SetReadBuffer(config.SockBuf); err != nil {
+					log.Println("Socket SetReadBuffer:", err)
+				}
+				if err := p.SetWriteBuffer(config.SockBuf); err != nil {
+					log.Println("Socket SetWriteBuffer:", err)
+				}
+				checkError(err)
 			}
-			if err := p1.SetWriteBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetWriteBuffer:", err)
-			}
-			checkError(err)
+
 			idx := rr % numconn
 
 			// do auto expiration && reconnection

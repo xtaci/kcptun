@@ -54,6 +54,28 @@ func newCompStream(conn net.Conn) *compStream {
 	return c
 }
 
+type GenericConn interface {
+	net.Conn
+	SetReadBuffer(int) error
+	SetWriteBuffer(int) error
+}
+
+func getGenericConn(conn net.Conn) GenericConn {
+	var c GenericConn
+
+	c, ok := conn.(*net.TCPConn)
+	if ok {
+		return c
+	}
+
+	c, ok = conn.(*net.UnixConn)
+	if ok {
+		return c
+	}
+
+	return nil
+}
+
 // handle multiplex-ed connection
 func handleMux(conn io.ReadWriteCloser, config *Config) {
 	// stream multiplex
@@ -71,17 +93,20 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			log.Println(err)
 			return
 		}
-		p2, err := net.DialTimeout("tcp", config.Target, 5*time.Second)
+		p2, err := net.DialTimeout(config.TargetType, config.Target, 5*time.Second)
 		if err != nil {
 			p1.Close()
 			log.Println(err)
 			continue
 		}
-		if err := p2.(*net.TCPConn).SetReadBuffer(config.SockBuf); err != nil {
-			log.Println("TCP SetReadBuffer:", err)
-		}
-		if err := p2.(*net.TCPConn).SetWriteBuffer(config.SockBuf); err != nil {
-			log.Println("TCP SetWriteBuffer:", err)
+		p := getGenericConn(p2)
+		if p != nil {
+			if err := p.SetReadBuffer(config.SockBuf); err != nil {
+				log.Println("Socket SetReadBuffer:", err)
+			}
+			if err := p.SetWriteBuffer(config.SockBuf); err != nil {
+				log.Println("Socket SetWriteBuffer:", err)
+			}
 		}
 		go handleClient(p1, p2)
 	}
@@ -134,6 +159,11 @@ func main() {
 			Name:  "target, t",
 			Value: "127.0.0.1:12948",
 			Usage: "target server address",
+		},
+		cli.StringFlag{
+			Name:  "targettype",
+			Value: "tcp",
+			Usage: "tcp, unix",
 		},
 		cli.StringFlag{
 			Name:   "key",
@@ -245,6 +275,7 @@ func main() {
 		config := Config{}
 		config.Listen = c.String("listen")
 		config.Target = c.String("target")
+		config.TargetType = c.String("targettype")
 		config.Key = c.String("key")
 		config.Crypt = c.String("crypt")
 		config.Mode = c.String("mode")

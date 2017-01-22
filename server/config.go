@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Listen       string `json:"listen"`
 	Target       string `json:"target"`
+	TargetType   string `json:"targetType"`
 	Key          string `json:"key"`
 	Crypt        string `json:"crypt"`
 	Mode         string `json:"mode"`
