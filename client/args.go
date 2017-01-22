@@ -85,7 +85,6 @@ func parseEnv() (opts Args, err error) {
 			return nil, err
 		}
 		for k, v := range other_opts {
-			fmt.Printf("%s: %s\n", k, v)
 			opts[k] = v
 		}
 	}
