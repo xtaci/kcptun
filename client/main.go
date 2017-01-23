@@ -279,6 +279,7 @@ func main() {
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
 		config.Quiet = c.Bool("quiet")
+		config.Vpn = c.Bool("V")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -404,6 +405,11 @@ func main() {
 					config.Quiet = quiet
 				}
 			}
+			if c, b := opts.Get("V"); b {
+				if vpn, err := strconv.ParseBool(c); err == nil {
+					config.Vpn = vpn
+				}
+			}
 		}
 
 		// log redirect
@@ -482,6 +488,7 @@ func main() {
 		log.Println("snmplog:", config.SnmpLog)
 		log.Println("snmpperiod:", config.SnmpPeriod)
 		log.Println("quiet:", config.Quiet)
+		log.Println("vpn:", config.Vpn)
 
 		if config.Vpn {
 
