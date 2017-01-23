@@ -118,7 +118,7 @@ other parameters can be set independently.
 
 *How to optimize*：
 > Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually。       
-> Step 2：Try download something and observer, if the bandwidth usage is close the limit then stop, otherwise goto step 1.     
+> Step 2：Try download something and watch network IO to see if it helps.     
 
 ***NOTICE: if too much retranmission happens, it's quite possible the windows are too large***
 
@@ -128,7 +128,8 @@ Aggresiveness On Retransmission:
 
 *fast3 > fast2 > fast > normal > default*    
 
-Manual control is supported with hidden parameters, you must understand KCP protocol before doing this.
+Manual control is supported with hidden parameters, you must understand KCP protocol before doing this. eg:
+
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
