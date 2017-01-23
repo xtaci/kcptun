@@ -124,11 +124,9 @@ other parameters can be set independently.
 
 ### Embeded Mode
 
-Responsiveness:
-*fast3 >* ***[fast2]*** *> fast > normal > default*    
+Aggresiveness On Retransmission:
 
-Throughput:     
-*default > normal > fast >* ***[fast2]*** *> fast3*       
+*fast3 > fast2 > fast > normal > default*    
 
 Manual control is supported with hidden parameters, you must understand KCP protocol before doing this.
 ```
