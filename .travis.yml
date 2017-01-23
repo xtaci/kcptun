@@ -1,0 +1,16 @@
+language: go
+go:
+    - 1.6
+before_install:
+    - go get github.com/mattn/goveralls
+    - go get golang.org/x/tools/cmd/cover
+install:
+    - go get github.com/xtaci/kcptun/client
+    - go get github.com/xtaci/kcptun/server
+before_script:
+script:
+    - cd $HOME/gopath/src/github.com/xtaci/kcptun/client
+    - $HOME/gopath/bin/goveralls -service=travis-ci
+    - cd $HOME/gopath/src/github.com/xtaci/kcptun/server
+    - $HOME/gopath/bin/goveralls -service=travis-ci
+    - exit 0
