@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+VERSION := $(shell dpkg-parsechangelog --show-field Version)
+LDFLAGS := -X main.VERSION=$(VERSION) -s -w
+
+override_dh_clean:
+	rm -f kcptun-client kcptun-server
+	dh_clean
+
+override_dh_auto_build:
+	# build client
+	go build -mod=vendor -o kcptun-client \
+		-ldflags "$(LDFLAGS)" \
+		./client
+		
+	# build server
+	go build -mod=vendor -o kcptun-server \
+		-ldflags "$(LDFLAGS)" \
+		./server
+
+%::
+	dh $@

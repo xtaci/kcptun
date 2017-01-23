@@ -1,0 +1,1169 @@
+//go:build !noasm && !appengine && !gccgo && !nopshufb
+
+// Copyright 2015, Klaus Post, see LICENSE for details.
+
+package reedsolomon
+
+const pshufb = true
+
+//go:noescape
+func galMulSSSE3(low, high, in, out []byte)
+
+//go:noescape
+func galMulSSSE3Xor(low, high, in, out []byte)
+
+//go:noescape
+func galMulAVX2Xor(low, high, in, out []byte)
+
+//go:noescape
+func galMulAVX2(low, high, in, out []byte)
+
+//go:noescape
+func galMulAVX2Xor_64(low, high, in, out []byte)
+
+//go:noescape
+func galMulAVX2_64(low, high, in, out []byte)
+
+// This is what the assembler routines do in blocks of 16 bytes:
+/*
+func galMulSSSE3(low, high, in, out []byte) {
+	for n, input := range in {
+		l := input & 0xf
+		h := input >> 4
+		out[n] = low[l] ^ high[h]
+	}
+}
+
+func galMulSSSE3Xor(low, high, in, out []byte) {
+	for n, input := range in {
+		l := input & 0xf
+		h := input >> 4
+		out[n] ^= low[l] ^ high[h]
+	}
+}
+*/
+
+// bigSwitchover is the size where 64 bytes are processed per loop.
+const bigSwitchover = 128
+
+func galMulSlice(c byte, in, out []byte, o *options) {
+	// The kernels below write len(in) bytes to out without consulting its
+	// length. Fail here rather than past the end of out.
+	out = out[:len(in)]
+	if c == 1 {
+		copy(out, in)
+		return
+	}
+	if o.useAVX2 {
+		if len(in) >= bigSwitchover {
+			done := (len(in) >> 6) << 6
+			if raceEnabled {
+				raceReadSlice(in[:done])
+				raceWriteSlice(out[:done])
+			}
+			galMulAVX2_64(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			in = in[done:]
+			out = out[done:]
+		}
+		if len(in) > 32 {
+			done := (len(in) >> 5) << 5
+			if raceEnabled {
+				raceReadSlice(in[:done])
+				raceWriteSlice(out[:done])
+			}
+			galMulAVX2(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			in = in[done:]
+			out = out[done:]
+		}
+	} else if o.useSSSE3 {
+		done := (len(in) >> 4) << 4
+		if raceEnabled {
+			raceReadSlice(in[:done])
+			raceWriteSlice(out[:done])
+		}
+		galMulSSSE3(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+		in = in[done:]
+		out = out[done:]
+	} else if !o.skip2B {
+		mt16 := getMulTable16(c)
+		for len(in) >= 8 {
+			store16(out, mt16[load16(in, 0)], 0)
+			store16(out, mt16[load16(in, 2)], 2)
+			store16(out, mt16[load16(in, 4)], 4)
+			store16(out, mt16[load16(in, 6)], 6)
+
+			in = in[8:]
+			out = out[8:]
+		}
+	}
+	out = out[:len(in)]
+	mt := mulTable[c][:256]
+	for i := range in {
+		out[i] = mt[in[i]]
+	}
+}
+
+func galMulSliceXor(c byte, in, out []byte, o *options) {
+	out = out[:len(in)]
+	if c == 1 {
+		sliceXor(in, out, o)
+		return
+	}
+
+	if o.useAVX2 {
+		if len(in) >= bigSwitchover {
+			done := (len(in) >> 6) << 6
+			if raceEnabled {
+				raceReadSlice(in[:done])
+				raceWriteSlice(out[:done])
+			}
+			galMulAVX2Xor_64(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			in = in[done:]
+			out = out[done:]
+		}
+		if len(in) >= 32 {
+			done := (len(in) >> 5) << 5
+			if raceEnabled {
+				raceReadSlice(in[:done])
+				raceWriteSlice(out[:done])
+			}
+			galMulAVX2Xor(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			in = in[done:]
+			out = out[done:]
+		}
+	} else if o.useSSSE3 {
+		done := (len(in) >> 4) << 4
+		if raceEnabled {
+			raceReadSlice(in[:done])
+			raceWriteSlice(out[:done])
+		}
+		galMulSSSE3Xor(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+		in = in[done:]
+		out = out[done:]
+	} else if !o.skip2B {
+		mt16 := getMulTable16(c)
+		for len(in) >= 8 {
+			store16(out, load16(out, 0)^mt16[load16(in, 0)], 0)
+			store16(out, load16(out, 2)^mt16[load16(in, 2)], 2)
+			store16(out, load16(out, 4)^mt16[load16(in, 4)], 4)
+			store16(out, load16(out, 6)^mt16[load16(in, 6)], 6)
+
+			in = in[8:]
+			out = out[8:]
+		}
+	}
+	if len(in) == 0 {
+		return
+	}
+	out = out[:len(in)]
+	mt := mulTable[c][:256]
+	for i := range in {
+		out[i] ^= mt[in[i]]
+	}
+}
+
+// simple slice xor
+func sliceXor(in, out []byte, o *options) {
+	out = out[:len(in)]
+	if o.useSSE2 {
+		if len(in) >= bigSwitchover {
+			if o.useAVX2 {
+				done := (len(in) >> 6) << 6
+				if raceEnabled {
+					raceReadSlice(in[:done])
+					raceWriteSlice(out[:done])
+				}
+				avx2XorSlice_64(in, out)
+				in = in[done:]
+				out = out[done:]
+			} else {
+				done := (len(in) >> 6) << 6
+				if raceEnabled {
+					raceReadSlice(in[:done])
+					raceWriteSlice(out[:done])
+				}
+				sSE2XorSlice_64(in, out)
+				in = in[done:]
+				out = out[done:]
+			}
+		}
+		if len(in) >= 16 {
+			done := (len(in) >> 4) << 4
+			if raceEnabled {
+				raceReadSlice(in[:done])
+				raceWriteSlice(out[:done])
+			}
+			sSE2XorSlice(in, out)
+			in = in[done:]
+			out = out[done:]
+		}
+	} else {
+		sliceXorGo(in, out, o)
+		return
+	}
+	out = out[:len(in)]
+	for i := range in {
+		out[i] ^= in[i]
+	}
+}
+
+// 4-way butterfly
+func ifftDIT4(work [][]byte, dist int, log_m01, log_m23, log_m02 ffe, o *options) {
+	if len(work[0]) == 0 {
+		return
+	}
+
+	t01 := &multiply256LUT[log_m01]
+	t23 := &multiply256LUT[log_m23]
+	t02 := &multiply256LUT[log_m02]
+	if o.useAvx512GFNI && o.useAVX512 && gf2p811dMulMatrices16 != nil {
+		g01 := &gf2p811dMulMatrices16[log_m01]
+		g23 := &gf2p811dMulMatrices16[log_m23]
+		g02 := &gf2p811dMulMatrices16[log_m02]
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_7(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_3(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_5(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_1(work, dist*24, g01, g23, g02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_6(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_2(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_4(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_0(work, dist*24, g01, g23, g02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		g01 := &gf2p811dMulMatrices16[log_m01]
+		g23 := &gf2p811dMulMatrices16[log_m23]
+		g02 := &gf2p811dMulMatrices16[log_m02]
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_7(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_3(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_5(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_1(work, dist*24, g01, g23, g02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_6(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_2(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_4(work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_0(work, dist*24, g01, g23, g02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAVX512 {
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_7(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_5(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_6(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_4(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	} else if o.useAVX2 {
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_7(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_5(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_6(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_4(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	ifftDIT4Ref(work, dist, log_m01, log_m23, log_m02, o)
+}
+
+// 4-way butterfly with separate destination
+func ifftDIT4Dst(dst, work [][]byte, dist int, log_m01, log_m23, log_m02 ffe, o *options) {
+	if len(work[0]) == 0 {
+		return
+	}
+
+	t01 := &multiply256LUT[log_m01]
+	t23 := &multiply256LUT[log_m23]
+	t02 := &multiply256LUT[log_m02]
+	if o.useAvx512GFNI && o.useAVX512 && gf2p811dMulMatrices16 != nil {
+		g01 := &gf2p811dMulMatrices16[log_m01]
+		g23 := &gf2p811dMulMatrices16[log_m23]
+		g02 := &gf2p811dMulMatrices16[log_m02]
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_dst_7(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_dst_3(dst, work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_dst_5(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_dst_1(dst, work, dist*24, g01, g23, g02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_dst_6(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_dst_2(dst, work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_avx512_dst_4(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_avx512_dst_0(dst, work, dist*24, g01, g23, g02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		g01 := &gf2p811dMulMatrices16[log_m01]
+		g23 := &gf2p811dMulMatrices16[log_m23]
+		g02 := &gf2p811dMulMatrices16[log_m02]
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_dst_7(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_dst_3(dst, work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_dst_5(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_dst_1(dst, work, dist*24, g01, g23, g02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_dst_6(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_dst_2(dst, work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_gfni_dst_4(dst, work, dist*24, g01, g23, g02)
+				} else {
+					ifftDIT4_gfni_dst_0(dst, work, dist*24, g01, g23, g02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAVX512 {
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_dst_7(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_dst_3(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_dst_5(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_dst_1(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_dst_6(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_dst_2(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx512_dst_4(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx512_dst_0(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	} else if o.useAVX2 {
+		if log_m01 == modulus {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_dst_7(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_dst_3(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_dst_5(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_dst_1(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_dst_6(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_dst_2(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus {
+					ifftDIT4_avx2_dst_4(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT4_avx2_dst_0(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	ifftDIT4DstRef(dst, work, dist, log_m01, log_m23, log_m02, o)
+}
+
+// 4-way butterfly
+func ifftDIT48(work [][]byte, dist int, log_m01, log_m23, log_m02 ffe8, o *options) {
+	if len(work[0]) == 0 {
+		return
+	}
+
+	if o.useAvx512GFNI {
+		// Note that these currently require that length is multiple of 64.
+		t01 := gf2p811dMulMatricesLeo8[log_m01]
+		t23 := gf2p811dMulMatricesLeo8[log_m23]
+		t02 := gf2p811dMulMatricesLeo8[log_m02]
+		if log_m01 == modulus8 {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_7(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_5(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_6(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_4(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAVX2 {
+		// Note that these currently require that length is multiple of 64.
+		t01 := &multiply256LUT8[log_m01]
+		t23 := &multiply256LUT8[log_m23]
+		t02 := &multiply256LUT8[log_m02]
+		if log_m01 == modulus8 {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_7(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_5(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_6(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_4(work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	ifftDIT4Ref8(work, dist, log_m01, log_m23, log_m02, o)
+}
+
+// 4-way butterfly
+func ifftDIT48Dst(dst, work [][]byte, dist int, log_m01, log_m23, log_m02 ffe8, o *options) {
+	if len(work[0]) == 0 {
+		return
+	}
+
+	if o.useAvx512GFNI {
+		// Note that these currently require that length is multiple of 64.
+		t01 := gf2p811dMulMatricesLeo8[log_m01]
+		t23 := gf2p811dMulMatricesLeo8[log_m23]
+		t02 := gf2p811dMulMatricesLeo8[log_m02]
+		if log_m01 == modulus8 {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_dst_7(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_dst_3(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_dst_5(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_dst_1(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_dst_6(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_dst_2(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_gfni_dst_4(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_gfni_dst_0(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAVX2 {
+		// Note that these currently require that length is multiple of 64.
+		t01 := &multiply256LUT8[log_m01]
+		t23 := &multiply256LUT8[log_m23]
+		t02 := &multiply256LUT8[log_m02]
+		if log_m01 == modulus8 {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_dst_7(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_dst_3(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_dst_5(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_dst_1(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m23 == modulus8 {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_dst_6(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_dst_2(dst, work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m02 == modulus8 {
+					ifftDIT48_avx2_dst_4(dst, work, dist*24, t01, t23, t02)
+				} else {
+					ifftDIT48_avx2_dst_0(dst, work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	ifftDIT4DstRef8(dst, work, dist, log_m01, log_m23, log_m02, o)
+}
+
+func fftDIT4(work [][]byte, dist int, log_m01, log_m23, log_m02 ffe, o *options) {
+	if len(work[0]) == 0 {
+		return
+	}
+
+	t01 := &multiply256LUT[log_m01]
+	t23 := &multiply256LUT[log_m23]
+	t02 := &multiply256LUT[log_m02]
+	if o.useAvx512GFNI && o.useAVX512 && gf2p811dMulMatrices16 != nil {
+		g01 := &gf2p811dMulMatrices16[log_m01]
+		g23 := &gf2p811dMulMatrices16[log_m23]
+		g02 := &gf2p811dMulMatrices16[log_m02]
+		if log_m02 == modulus {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_gfni_avx512_7(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_avx512_3(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_gfni_avx512_5(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_avx512_1(work, dist*24, g01, g23, g02)
+				}
+			}
+		} else {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_gfni_avx512_6(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_avx512_2(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_gfni_avx512_4(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_avx512_0(work, dist*24, g01, g23, g02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		g01 := &gf2p811dMulMatrices16[log_m01]
+		g23 := &gf2p811dMulMatrices16[log_m23]
+		g02 := &gf2p811dMulMatrices16[log_m02]
+		if log_m02 == modulus {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_gfni_7(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_3(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_gfni_5(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_1(work, dist*24, g01, g23, g02)
+				}
+			}
+		} else {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_gfni_6(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_2(work, dist*24, g01, g23, g02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_gfni_4(work, dist*24, g01, g23, g02)
+				} else {
+					fftDIT4_gfni_0(work, dist*24, g01, g23, g02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAVX512 {
+		if log_m02 == modulus {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_avx512_7(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx512_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_avx512_5(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx512_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_avx512_6(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx512_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_avx512_4(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx512_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	} else if o.useAVX2 {
+		if log_m02 == modulus {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_avx2_7(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx2_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_avx2_5(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx2_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m01 == modulus {
+				if log_m23 == modulus {
+					fftDIT4_avx2_6(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx2_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus {
+					fftDIT4_avx2_4(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT4_avx2_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	fftDIT4Ref(work, dist, log_m01, log_m23, log_m02, o)
+}
+
+// 4-way butterfly
+func fftDIT48(work [][]byte, dist int, log_m01, log_m23, log_m02 ffe8, o *options) {
+	if len(work[0]) == 0 {
+		return
+	}
+
+	if o.useAvx512GFNI {
+		t01 := gf2p811dMulMatricesLeo8[log_m01]
+		t23 := gf2p811dMulMatricesLeo8[log_m23]
+		t02 := gf2p811dMulMatricesLeo8[log_m02]
+		// Note that these currently require that length is multiple of 64.
+		if log_m02 == modulus8 {
+			if log_m01 == modulus8 {
+				if log_m23 == modulus8 {
+					fftDIT48_gfni_7(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_gfni_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus8 {
+					fftDIT48_gfni_5(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_gfni_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m01 == modulus8 {
+				if log_m23 == modulus8 {
+					fftDIT48_gfni_6(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_gfni_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus8 {
+					fftDIT48_gfni_4(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_gfni_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	if o.useAVX2 {
+		t01 := &multiply256LUT8[log_m01]
+		t23 := &multiply256LUT8[log_m23]
+		t02 := &multiply256LUT8[log_m02]
+		// Note that these currently require that length is multiple of 64.
+		if log_m02 == modulus8 {
+			if log_m01 == modulus8 {
+				if log_m23 == modulus8 {
+					fftDIT48_avx2_7(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_avx2_3(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus8 {
+					fftDIT48_avx2_5(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_avx2_1(work, dist*24, t01, t23, t02)
+				}
+			}
+		} else {
+			if log_m01 == modulus8 {
+				if log_m23 == modulus8 {
+					fftDIT48_avx2_6(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_avx2_2(work, dist*24, t01, t23, t02)
+				}
+			} else {
+				if log_m23 == modulus8 {
+					fftDIT48_avx2_4(work, dist*24, t01, t23, t02)
+				} else {
+					fftDIT48_avx2_0(work, dist*24, t01, t23, t02)
+				}
+			}
+		}
+		return
+	}
+	fftDIT4Ref8(work, dist, log_m01, log_m23, log_m02, o)
+}
+
+// 2-way butterfly forward
+func fftDIT2(x, y []byte, log_m ffe, o *options) {
+	if len(x) == 0 {
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		tmp := &gf2p811dMulMatrices16[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		fftDIT2_gfni(x, y, tmp)
+	} else if o.useAVX2 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		fftDIT2_avx2(x, y, tmp)
+	} else if o.useSSSE3 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		fftDIT2_ssse3(x, y, tmp)
+	} else {
+		// Reference version:
+		refMulAdd(x, y, log_m)
+		sliceXor(x, y, o)
+	}
+}
+
+// 2-way butterfly forward
+func fftDIT28(x, y []byte, log_m ffe8, o *options) {
+	if len(x) == 0 {
+		return
+	}
+
+	if o.useAVX2 {
+		done := (len(y) >> 6) << 6
+		if raceEnabled {
+			raceReadSlice(y[:done])
+			raceWriteSlice(x[:done])
+		}
+		fftDIT28_avx2(x, y, &multiply256LUT8[log_m])
+		if len(x)&63 == 0 {
+			return
+		}
+		y = y[done:]
+		x = x[done:]
+	}
+	mulAdd8(x, y, log_m, o)
+	sliceXor(x, y, o)
+}
+
+// 2-way butterfly inverse
+func ifftDIT28(x, y []byte, log_m ffe8, o *options) {
+	if len(x) == 0 {
+		return
+	}
+
+	if o.useAVX2 {
+		done := (len(y) >> 6) << 6
+		if raceEnabled {
+			raceReadSlice(y[:done])
+			raceWriteSlice(x[:done])
+		}
+		ifftDIT28_avx2(x, y, &multiply256LUT8[log_m])
+		if len(x)&63 == 0 {
+			return
+		}
+		y = y[done:]
+		x = x[done:]
+	}
+	sliceXor(x, y, o)
+	mulAdd8(x, y, log_m, o)
+}
+
+func mulAdd8(x, y []byte, log_m ffe8, o *options) {
+	if o.useAVX2 {
+		t := &multiply256LUT8[log_m]
+		done := (len(y) >> 6) << 6
+		if raceEnabled {
+			raceReadSlice(y[:done])
+			raceWriteSlice(x[:done])
+		}
+		galMulAVX2Xor_64(t[:16], t[16:32], y, x)
+		y = y[done:]
+		x = x[done:]
+	} else if o.useSSSE3 {
+		t := &multiply256LUT8[log_m]
+		done := (len(y) >> 4) << 4
+		if raceEnabled {
+			raceReadSlice(y[:done])
+			raceWriteSlice(x[:done])
+		}
+		galMulSSSE3Xor(t[:16], t[16:32], y, x)
+		y = y[done:]
+		x = x[done:]
+	}
+	refMulAdd8(x, y, log_m)
+}
+
+// 2-way butterfly
+func ifftDIT2(x, y []byte, log_m ffe, o *options) {
+	if len(x) == 0 {
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		tmp := &gf2p811dMulMatrices16[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		ifftDIT2_gfni(x, y, tmp)
+	} else if o.useAVX2 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+
+		ifftDIT2_avx2(x, y, tmp)
+	} else if o.useSSSE3 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+
+		ifftDIT2_ssse3(x, y, tmp)
+	} else {
+		// Reference version:
+		sliceXor(x, y, o)
+		refMulAdd(x, y, log_m)
+	}
+}
+
+func mulgf16(x, y []byte, log_m ffe, o *options) {
+	if len(x) == 0 {
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		tmp := &gf2p811dMulMatrices16[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		mulgf16_gfni(x, y, tmp)
+	} else if o.useAVX2 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		mulgf16_avx2(x, y, tmp)
+	} else if o.useSSSE3 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		mulgf16_ssse3(x, y, tmp)
+	} else {
+		refMul(x, y, log_m)
+	}
+}
+
+func mulgf16Xor8(scalars *[8]uint16, in []byte, outs *[8][]byte, o *options) {
+	if len(in) == 0 {
+		return
+	}
+	if o.useAvx512GFNI && gf2p811dMulMatrices16 != nil {
+		var tables [8][4]uint64
+		for k, c := range scalars {
+			if c != 0 {
+				tables[k] = gf2p811dMulMatrices16[logLUT[ffe(c)]]
+			}
+		}
+		if raceEnabled {
+			raceReadSlice(in)
+			for k := range outs {
+				raceWriteSlice(outs[k])
+			}
+		}
+		mulgf16Xor8_avx512gfni(in, outs, &tables)
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		var tables [8][4]uint64
+		for k, c := range scalars {
+			if c != 0 {
+				tables[k] = gf2p811dMulMatrices16[logLUT[ffe(c)]]
+			}
+		}
+		if raceEnabled {
+			raceReadSlice(in)
+			for k := range outs {
+				raceWriteSlice(outs[k])
+			}
+		}
+		mulgf16Xor8_gfni(in, outs, &tables)
+		return
+	}
+	if o.useAVX2 {
+		var tables [8][8 * 16]byte
+		for k, c := range scalars {
+			if c != 0 {
+				tables[k] = multiply256LUT[logLUT[ffe(c)]]
+			}
+		}
+		if raceEnabled {
+			raceReadSlice(in)
+			for k := range outs {
+				raceWriteSlice(outs[k])
+			}
+		}
+		mulgf16Xor8_avx2(in, outs, &tables)
+		return
+	}
+	refMulAdd8x(scalars, in, outs)
+}
+
+func mulgf16Xor(x, y []byte, log_m ffe, o *options) {
+	if len(x) == 0 {
+		return
+	}
+	if o.useAvxGNFI && gf2p811dMulMatrices16 != nil {
+		tmp := &gf2p811dMulMatrices16[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		mulgf16Xor_gfni(x, y, tmp)
+	} else if o.useAVX2 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		mulgf16Xor_avx2(x, y, tmp)
+	} else if o.useSSSE3 {
+		tmp := &multiply256LUT[log_m]
+		if raceEnabled {
+			raceReadSlice(y)
+			raceWriteSlice(x)
+		}
+		mulgf16Xor_ssse3(x, y, tmp)
+	} else {
+		refMulAdd(x, y, log_m)
+	}
+}
+
+func mulgf8(out, in []byte, log_m ffe8, o *options) {
+	if o.useAVX2 {
+		t := &multiply256LUT8[log_m]
+		done := (len(in) >> 6) << 6
+		if raceEnabled {
+			raceReadSlice(in[:done])
+			raceWriteSlice(out[:done])
+		}
+
+		galMulAVX2_64(t[:16], t[16:32], in, out)
+		in = in[done:]
+		out = out[done:]
+	} else if o.useSSSE3 {
+		t := &multiply256LUT8[log_m]
+		done := (len(in) >> 4) << 4
+		if raceEnabled {
+			raceReadSlice(in[:done])
+			raceWriteSlice(out[:done])
+		}
+		galMulSSSE3(t[:16], t[16:32], in, out)
+		in = in[done:]
+		out = out[done:]
+	}
+	out = out[:len(in)]
+	mt := mul8LUTs[log_m].Value[:]
+	for i := range in {
+		out[i] = byte(mt[in[i]])
+	}
+}

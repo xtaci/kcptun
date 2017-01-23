@@ -1,0 +1,8 @@
+kcptun-client usr/bin/
+kcptun-server usr/bin/
+
+dist/linux/kcptun-server.service lib/systemd/system/
+dist/linux/kcptun-client.service lib/systemd/system/
+
+dist/local.json.example usr/share/doc/kcptun/examples/
+dist/server.json.example usr/share/doc/kcptun/examples/
