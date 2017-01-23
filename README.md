@@ -16,20 +16,15 @@ A tool for converting TCP stream into KCP stream, [Download Now!](https://github
 ***kcptun is based on [kcp-go](https://github.com/xtaci/kcp-go)***   
 
 ### QuickStart
-Client, server, respectively, download the corresponding platform binary compression package, and extract, through the following command to start port forwarding.
 ```
-Server: ./server_linux_amd64 -t "SERVER_IP:8388" -l ":4000" -mode fast2
 Client: ./client_darwin_amd64 -r "SERVER_IP:4000" -l ":8388" -mode fast2
+Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2
 ```
 The above command can establish 8388/tcp port forwarding (through 4000/udp port).
 
 
 ### Performance
 <img src="fast.png" alt="fast.com" height="256px" />       
-* Speed tested with: https://fast.com
-* WAN Link Speed: 100M ADSL
-* WIFI: 5GHz TL-WDR3320
-
 
 ### Usage
 Help output under MacOS X:
