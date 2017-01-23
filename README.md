@@ -9,13 +9,13 @@
 [7]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [8]: https://github.com/skywind3000/kcp
 
-A tool for converting tcp stream into kcp+udp stream, :zap: ***[download address](https://github.com/xtaci/kcptun/releases/latest)***:zap:
+A tool for converting TCP stream into KCP stream, [Download Now!](https://github.com/xtaci/kcptun/releases/latest)
 
 ![kcptun](kcptun.png)
 
 ***kcptun is based on [kcp-go](https://github.com/xtaci/kcp-go)***   
 
-### *QuickStart* :lollipop:
+### QuickStart
 Client, server, respectively, download the corresponding platform binary compression package, and extract, through the following command to start port forwarding.
 ```
 Server: ./server_linux_amd64 -t "SERVER_IP:8388" -l ":4000" -mode fast2
@@ -24,14 +24,14 @@ Client: ./client_darwin_amd64 -r "SERVER_IP:4000" -l ":8388" -mode fast2
 The above command can establish 8388/tcp port forwarding (through 4000/udp port).
 
 
-### *Performance* :lollipop:
+### Performance
 <img src="fast.png" alt="fast.com" height="256px" />       
 * Speed tested with: https://fast.com
 * WAN Link Speed: 100M ADSL
 * WIFI: 5GHz TL-WDR3320
 
 
-### *Usage* :lollipop:
+### Usage
 Help output under MacOS X:
 ```
 $ ./client_darwin_amd64 -h
@@ -103,11 +103,9 @@ GLOBAL OPTIONS:
    --version, -v                    print the version
 ```
 
-#### *Parameters by Layers* :lollipop:   
+#### Parameters by Layers
 
 <p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
-
-### *Parameters* :lollipop: 
 
 ***Both sides must agree on the following parameters:***
 * datashard
@@ -119,12 +117,12 @@ GLOBAL OPTIONS:
 other parameters can be set independently.
 
 *How to optimize*：
-> Step 1：Increase client rcvwnd & server sndwnd simultaneously & gradually。       
+> Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually。       
 > Step 2：Try download something and observer, if the bandwidth usage is close the limit then stop, otherwise goto step 1.     
 
 ***NOTICE: if too much retranmission happens, it's quite possible the windows are too large***
 
-### *Embeded Mode* :lollipop: 
+### Embeded Mode
 
 Latency:     
 *fast3 >* ***[fast2]*** *> fast > normal > default*        
@@ -137,7 +135,7 @@ Manual control is supported with hidden parameters, you must understand KCP prot
 ```
 I suggest fast2 for high-loss network, normal for low-loss network.
 
-### *Forward Error Correction* :lollipop: 
+### Forward Error Correction
 
 In coding theory, the Reed–Solomon code belongs to the class of non-binary cyclic error-correcting codes. The Reed–Solomon code is based on univariate polynomials over finite fields.
 
@@ -147,7 +145,7 @@ It is able to detect and correct multiple symbol errors. By adding t check symbo
 
 Setting parameters of RS-Code with ```-datashard m -parityshard n```
 
-### *DSCP* :lollipop: 
+### DSCP
 
 Differentiated services or DiffServ is a computer networking architecture that specifies a simple, scalable and coarse-grained mechanism for classifying and managing network traffic and providing quality of service (QoS) on modern IP networks. DiffServ can, for example, be used to provide low-latency to critical network traffic such as voice or streaming media while providing simple best-effort service to non-critical services such as web traffic or file transfers.
 
@@ -156,19 +154,19 @@ DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit dif
 setting each side with ```-dscp value```.
 
 
-### *Security* :lollipop: 
+### Security
 
 No matter what encryption you are using for application layer, if you specify ```-crypt none``` to kcptun, 
 the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` for encryption at least .
 
 NOTICE: ```-crypt xor``` is also insecure, do not use this unless you know what you are doing.
 
-### *Memory Control* :lollipop: 
+### Memory Control
 
 Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
 Reference: https://blog.golang.org/go15gc
 
-### *Traffic Control* :lollipop: 
+### Traffic Control
 
 ***Intended audience : for those server's bandwidth is quite limited.***      
 
@@ -183,7 +181,7 @@ iptables -t mangle -A POSTROUTING -o eth0  -j MARK --set-mark 10
 root@kcptun:~#
 ```
 
-### *Snappy Stream Compression* :lollipop: 
+### Snappy Stream Compression
 
 > Snappy is a compression/decompression library. It does not aim for maximum
 > compression, or compatibility with any other compression library; instead,
@@ -198,7 +196,7 @@ disable compression by setting ```-nocomp``` on both side.
 
 > Tips: Turning off compression may reduce latency.
 
-### *SNMP* :lollipop:
+### SNMP
 
 ```go
 // Snmp defines network statistics indicator
@@ -228,7 +226,7 @@ type Snmp struct {
 Sending a signal by ```kill -SIGUSR1 pid``` will give SNMP information for KCP，useful for fine-grained adjustment.
 Of which ```RetransSegs,FastRetransSegs,LostSegs,OutSegs``` is the most useful.
 
-### *References* :paperclip:
+### References
 
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
 2. https://github.com/klauspost/reedsolomon -- Reed-Solomon Erasure Coding in Go.
