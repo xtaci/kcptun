@@ -124,16 +124,16 @@ other parameters can be set independently.
 
 ### Embeded Mode
 
-Latency:     
-*fast3 >* ***[fast2]*** *> fast > normal > default*        
-Payload Ratio:     
+Responsiveness:
+*fast3 >* ***[fast2]*** *> fast > normal > default*    
+
+Throughput:     
 *default > normal > fast >* ***[fast2]*** *> fast3*       
-Parameters in middle is balanced for latency & payload ratio, the faster you get the more wasteful you are.
+
 Manual control is supported with hidden parameters, you must understand KCP protocol before doing this.
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
 ```
-I suggest fast2 for high-loss network, normal for low-loss network.
 
 ### Forward Error Correction
 
