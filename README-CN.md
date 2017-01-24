@@ -24,7 +24,7 @@
 
 ### 快速设定
 
-客户端、服务器分别**下载**对应平台的二进制压缩包，并**解压**，通过下面的命令**启动**端口转发。
+客户端、服务器分别**下载**对应平台的[预编译版本](https://github.com/xtaci/kcptun/releases)，并**解压**，通过下面的命令**启动**端口转发。
 ```
 KCP客户端: ./client_darwin_amd64 -r "KCP服务器IP地址:4000" -l ":8388" -mode fast2
 KCP服务器: ./server_linux_amd64 -t "目标服务器IP地址:8388" -l ":4000" -mode fast2
