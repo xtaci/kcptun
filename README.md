@@ -63,11 +63,11 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 #### Improving Latency
 
-> **Q: I'm using kcptun for game, I don't want any lags happening.**    
+> **Q: I'm using kcptun for game, I don't want any lag happening.**    
 
 > **A:**
 
-> Lags means packet loss for most of the time, by changing `-mode`, lags can be improved.   
+> Lag means packet loss for most of the time, by changing `-mode`, lags can be improved.   
 
 > eg: `-mode fast3`    
 
@@ -176,6 +176,8 @@ setting each side with ```-dscp value```.
 No matter what encryption you are using for application layer, if you specify ```-crypt none``` to kcptun, 
 the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` for encryption at least .
 
+`-crypt` and `-key` must be the same on both KCP Client & KCP Server.
+
 NOTICE: ```-crypt xor``` is also insecure, do not use this unless you know what you are doing.
 
 Benchmarks for crypto algorithms supported by kcptun:
@@ -194,6 +196,8 @@ BenchmarkTwofish-4     	   20000	     68501 ns/op
 BenchmarkXTEA-4        	   20000	     77417 ns/op
 BenchmarkSalsa20-4     	  300000	      4998 ns/op
 ```
+
+
 
 #### Memory Control
 
@@ -215,7 +219,7 @@ kcptun has builtin snappy algorithms for compressing streams:
 
 Compression may save bandwidth for **PLAINTEXT** data, such as HTTP data.
 
-Compression is enabled by default, you can disable it by setting ```-nocomp``` on both side.
+Compression is enabled by default, you can disable it by setting ```-nocomp``` on both KCP Client & KCP Server.
 
 #### SNMP
 
