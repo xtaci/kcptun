@@ -249,6 +249,14 @@ type Snmp struct {
 
 Sending a `SIGUSR1` signal to KCP Client or KCP Server will dump SNMP information to console, just like `/proc/net/snmp`. You can use this information to do fine-grained tuning.
 
+### Manual Control
+
+https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
+
+`-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1`
+
+Low-level KCP configuration can be altered by using manual mode like above, make sure you really **UNDERSTAND** what these means before doing **ANY** manual settings.
+
 ### References
 
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
