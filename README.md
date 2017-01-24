@@ -18,7 +18,7 @@
 [18]: https://github.com/skywind3000/kcp
 
 
-<img src="kcptun.png" alt="kcptun" height="267px"/>
+<img src="kcptun.png" alt="kcptun" height="300px"/>
 
 -
 
