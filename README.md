@@ -43,7 +43,7 @@ $go get -u github.com/xtaci/kcptun/client
 $go get -u github.com/xtaci/kcptun/server
 ```
 
-All releases are genereated by `build-release.sh` script.
+All precompiled releases are genereated by `build-release.sh` script.
 
 ### Performance
 
@@ -57,7 +57,7 @@ All releases are genereated by `build-release.sh` script.
 
 > **A:**
 
-> Step 1：Increase `-rcvwnd` on kcp client and `-sndwnd` on kcp server **simultaneously & gradually**, the mininum of the two decides the maximum transfer rate of the link.
+> Step 1：Increase `-rcvwnd` on KCP Client and `-sndwnd` on KCP Server **simultaneously & gradually**, the mininum one decides the maximum transfer rate of the link, as `wnd * mtu / rtt`.
 
 > Step 2：Try download something and to see if it meets your requirements.
 
@@ -71,7 +71,7 @@ All releases are genereated by `build-release.sh` script.
 
 > eg: `-mode fast3`    
 
-> Aggresiveness/Responsiveness On Retransmission for embeded modes:
+> Aggresiveness/Responsiveness on retransmission for embeded modes:
 
 > *fast3 > fast2 > fast > normal > default*
 
