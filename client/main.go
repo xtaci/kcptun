@@ -594,6 +594,7 @@ func main() {
 		chScavenger := make(chan *smux.Session, 128)
 		go scavenger(chScavenger, config.ScavengeTTL)
 		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
+		go parentMonitor(3)
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
@@ -620,6 +621,25 @@ func main() {
 type scavengeSession struct {
 	session *smux.Session
 	ts      time.Time
+}
+
+const (
+	maxScavengeTTL = 10 * time.Minute
+)
+
+func parentMonitor(interval int) {
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
+	pid := os.Getppid()
+	for {
+		select {
+		case <-ticker.C:
+			curpid := os.Getppid()
+			if curpid != pid {
+				os.Exit(1)
+			}
+		}
+	}
 }
 
 func scavenger(ch chan *smux.Session, ttl int) {

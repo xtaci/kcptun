@@ -484,6 +484,7 @@ func main() {
 		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
+		go parentMonitor(3)
 
 		for {
 			if conn, err := lis.AcceptKCP(); err == nil {
@@ -506,6 +507,21 @@ func main() {
 		}
 	}
 	myApp.Run(os.Args)
+}
+
+func parentMonitor(interval int) {
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
+	pid := os.Getppid()
+	for {
+		select {
+		case <-ticker.C:
+			curpid := os.Getppid()
+			if curpid != pid {
+				os.Exit(1)
+			}
+		}
+	}
 }
 
 func snmpLogger(path string, interval int) {
