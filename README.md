@@ -32,7 +32,9 @@ Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 KCP Client: ./client_darwin_amd64 -r "KCP_SERVER_IP:4000" -l ":8388" -mode fast2
 KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2
 ```
-The above command can establish 8388/tcp port forwarding (through 4000/udp port).
+The above commands will establish port forwarding for 8388/tcp as:
+
+Application -> KCP Client(8388/tcp) -> KCP Server(4000/udp) -> Server(8388/tcp) 
 
 ### Install from source
 
