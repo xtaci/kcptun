@@ -55,19 +55,13 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 > **Q: I have a high speed network link, how to reach the maximum bandwidth?**        
 
-> **A:**
-
-> Step 1：Increase `-rcvwnd` on KCP Client and `-sndwnd` on KCP Server **simultaneously & gradually**, the mininum one decides the maximum transfer rate of the link, as `wnd * mtu / rtt`.
-
-> Step 2：Try download something and to see if it meets your requirements.
+> **A:** Increase `-rcvwnd` on KCP Client and `-sndwnd` on KCP Server **simultaneously & gradually**, the mininum one decides the maximum transfer rate of the link, as `wnd * mtu / rtt`; Then try downloading something and to see if it meets your requirements.
 
 #### Improving Latency
 
 > **Q: I'm using kcptun for game, I don't want any lag happening.**    
 
-> **A:**
-
-> Lag means packet loss for most of the time, by changing `-mode`, lags can be improved.   
+> **A:** Lag means packet loss for most of the time, lags can be improved by changing `-mode`.
 
 > eg: `-mode fast3`    
 
