@@ -53,7 +53,7 @@ All releases are genereated by `build-release.sh` script.
 
 > **A:**
 
-> Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.
+> Step 1：Increase `-rcvwnd` on kcp client and `-sndwnd` on kcp server **simultaneously & gradually**, the mininum of the two decides the maximum transfer rate of the link.
 
 > Step 2：Try download something and to see if it meets your requirements.
 
@@ -63,7 +63,7 @@ All releases are genereated by `build-release.sh` script.
 
 > **A:**
 
-> Lags means packet loss for most of the time, by changing `-mode` may improve latency:     
+> Lags means packet loss for most of the time, by changing `-mode`, lags can be improved.   
 
 > eg: `-mode fast3`    
 
