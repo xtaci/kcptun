@@ -22,6 +22,8 @@
 
 <img src="kcptun.png" alt="kcptun" height="200px"/>
 
+-
+
 ### QuickStart
 Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
@@ -31,6 +33,13 @@ KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2
 ```
 The above command can establish 8388/tcp port forwarding (through 4000/udp port).
 
+### Install from source
+```
+$go get -u github.com/xtaci/kcptun/client
+$go get -u github.com/xtaci/kcptun/server
+```
+
+All releases are genereated by `build-release.sh` script.
 
 ### Performance
 <img src="fast.png" alt="fast.com" height="256px" />       
