@@ -100,28 +100,40 @@ GLOBAL OPTIONS:
 
 <p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
-***Both sides must agree on the following parameters:***
-* datashard
-* parityshard
-* nocomp
-* key
-* crypt
+### Tuning Guide
 
-other parameters can be set independently.
+#### Improving Thoughput
 
-*How to optimize*：
-> Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually。       
-> Step 2：Try download something and watch network IO to see if it helps.     
+Q: I have a high speed network link, how to reach the maximum bandwidth？
 
-***NOTICE: if too much retranmission happens, it's quite possible the windows are too large***
+A:
 
-### Embeded Mode
+Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.
 
-Aggresiveness On Retransmission:
+Step 2：Try download something and watch network IO to see if it meets your requirements. 
+
+#### Improving Latency
+
+Q: I'm using kcptun for game, I don't want any lags happening.
+
+A: Lags means packet loss for most of the time, there are some options for dealing with packet loss.
+
+1. changing embeded modes:
+
+eg:
+
+```-mode fast3```
+
+Aggresiveness/Responsiveness On Retransmission for embeded modes:
 
 *fast3 > fast2 > fast > normal > default*    
 
-Manual control is supported with hidden parameters, you must understand KCP protocol before doing this. eg:
+2. Setting DSCP may reduce packet loss:
+
+eg:
+```-dscp 46```
+
+Finally, manual control is supported with hidden parameters, you must understand KCP protocol before doing this. eg:
 
 ```
  -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
