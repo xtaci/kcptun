@@ -104,8 +104,7 @@ GLOBAL OPTIONS:
 
 #### Improving Thoughput
 
-Q: I have a high speed network link, how to reach the maximum bandwidth？
-
+**Q: I have a high speed network link, how to reach the maximum bandwidth?**
 A:
 
 Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.
@@ -114,7 +113,7 @@ Step 2：Try download something and watch network IO to see if it meets your req
 
 #### Improving Latency
 
-Q: I'm using kcptun for game, I don't want any lags happening.
+**Q: I'm using kcptun for game, I don't want any lags happening.**
 
 A: Lags means packet loss for most of the time, by changing `-mode` may improve latency: 
 
