@@ -161,7 +161,7 @@ It is able to detect and correct multiple symbol errors. By adding t check symbo
 
 ![reed-solomon](rs.png)
 
-Setting parameters of RS-Code with ```-datashard m -parityshard n``` on both client and server.
+Setting parameters of RS-Code with ```-datashard m -parityshard n``` on both KCP Client & KCP Server.
 
 #### DSCP
 
