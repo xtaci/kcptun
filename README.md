@@ -73,7 +73,11 @@ All releases are genereated by `build-release.sh` script.
 
 ### Expert Tuning Guide
 
-#### Usage
+#### Overview of parameters
+
+<p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
+
+#### Complete Usage
 
 Help output under MacOS X:
 ```
@@ -145,10 +149,6 @@ GLOBAL OPTIONS:
    --help, -h                       show help
    --version, -v                    print the version
 ```
-
-#### Parameters by Layers
-
-<p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
 #### Forward Error Correction
 
