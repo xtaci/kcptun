@@ -1,4 +1,4 @@
-# <img src="logo.png" alt="kcptun" height="60px" /> 
+# <img src="logo.png" alt="kcptun" height="54px" /> 
 [![Release][1]][2] [![Powered][7]][8] [![Build Status][3]][4] [![Go Report Card][5]][6]
 [1]: https://img.shields.io/github/release/xtaci/kcptun.svg
 [2]: https://github.com/xtaci/kcptun/releases/latest
