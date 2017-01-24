@@ -149,6 +149,23 @@ the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` f
 
 NOTICE: ```-crypt xor``` is also insecure, do not use this unless you know what you are doing.
 
+Benchmarks for different crypto algorithms:
+
+```
+BenchmarkAES128-4      	  200000	     11182 ns/op
+BenchmarkAES192-4      	  200000	     12699 ns/op
+BenchmarkAES256-4      	  100000	     13757 ns/op
+BenchmarkTEA-4         	   50000	     26441 ns/op
+BenchmarkSimpleXOR-4   	 3000000	       441 ns/op
+BenchmarkBlowfish-4    	   30000	     48036 ns/op
+BenchmarkNone-4        	20000000	       106 ns/op
+BenchmarkCast5-4       	   20000	     60222 ns/op
+BenchmarkTripleDES-4   	    2000	    878759 ns/op
+BenchmarkTwofish-4     	   20000	     68501 ns/op
+BenchmarkXTEA-4        	   20000	     77417 ns/op
+BenchmarkSalsa20-4     	  300000	      4998 ns/op
+```
+
 #### Memory Control
 
 Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
