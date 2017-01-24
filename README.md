@@ -229,3 +229,4 @@ Of which ```RetransSegs,FastRetransSegs,LostSegs,OutSegs``` is the most useful.
 11. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
 12. http://http2.github.io/ -- What is HTTP/2?
 13. http://www.lartc.org/ -- Linux Advanced Routing & Traffic Control
+14. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
