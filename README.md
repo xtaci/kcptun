@@ -73,13 +73,12 @@ All releases are genereated by `build-release.sh` script.
 
 ### Expert Tuning Guide
 
-#### Overview of parameters
+#### Overview
 
 <p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
-#### Complete Usage
+#### Usage
 
-Help output under MacOS X:
 ```
 $ ./client_darwin_amd64 -h
 NAME:
@@ -175,7 +174,7 @@ the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` f
 
 NOTICE: ```-crypt xor``` is also insecure, do not use this unless you know what you are doing.
 
-Benchmarks for different crypto algorithms:
+Benchmarks for crypto algorithms supported by kcptun:
 
 ```
 BenchmarkAES128-4      	  200000	     11182 ns/op
@@ -197,21 +196,6 @@ BenchmarkSalsa20-4     	  300000	      4998 ns/op
 Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
 Reference: https://blog.golang.org/go15gc
 
-#### Traffic Control
-
-***Intended audience : for those server's bandwidth is quite limited.***      
-
-Example: To limit outgoing bandwidth to 32mbit/s on server. 
-```
-root@kcptun:~# cat tc.sh
-tc qdisc del dev eth0 root
-tc qdisc add dev eth0 root handle 1: htb
-tc class add dev eth0 parent 1: classid 1:1 htb rate 32mbit
-tc filter add dev eth0 protocol ip parent 1:0 prio 1 handle 10 fw flowid 1:1
-iptables -t mangle -A POSTROUTING -o eth0  -j MARK --set-mark 10
-root@kcptun:~#
-```
-
 #### Compression
 
 kcptun has builtin snappy algorithms for compressing streams:
@@ -225,9 +209,9 @@ kcptun has builtin snappy algorithms for compressing streams:
 
 > Reference: http://google.github.io/snappy/
 
-compression may save bandwidth for **plaintext** data, such as HTTP data.
+Compression may save bandwidth for **PLAINTEXT** data, such as HTTP data.
 
-disable compression by setting ```-nocomp``` on both side.
+Compression is enabled by default, you can disable it by setting ```-nocomp``` on both side.
 
 #### SNMP
 
@@ -260,7 +244,6 @@ type Snmp struct {
 ```
 
 Sending a signal by ```kill -SIGUSR1 pid``` will give SNMP information for KCP，useful for fine-grained adjustment.
-Of which ```RetransSegs,FastRetransSegs,LostSegs,OutSegs``` is the most useful.
 
 ### References
 
