@@ -49,25 +49,18 @@ All releases are genereated by `build-release.sh` script.
 
 #### Improving Thoughput
 
-**Q: I have a high speed network link, how to reach the maximum bandwidth?**
-
-A:
-
-Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.
-
-Step 2：Try download something and to see if it meets your requirements. 
+> **Q: I have a high speed network link, how to reach the maximum bandwidth?**        
+> A:    
+> Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.     
+> Step 2：Try download something and to see if it meets your requirements.       
 
 #### Improving Latency
 
-**Q: I'm using kcptun for game, I don't want any lags happening.**
-
-A: Lags means packet loss for most of the time, by changing `-mode` may improve latency: 
-
-eg: `-mode fast3`
-
-Aggresiveness/Responsiveness On Retransmission for embeded modes:
-
-*fast3 > fast2 > fast > normal > default*
+> **Q: I'm using kcptun for game, I don't want any lags happening.**    
+> A: Lags means packet loss for most of the time, by changing `-mode` may improve latency:     
+> eg: `-mode fast3`    
+> Aggresiveness/Responsiveness On Retransmission for embeded modes:    
+> *fast3 > fast2 > fast > normal > default*    
 
 ### Expert Tuning Guide
 
