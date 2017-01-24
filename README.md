@@ -43,7 +43,7 @@ $go get -u github.com/xtaci/kcptun/client
 $go get -u github.com/xtaci/kcptun/server
 ```
 
-All precompiled releases are genereated by `build-release.sh` script.
+All precompiled releases are genereated from `build-release.sh` script.
 
 ### Performance
 
