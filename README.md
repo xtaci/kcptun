@@ -163,7 +163,7 @@ Differentiated services or DiffServ is a computer networking architecture that s
 
 DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit differentiated services field (DS field) in the IP header for packet classification purposes. The DS field and ECN field replace the outdated IPv4 TOS field.
 
-setting each side with ```-dscp value```.
+setting each side with ```-dscp value```, Here are some [Commonly used DSCP values](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values).
 
 #### Security
 
