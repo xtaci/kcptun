@@ -9,13 +9,11 @@
 [7]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [8]: https://github.com/skywind3000/kcp
 
-A tool for converting TCP stream into KCP stream, [Download Now!](https://github.com/xtaci/kcptun/releases/latest)
-
-![kcptun](kcptun.png)
-
-***kcptun is based on [kcp-go](https://github.com/xtaci/kcp-go)***   
+<img src="kcptun.png" alt="kcptun" height="200px"/>
 
 ### QuickStart
+Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
+
 ```
 KCP Client: ./client_darwin_amd64 -r "SERVER_IP:4000" -l ":8388" -mode fast2
 KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2
