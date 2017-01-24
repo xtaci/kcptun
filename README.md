@@ -69,6 +69,8 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 > *fast3 > fast2 > fast > normal > default*
 
+-
+
 ### Expert Tuning Guide
 
 #### Overview
