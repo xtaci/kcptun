@@ -26,12 +26,12 @@
 
 客户端、服务器分别**下载**对应平台的二进制压缩包，并**解压**，通过下面的命令**启动**端口转发。
 ```
-客户端: ./client_darwin_amd64 -r "KCP服务器IP地址:4000" -l ":8388" -mode fast2
-服务器: ./server_linux_amd64 -t "目标服务器IP地址:8388" -l ":4000" -mode fast2
+KCP客户端: ./client_darwin_amd64 -r "KCP服务器IP地址:4000" -l ":8388" -mode fast2
+KCP服务器: ./server_linux_amd64 -t "目标服务器IP地址:8388" -l ":4000" -mode fast2
 ```
 以上命令可以实现8388/tcp端口的转发（通过4000/udp端口），即：
 
-Application -> KCP Client(8388/tcp) -> KCP Server(4000/udp) -> Server(8388/tcp)
+Application -> KCP客户端(8388/tcp) -> KCP服务器(4000/udp) -> Server(8388/tcp)
 
 ### 手动编译
 ```
