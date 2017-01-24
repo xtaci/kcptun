@@ -118,28 +118,14 @@ Q: I'm using kcptun for game, I don't want any lags happening.
 
 A: Lags means packet loss for most of the time, there are some options for dealing with packet loss.
 
-1. changing embeded modes:
-
-eg:
-
 ```-mode fast3```
 
 Aggresiveness/Responsiveness On Retransmission for embeded modes:
 
-*fast3 > fast2 > fast > normal > default*    
+*fast3 > fast2 > fast > normal > default*
 
-2. Setting DSCP may reduce packet loss:
-
-eg:
-```-dscp 46```
-
-Finally, manual control is supported with hidden parameters, you must understand KCP protocol before doing this. eg:
-
-```
- -mode manual -nodelay 1 -resend 2 -nc 1 -interval 20
-```
-
-### Forward Error Correction
+### Advanced Tuning
+#### Forward Error Correction
 
 In coding theory, the Reed–Solomon code belongs to the class of non-binary cyclic error-correcting codes. The Reed–Solomon code is based on univariate polynomials over finite fields.
 
@@ -156,7 +142,6 @@ Differentiated services or DiffServ is a computer networking architecture that s
 DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit differentiated services field (DS field) in the IP header for packet classification purposes. The DS field and ECN field replace the outdated IPv4 TOS field.[1]
 
 setting each side with ```-dscp value```.
-
 
 ### Security
 
