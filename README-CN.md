@@ -1,8 +1,4 @@
-<p align="center"><img src="logo.png" alt="kcptun" height="60px" /></p>
-<p align="center"><em>A Simple UDP Tunnel Based On KCP</em></p>
-
--
-
+# <img src="logo.png" alt="kcptun" height="54px" /> 
 [![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2]
 [1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
 [2]: https://microbadger.com/images/xtaci/kcptun
@@ -21,19 +17,10 @@
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
 
-<p align="center"><img src="kcptun.png" alt="kcptun" height="300px"/></p>
-<p align="center"><a href="https://github.com/xtaci/kcptun/releases/latest">立即安装</a></p>
-<p align="center"><em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt</em></p>
+
+<img src="kcptun.png" alt="kcptun" height="300px"/>
 
 -
-### 手动编译
-```
-$go get -u github.com/xtaci/kcptun/client
-$go get -u github.com/xtaci/kcptun/server
-```
-注意: 如果出现错误提示，请确保依赖库能正确访问到。
-
-Release中的所有二进制版本，是通过 `build-release.sh` 脚本生成并优化。
 
 ### 快速设定
 
@@ -43,6 +30,15 @@ Release中的所有二进制版本，是通过 `build-release.sh` 脚本生成�
 客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388" -mode fast2
 ```
 以上命令可以实现8388/tcp端口的转发（通过4000/udp端口）。
+
+### 手动编译
+```
+$go get -u github.com/xtaci/kcptun/client
+$go get -u github.com/xtaci/kcptun/server
+```
+注意: 如果出现错误提示，请确保依赖库能正确访问到。
+
+Release中的所有二进制版本，是通过 `build-release.sh` 脚本生成并优化。
 
 ### 速度对比
 
