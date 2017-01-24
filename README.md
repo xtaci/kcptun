@@ -1,5 +1,5 @@
 # <img src="logo.png" alt="kcptun" height="54px" /> 
-[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20] [![Docker][1]][2]
+[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2]
 [1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
 [2]: https://microbadger.com/images/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
@@ -16,8 +16,6 @@
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
-[19]: https://badges.gitter.im/xtaci/kcptun.svg
-[20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
 
 <img src="kcptun.png" alt="kcptun" height="200px"/>
