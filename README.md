@@ -23,6 +23,7 @@
 -
 
 ### QuickStart
+
 Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
 ```
@@ -32,6 +33,7 @@ KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2
 The above command can establish 8388/tcp port forwarding (through 4000/udp port).
 
 ### Install from source
+
 ```
 $go get -u github.com/xtaci/kcptun/client
 $go get -u github.com/xtaci/kcptun/server
@@ -40,9 +42,36 @@ $go get -u github.com/xtaci/kcptun/server
 All releases are genereated by `build-release.sh` script.
 
 ### Performance
+
 <img src="fast.png" alt="fast.com" height="256px" />       
 
-### Usage
+### Basic Tuning Guide
+
+#### Improving Thoughput
+
+**Q: I have a high speed network link, how to reach the maximum bandwidth?**
+A:
+
+Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.
+
+Step 2：Try download something and watch network IO to see if it meets your requirements. 
+
+#### Improving Latency
+
+**Q: I'm using kcptun for game, I don't want any lags happening.**
+
+A: Lags means packet loss for most of the time, by changing `-mode` may improve latency: 
+
+eg: `-mode fast3`
+
+Aggresiveness/Responsiveness On Retransmission for embeded modes:
+
+*fast3 > fast2 > fast > normal > default*
+
+### Expert Tuning Guide
+
+#### Usage
+
 Help output under MacOS X:
 ```
 $ ./client_darwin_amd64 -h
@@ -118,30 +147,6 @@ GLOBAL OPTIONS:
 
 <p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
-### Tuning Guide
-
-#### Improving Thoughput
-
-**Q: I have a high speed network link, how to reach the maximum bandwidth?**
-A:
-
-Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.
-
-Step 2：Try download something and watch network IO to see if it meets your requirements. 
-
-#### Improving Latency
-
-**Q: I'm using kcptun for game, I don't want any lags happening.**
-
-A: Lags means packet loss for most of the time, by changing `-mode` may improve latency: 
-
-```-mode fast3```
-
-Aggresiveness/Responsiveness On Retransmission for embeded modes:
-
-*fast3 > fast2 > fast > normal > default*
-
-### Advanced Tuning
 #### Forward Error Correction
 
 In coding theory, the Reed–Solomon code belongs to the class of non-binary cyclic error-correcting codes. The Reed–Solomon code is based on univariate polynomials over finite fields.
