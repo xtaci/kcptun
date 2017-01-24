@@ -29,7 +29,9 @@
 服务器: ./server_linux_amd64 -t "服务器IP地址:8388" -l ":4000" -mode fast2
 客户端: ./client_darwin_amd64 -r "服务器IP地址:4000" -l ":8388" -mode fast2
 ```
-以上命令可以实现8388/tcp端口的转发（通过4000/udp端口）。
+以上命令可以实现8388/tcp端口的转发（通过4000/udp端口），即：
+
+Application -> KCP Client(8388/tcp) -> KCP Server(4000/udp) -> Server(8388/tcp)
 
 ### 手动编译
 ```
