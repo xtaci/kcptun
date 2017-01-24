@@ -3,7 +3,7 @@
 
 -
 
-[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Gitter][19]][20] [![Docker][1]][2]
+[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2]
 [1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
 [2]: https://microbadger.com/images/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
@@ -20,8 +20,6 @@
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
-[19]: https://badges.gitter.im/xtaci/kcptun.svg
-[20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
 <p align="center"><img src="kcptun.png" alt="kcptun" height="300px"/></p>
 <p align="center"><a href="https://github.com/xtaci/kcptun/releases/latest">立即安装</a></p>
