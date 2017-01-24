@@ -135,7 +135,7 @@ It is able to detect and correct multiple symbol errors. By adding t check symbo
 
 Setting parameters of RS-Code with ```-datashard m -parityshard n```
 
-### DSCP
+#### DSCP
 
 Differentiated services or DiffServ is a computer networking architecture that specifies a simple, scalable and coarse-grained mechanism for classifying and managing network traffic and providing quality of service (QoS) on modern IP networks. DiffServ can, for example, be used to provide low-latency to critical network traffic such as voice or streaming media while providing simple best-effort service to non-critical services such as web traffic or file transfers.
 
@@ -143,19 +143,19 @@ DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit dif
 
 setting each side with ```-dscp value```.
 
-### Security
+#### Security
 
 No matter what encryption you are using for application layer, if you specify ```-crypt none``` to kcptun, 
 the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` for encryption at least .
 
 NOTICE: ```-crypt xor``` is also insecure, do not use this unless you know what you are doing.
 
-### Memory Control
+#### Memory Control
 
 Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
 Reference: https://blog.golang.org/go15gc
 
-### Traffic Control
+#### Traffic Control
 
 ***Intended audience : for those server's bandwidth is quite limited.***      
 
@@ -170,7 +170,7 @@ iptables -t mangle -A POSTROUTING -o eth0  -j MARK --set-mark 10
 root@kcptun:~#
 ```
 
-### Snappy Stream Compression
+#### Snappy Stream Compression
 
 > Snappy is a compression/decompression library. It does not aim for maximum
 > compression, or compatibility with any other compression library; instead,
@@ -185,7 +185,7 @@ disable compression by setting ```-nocomp``` on both side.
 
 > Tips: Turning off compression may reduce latency.
 
-### SNMP
+#### SNMP
 
 ```go
 // Snmp defines network statistics indicator
