@@ -116,7 +116,7 @@ Step 2：Try download something and watch network IO to see if it meets your req
 
 Q: I'm using kcptun for game, I don't want any lags happening.
 
-A: Lags means packet loss for most of the time, there are some options for dealing with packet loss.
+A: Lags means packet loss for most of the time, by changing `-mode` may improve latency: 
 
 ```-mode fast3```
 
