@@ -243,25 +243,28 @@ root@kcptun:~#
 ```go
 // Snmp defines network statistics indicator
 type Snmp struct {
-	BytesSent        uint64 // payload bytes sent
-	BytesReceived    uint64
-	MaxConn          uint64
-	ActiveOpens      uint64
-	PassiveOpens     uint64
-	CurrEstab        uint64
-	InErrs           uint64
-	InCsumErrors     uint64 // checksum errors
-	InSegs           uint64
-	OutSegs          uint64
-	OutBytes         uint64 // udp bytes sent
-	RetransSegs      uint64
-	FastRetransSegs  uint64
-	EarlyRetransSegs uint64
-	LostSegs         uint64
-	RepeatSegs       uint64
-	FECRecovered     uint64
-	FECErrs          uint64
-	FECSegs          uint64 // fec segments received
+    BytesSent        uint64 // raw bytes sent
+    BytesReceived    uint64
+    MaxConn          uint64
+    ActiveOpens      uint64
+    PassiveOpens     uint64
+    CurrEstab        uint64 // count of connections for now
+    InErrs           uint64 // udp read errors
+    InCsumErrors     uint64 // checksum errors from CRC32
+    KCPInErrors      uint64 // packet iput errors from kcp
+    InSegs           uint64
+    OutSegs          uint64
+    InBytes          uint64 // udp bytes received
+    OutBytes         uint64 // udp bytes sent
+    RetransSegs      uint64
+    FastRetransSegs  uint64
+    EarlyRetransSegs uint64
+    LostSegs         uint64 // number of segs infered as lost
+    RepeatSegs       uint64 // number of segs duplicated
+    FECRecovered     uint64 // correct packets recovered from FEC
+    FECErrs          uint64 // incorrect packets recovered from FEC
+    FECSegs          uint64 // FEC segments received
+    FECShortShards   uint64 // number of data shards that's not enough for recovery
 }
 ```
 
