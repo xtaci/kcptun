@@ -23,10 +23,9 @@
 [19]: https://badges.gitter.im/xtaci/kcptun.svg
 [20]: https://gitter.im/xtaci/kcptun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-<p align="center"><img src="kcptun.png" alt="kcptun" height="200px"/></p>
+<p align="center"><img src="kcptun.png" alt="kcptun" height="300px"/></p>
 <p align="center"><a href="https://github.com/xtaci/kcptun/releases/latest">立即安装</a></p>
 <p align="center"><em>支持macOS/Linux/Windows/FreeBSD/ARM/Raspberry Pi/OpenWrt</em></p>
-<p align="right"><a href="https://github.com/xtaci/kcptun/blob/master/README.en.md">ENGLISH VERSION</a></p>
 
 -
 ### 手动编译
