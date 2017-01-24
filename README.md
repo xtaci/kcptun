@@ -55,7 +55,7 @@ A:
 
 Step 1：Increase client `-rcvwnd` & server `-sndwnd` simultaneously & gradually.
 
-Step 2：Try download something and watch network IO to see if it meets your requirements. 
+Step 2：Try download something and to see if it meets your requirements. 
 
 #### Improving Latency
 
