@@ -33,7 +33,7 @@ KCP服务器: ./server_linux_amd64 -t "目标服务器IP地址:8388" -l ":4000" 
 
 Application -> KCP客户端(8388/tcp) -> KCP服务器(4000/udp) -> Server(8388/tcp)
 
-### 源码编译
+### 从源码安装
 ```
 $go get -u github.com/xtaci/kcptun/client
 $go get -u github.com/xtaci/kcptun/server
