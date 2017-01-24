@@ -471,9 +471,7 @@ func main() {
 		}
 
 		log.Println("listening on:", listener.Addr())
-		log.Println("encryption:", config.Crypt)
 		log.Println("nodelay parameters:", config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
-		log.Println("remote address:", config.RemoteAddr)
 		log.Println("sndwnd:", config.SndWnd, "rcvwnd:", config.RcvWnd)
 		log.Println("compression:", !config.NoComp)
 		log.Println("mtu:", config.MTU)
