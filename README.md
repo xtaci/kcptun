@@ -49,43 +49,6 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 <img src="fast.png" alt="fast.com" height="256px" />       
 
-### Basic Tuning Guide
-
-#### Improving Thoughput
-
-> **Q: I have a high speed network link, how to reach the maximum bandwidth?**        
-
-> **A:** Increase `-rcvwnd` on KCP Client and `-sndwnd` on KCP Server **simultaneously & gradually**, the mininum one decides the maximum transfer rate of the link, as `wnd * mtu / rtt`; Then try downloading something and to see if it meets your requirements.
-
-#### Improving Latency
-
-> **Q: I'm using kcptun for game, I don't want any lag happening.**    
-
-> **A:** Lag means packet loss for most of the time, lags can be improved by changing `-mode`.
-
-> eg: `-mode fast3`    
-
-> Aggresiveness/Responsiveness on retransmission for embeded modes are:
-
-> *fast3 > fast2 > fast > normal > default*
-
--
-
-### Expert Tuning Guide
-
-#### Overview
-
-<p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
-
-**Some parameters of Server and Client must be identical:**
-
-* datashard --Forward Error Correction
-* parityshard --Forward Error Correction
-* key
-* crypt
-
-Other parameters can be set independently on both sides.
-
 #### Usage
 
 ```
@@ -157,6 +120,43 @@ GLOBAL OPTIONS:
    --help, -h                       show help
    --version, -v                    print the version
 ```
+
+#### Overview
+
+<p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
+
+**Some parameters of Server and Client must be identical:**
+
+* datashard --Forward Error Correction
+* parityshard --Forward Error Correction
+* key
+* crypt
+
+Other parameters can be set independently on both sides.
+
+### Basic Tuning Guide
+
+#### Improving Thoughput
+
+> **Q: I have a high speed network link, how to reach the maximum bandwidth?**        
+
+> **A:** Increase `-rcvwnd` on KCP Client and `-sndwnd` on KCP Server **simultaneously & gradually**, the mininum one decides the maximum transfer rate of the link, as `wnd * mtu / rtt`; Then try downloading something and to see if it meets your requirements.
+
+#### Improving Latency
+
+> **Q: I'm using kcptun for game, I don't want any lag happening.**    
+
+> **A:** Lag means packet loss for most of the time, lags can be improved by changing `-mode`.
+
+> eg: `-mode fast3`    
+
+> Aggresiveness/Responsiveness on retransmission for embeded modes are:
+
+> *fast3 > fast2 > fast > normal > default*
+
+-
+
+### Expert Tuning Guide
 
 #### Forward Error Correction
 
