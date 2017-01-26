@@ -49,7 +49,7 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 <img src="fast.png" alt="fast.com" height="256px" />       
 
-#### Usage
+### Usage
 
 ```
 $ ./client_darwin_amd64 -h
