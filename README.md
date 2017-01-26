@@ -77,6 +77,15 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 <p align="left"><img src="layeredparams.png" alt="params" height="450px"/></p>
 
+**Some parameters of Server and Client must be identical:**
+
+* datashard --Forward Error Correction
+* parityshard --Forward Error Correction
+* key
+* crypt
+
+Other parameters can be set independently on both sides.
+
 #### Usage
 
 ```
