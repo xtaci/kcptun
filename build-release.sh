@@ -1,10 +1,31 @@
 #!/bin/bash
-sum='sha256sum'
 unamestr=`uname`
-if [[ "$unamestr" == 'Darwin' ]]; then
-	sum='md5'
-fi
 
+inpath()
+{   
+    cmd=$1    path=$2    retval=1
+    oldIFS=$IFS    IFS=":"
+
+    for directory in $path
+    do 
+        if [ -x $directory/$cmd ]; then
+            retval=0
+        fi
+    done
+    IFS=$oldIFS
+    return $retval
+}
+
+checkCmd()
+{
+    var="$1"
+    if ! inpath $var $PATH; then
+       return 1
+    fi
+}
+
+main()
+{
 UPX=false
 if hash upx 2>/dev/null; then
 	UPX=true
@@ -52,3 +73,20 @@ tar -zcf kcptun-linux-mipsle-$VERSION.tar.gz client_linux_mipsle server_linux_mi
 tar -zcf kcptun-linux-mips-$VERSION.tar.gz client_linux_mips server_linux_mips
 $sum kcptun-linux-mipsle-$VERSION.tar.gz
 $sum kcptun-linux-mips-$VERSION.tar.gz
+exit
+}
+
+
+checkCmd "sha1sum"
+case $? in
+    0)sum="sha1sum"
+      main
+    ;;
+    1)if checkCmd "shasum"; then
+         sum="shasum"
+	 main
+      fi
+      echo "Please install sha1sum or shasum."
+      exit
+    ;;
+esac
