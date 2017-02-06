@@ -363,6 +363,7 @@ func main() {
 			if err != nil {
 				return nil, errors.Wrap(err, "createConn()")
 			}
+			log.Println("connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
 			return session, nil
 		}
 
@@ -384,9 +385,7 @@ func main() {
 		}, numconn)
 
 		for k := range muxes {
-			sess, err := createConn()
-			checkError(err)
-			muxes[k].session = sess
+			muxes[k].session = waitConn()
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 		}
 
