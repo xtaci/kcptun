@@ -14,6 +14,7 @@ type Config struct {
 	Mode         string `json:"mode"`
 	Conn         int    `json:"conn"`
 	AutoExpire   int    `json:"autoexpire"`
+	ScavengeTTL  int    `json:"scavengettl"`
 	MTU          int    `json:"mtu"`
 	SndWnd       int    `json:"sndwnd"`
 	RcvWnd       int    `json:"rcvwnd"`

@@ -135,6 +135,11 @@ func main() {
 			Usage: "set auto expiration time(in seconds) for a single UDP connection, 0 to disable",
 		},
 		cli.IntFlag{
+			Name:  "scavengettl",
+			Value: 600,
+			Usage: "set how long an expired connection can live(in sec), -1 to disable",
+		},
+		cli.IntFlag{
 			Name:  "mtu",
 			Value: 1350,
 			Usage: "set maximum transmission unit for UDP packets",
@@ -233,6 +238,7 @@ func main() {
 		config.Mode = c.String("mode")
 		config.Conn = c.Int("conn")
 		config.AutoExpire = c.Int("autoexpire")
+		config.ScavengeTTL = c.Int("scavengettl")
 		config.MTU = c.Int("mtu")
 		config.SndWnd = c.Int("sndwnd")
 		config.RcvWnd = c.Int("rcvwnd")
@@ -325,6 +331,7 @@ func main() {
 		log.Println("keepalive:", config.KeepAlive)
 		log.Println("conn:", config.Conn)
 		log.Println("autoexpire:", config.AutoExpire)
+		log.Println("scavengettl:", config.ScavengeTTL)
 		log.Println("snmplog:", config.SnmpLog)
 		log.Println("snmpperiod:", config.SnmpPeriod)
 
@@ -390,7 +397,7 @@ func main() {
 		}
 
 		chScavenger := make(chan *smux.Session, 128)
-		go scavenger(chScavenger)
+		go scavenger(chScavenger, config.ScavengeTTL)
 		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
 		rr := uint16(0)
 		for {
@@ -423,27 +430,27 @@ func main() {
 
 type scavengeSession struct {
 	session *smux.Session
-	ttl     time.Time
+	ts      time.Time
 }
 
-const (
-	maxScavengeTTL = 10 * time.Minute
-)
-
-func scavenger(ch chan *smux.Session) {
-	ticker := time.NewTicker(30 * time.Second)
+func scavenger(ch chan *smux.Session, ttl int) {
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	var sessionList []scavengeSession
 	for {
 		select {
 		case sess := <-ch:
 			sessionList = append(sessionList, scavengeSession{sess, time.Now()})
+			log.Println("session marked as expired")
 		case <-ticker.C:
 			var newList []scavengeSession
 			for k := range sessionList {
 				s := sessionList[k]
-				if s.session.NumStreams() == 0 || s.session.IsClosed() || time.Since(s.ttl) > maxScavengeTTL {
-					log.Println("session scavenged")
+				if s.session.NumStreams() == 0 || s.session.IsClosed() {
+					log.Println("session normally closed")
+					s.session.Close()
+				} else if ttl >= 0 && time.Since(s.ts) >= time.Duration(ttl)*time.Second {
+					log.Println("session reached scavenge ttl")
 					s.session.Close()
 				} else {
 					newList = append(newList, sessionList[k])
