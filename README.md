@@ -257,6 +257,18 @@ https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configurati
 
 Low-level KCP configuration can be altered by using manual mode like above, make sure you really **UNDERSTAND** what these means before doing **ANY** manual settings.
 
+### Support
+
+You can support this project with the following methods:
+
+1. Vultr promotion code:     
+http://www.vultr.com/?ref=6897065
+
+2. Paypal    
+https://www.paypal.me/xtaci
+
+Your name or github name will be listed in this page by default.
+
 ### References
 
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
