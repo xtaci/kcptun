@@ -259,7 +259,7 @@ Low-level KCP configuration can be altered by using manual mode like above, make
 
 ### Support
 
-You can support this project with the following methods:
+You can support this project by the following methods:
 
 1. Vultr promotion code:     
 http://www.vultr.com/?ref=6897065
@@ -267,7 +267,7 @@ http://www.vultr.com/?ref=6897065
 2. Paypal    
 https://www.paypal.me/xtaci
 
-Your name or github name will be listed in this page by default.
+Your name or github name will be listed on this page by default.
 
 ### References
 
