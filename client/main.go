@@ -272,13 +272,13 @@ func main() {
 
 		switch config.Mode {
 		case "normal":
-			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 60, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 60, 3, 1
 		case "fast":
-			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 50, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 0, 50, 3, 1
 		case "fast2":
-			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 40, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 40, 3, 1
 		case "fast3":
-			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 30, 2, 1
+			config.NoDelay, config.Interval, config.Resend, config.NoCongestion = 1, 30, 3, 1
 		}
 
 		log.Println("version:", VERSION)
