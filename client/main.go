@@ -56,14 +56,13 @@ func newCompStream(conn net.Conn) *compStream {
 }
 
 func handleClient(sess *smux.Session, p1 io.ReadWriteCloser) {
+	log.Println("stream opened")
+	defer log.Println("stream closed")
+	defer p1.Close()
 	p2, err := sess.OpenStream()
 	if err != nil {
 		return
 	}
-
-	log.Println("stream opened")
-	defer log.Println("stream closed")
-	defer p1.Close()
 	defer p2.Close()
 
 	// start tunnel
