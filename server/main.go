@@ -79,12 +79,6 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			log.Println(err)
 			continue
 		}
-		if err := p2.(*net.TCPConn).SetReadBuffer(config.SockBuf); err != nil {
-			log.Println("TCP SetReadBuffer:", err)
-		}
-		if err := p2.(*net.TCPConn).SetWriteBuffer(config.SockBuf); err != nil {
-			log.Println("TCP SetWriteBuffer:", err)
-		}
 		go handleClient(p1, p2)
 	}
 }

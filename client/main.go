@@ -404,12 +404,6 @@ func main() {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			if err := p1.SetReadBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetReadBuffer:", err)
-			}
-			if err := p1.SetWriteBuffer(config.SockBuf); err != nil {
-				log.Println("TCP SetWriteBuffer:", err)
-			}
 			checkError(err)
 			idx := rr % numconn
 
