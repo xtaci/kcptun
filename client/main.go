@@ -425,7 +425,7 @@ func main() {
 		chScavenger := make(chan *smux.Session, 128)
 		go scavenger(chScavenger, config.ScavengeTTL)
 		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
-		if c.Bool("pprof") {
+		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
 		rr := uint16(0)
