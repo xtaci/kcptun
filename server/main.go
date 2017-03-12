@@ -374,7 +374,7 @@ func main() {
 
 		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
 		if c.Bool("pprof") {
-			go http.ListenAndServe("0.0.0.0:6060", nil)
+			go http.ListenAndServe(":6060", nil)
 		}
 
 		for {
