@@ -8,6 +8,8 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"sync"
 	"time"
@@ -236,6 +238,10 @@ func main() {
 			Value: 60,
 			Usage: "snmp collect period, in seconds",
 		},
+		cli.BoolFlag{
+			Name:  "pprof",
+			Usage: "start profiling server on :6060",
+		},
 		cli.StringFlag{
 			Name:  "log",
 			Value: "",
@@ -274,6 +280,7 @@ func main() {
 		config.Log = c.String("log")
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
+		config.Pprof = c.Bool("pprof")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -352,6 +359,7 @@ func main() {
 		log.Println("scavengettl:", config.ScavengeTTL)
 		log.Println("snmplog:", config.SnmpLog)
 		log.Println("snmpperiod:", config.SnmpPeriod)
+		log.Println("pprof:", config.Pprof)
 
 		smuxConfig := smux.DefaultConfig()
 		smuxConfig.MaxReceiveBuffer = config.SockBuf
@@ -417,6 +425,9 @@ func main() {
 		chScavenger := make(chan *smux.Session, 128)
 		go scavenger(chScavenger, config.ScavengeTTL)
 		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
+		if c.Bool("pprof") {
+			go http.ListenAndServe("0.0.0.0:6060", nil)
+		}
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()

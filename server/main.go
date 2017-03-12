@@ -8,6 +8,8 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"sync"
 	"time"
@@ -245,6 +247,10 @@ func main() {
 			Value: 60,
 			Usage: "snmp collect period, in seconds",
 		},
+		cli.BoolFlag{
+			Name:  "pprof",
+			Usage: "start profiling server on :6060",
+		},
 		cli.StringFlag{
 			Name:  "log",
 			Value: "",
@@ -280,6 +286,7 @@ func main() {
 		config.Log = c.String("log")
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
+		config.Pprof = c.Bool("pprof")
 
 		if c.String("c") != "" {
 			//Now only support json config file
@@ -353,6 +360,7 @@ func main() {
 		log.Println("keepalive:", config.KeepAlive)
 		log.Println("snmplog:", config.SnmpLog)
 		log.Println("snmpperiod:", config.SnmpPeriod)
+		log.Println("pprof:", config.Pprof)
 
 		if err := lis.SetDSCP(config.DSCP); err != nil {
 			log.Println("SetDSCP:", err)
@@ -365,6 +373,10 @@ func main() {
 		}
 
 		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
+		if c.Bool("pprof") {
+			go http.ListenAndServe("0.0.0.0:6060", nil)
+		}
+
 		for {
 			if conn, err := lis.AcceptKCP(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
