@@ -20,8 +20,6 @@
 
 <img src="kcptun.png" alt="kcptun" height="300px"/>
 
-[简体中文](README-CN.md)
-
 -
 
 ### QuickStart
