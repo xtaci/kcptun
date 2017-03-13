@@ -347,16 +347,17 @@ type Snmp struct {
 ### 参考资料
 
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
-2. https://github.com/klauspost/reedsolomon -- Reed-Solomon Erasure Coding in Go.
-3. https://en.wikipedia.org/wiki/Differentiated_services -- DSCP.
-4. http://google.github.io/snappy/ -- A fast compressor/decompressor.
-5. https://www.backblaze.com/blog/reed-solomon/ -- Reed-Solomon Explained.
-6. http://www.qualcomm.cn/products/raptorq -- RaptorQ Forward Error Correction Scheme for Object Delivery.
-7. https://en.wikipedia.org/wiki/PBKDF2 -- Key stretching.
-8. http://blog.appcanary.com/2016/encrypt-or-compress.html -- Should you encrypt or compress first?
-9. https://github.com/hashicorp/yamux -- Connection multiplexing library.
-10. https://tools.ietf.org/html/rfc6937 -- Proportional Rate Reduction for TCP.
-11. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
-12. http://http2.github.io/ -- What is HTTP/2?
-13. http://www.lartc.org/LARTC-zh_CN.GB2312.pdf -- Linux Advanced Routing & Traffic Control
-14. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
+1. https://github.com/xtaci/kcp-go/ -- A Production-Grade Reliable-UDP Library for golang
+1. https://github.com/klauspost/reedsolomon -- Reed-Solomon Erasure Coding in Go.
+1. https://en.wikipedia.org/wiki/Differentiated_services -- DSCP.
+1. http://google.github.io/snappy/ -- A fast compressor/decompressor.
+1. https://www.backblaze.com/blog/reed-solomon/ -- Reed-Solomon Explained.
+1. http://www.qualcomm.cn/products/raptorq -- RaptorQ Forward Error Correction Scheme for Object Delivery.
+1. https://en.wikipedia.org/wiki/PBKDF2 -- Key stretching.
+1. http://blog.appcanary.com/2016/encrypt-or-compress.html -- Should you encrypt or compress first?
+1. https://github.com/hashicorp/yamux -- Connection multiplexing library.
+1. https://tools.ietf.org/html/rfc6937 -- Proportional Rate Reduction for TCP.
+1. https://tools.ietf.org/html/rfc5827 -- Early Retransmit for TCP and Stream Control Transmission Protocol (SCTP).
+1. http://http2.github.io/ -- What is HTTP/2?
+1. http://www.lartc.org/ -- Linux Advanced Routing & Traffic Control
+1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
