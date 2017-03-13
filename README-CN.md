@@ -326,24 +326,6 @@ type Snmp struct {
 
 **对免责声明的解释、修改及更新权均属于作者本人所有。**
 
-### 特别鸣谢
-
-> 郑H立, 南东风, Li, 七七, 凌君, 昶，LesMiserables, KyOn, 噼里啪啦, 继斌, 小苍辛苦, **Ken**, 
-> 乔槁, 佳晨, 猪肉佬, lcx, 昊文, 冰峰, 凡, alex, **海豹叔叔**, 奥姐, 张冰, 司成, 
-> 武子, **慎**，Alex43211，**Coxxs**，荣，NeroNg，吴骁，定一，我不是林J，Patrick, 超, 陈，windfarer, 宇,
-> 今晶，斌，晓东，最后一缕阳光，亮，Ethan，一心不乱，allenm，冬卯，GELATO，用户1，Butterfly，光子曲面，
-> 丞佳，捉鱼，Talon，Biny，李勇，***阿彪***，***rinex20***，Fabre，路过发光体，池子，kk，杰，维维
-
-好人一生平安!
-
-### 相关软件
-
-1. https://github.com/bettermanbao/openwrt-kcptun
-2. https://github.com/EasyPi/openwrt-kcptun
-3. https://github.com/kuoruan/luci-app-kcptun
-4. https://github.com/dfdragon/kcptun_gclient
-5. https://github.com/dfdragon/kcptun_xclient
-
 ### 参考资料
 
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
