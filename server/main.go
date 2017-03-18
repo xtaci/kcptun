@@ -381,6 +381,7 @@ func main() {
 			if conn, err := lis.AcceptKCP(); err == nil {
 				log.Println("remote address:", conn.RemoteAddr())
 				conn.SetStreamMode(true)
+				conn.SetWriteDelay(true)
 				conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
 				conn.SetMtu(config.MTU)
 				conn.SetWindowSize(config.SndWnd, config.RcvWnd)
