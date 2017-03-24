@@ -18,6 +18,7 @@ func init() {
 func sigHandler() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGUSR1)
+	signal.Ignore(syscall.SIGPIPE)
 
 	for {
 		switch <-ch {
