@@ -11,7 +11,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"sync"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -28,11 +27,6 @@ var (
 	// SALT is use for pbkdf2 key expansion
 	SALT = "kcp-go"
 )
-
-// global recycle buffer
-var copyBuf sync.Pool
-
-const bufSize = 4096
 
 type compStream struct {
 	conn net.Conn
@@ -99,20 +93,10 @@ func handleClient(p1, p2 io.ReadWriteCloser) {
 
 	// start tunnel
 	p1die := make(chan struct{})
-	go func() {
-		buf := copyBuf.Get().([]byte)
-		io.CopyBuffer(p1, p2, buf)
-		close(p1die)
-		copyBuf.Put(buf)
-	}()
+	go func() { io.Copy(p1, p2); close(p1die) }()
 
 	p2die := make(chan struct{})
-	go func() {
-		buf := copyBuf.Get().([]byte)
-		io.CopyBuffer(p2, p1, buf)
-		close(p2die)
-		copyBuf.Put(buf)
-	}()
+	go func() { io.Copy(p2, p1); close(p2die) }()
 
 	// wait for tunnel termination
 	select {
@@ -130,9 +114,6 @@ func checkError(err error) {
 
 func main() {
 	rand.Seed(int64(time.Now().Nanosecond()))
-	copyBuf.New = func() interface{} {
-		return make([]byte, bufSize)
-	}
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
