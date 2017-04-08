@@ -380,6 +380,7 @@ func main() {
 				if session, err := createConn(); err == nil {
 					return session
 				} else {
+					log.Println("re-connecting:", err)
 					time.Sleep(time.Second)
 				}
 			}
