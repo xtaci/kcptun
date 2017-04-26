@@ -159,7 +159,7 @@ It is able to detect and correct multiple symbol errors. By adding t check symbo
 
 ![reed-solomon](rs.png)
 
-Setting parameters of RS-Code with ```-datashard m -parityshard n``` on **BOTH** KCP Client & KCP Server.
+Setting parameters of RS-Code with ```-datashard m -parityshard n``` on **BOTH** KCP Client & KCP Server **MUST** be **IDENTICAL**.
 
 #### DSCP
 
@@ -217,7 +217,7 @@ kcptun has builtin snappy algorithms for compressing streams:
 
 Compression may save bandwidth for **PLAINTEXT** data, such as HTTP data.
 
-Compression is enabled by default, you can disable it by setting ```-nocomp``` on **BOTH** KCP Client & KCP Server.
+Compression is enabled by default, you can disable it by setting ```-nocomp``` on **BOTH** KCP Client & KCP Server **MUST** be **IDENTICAL**.
 
 #### SNMP
 
@@ -258,6 +258,17 @@ https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configurati
 `-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1`
 
 Low-level KCP configuration can be altered by using manual mode like above, make sure you really **UNDERSTAND** what these means before doing **ANY** manual settings.
+
+
+### Identical Parmeters
+
+The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
+
+1. -key
+1. -crypt
+1. -nocomp
+1. -datashard
+1. -parityshard
 
 ### References
 
