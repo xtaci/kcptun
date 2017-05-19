@@ -492,7 +492,7 @@ func main() {
 
 			path := "protect_path"
 
-			callback := func(fd int) {
+			callback := func(fd int, sotype int) {
 				socket, err := syscall.Socket(syscall.AF_UNIX, syscall.SOCK_STREAM, 0)
 				if err != nil {
 					log.Println(err)
@@ -523,7 +523,6 @@ func main() {
 			}
 
 			SetNetCallback(callback)
-
 		}
 
 		smuxConfig := smux.DefaultConfig()
