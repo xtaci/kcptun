@@ -292,3 +292,5 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 > Donate via bitcoin:
 
 ![wallet](wallet.png)
+
+bitcoin: 1Bfr3HPr6XxZPWji1EKEUMMq2FZLbmuX34
