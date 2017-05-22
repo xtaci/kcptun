@@ -21,6 +21,31 @@
 
 <img src="kcptun.png" alt="kcptun" height="300px"/>
 
+
+## kcptun(tcp) - kcptun + tcp模式
+### 什么是tcp模式?
+原版kcptun使用UDP传输层，大流量容易被ISP封停(只能重启拨号或等待一段时间才能恢复).  
+kcptun(tcp)参考<del>抄袭</del>[finalspeed](https://github.com/d1sm/finalspeed), 用libpcap构造伪TCP包，替代UDP传输.  
+
+### Usage
+由于使用pcap发包，需要root权限  
+windows用户需下载[wincap](https://www.winpcap.org/install/default.htm)  
+kcptun(tcp)与原版参数一致，只是多了2个参数：  
+```
+--tcp                            开启tcp模式，否则和原版一致
+--interface value, -i value      指定network interface, 如eth0, 如果没有指定, 启动后手动选择.
+```  
+注意：客户端只能开一个连接，即--conn 1
+
+### Install
+安装pcap Developer's Pack  
+windows: 下载[Wincap Developer's Pack](https://www.winpcap.org/devel.htm)  
+ubuntu: ```sudo apt-get install libpcap-dev```  
+或者自行编译libpcap: [http://www.tcpdump.org/](http://www.tcpdump.org/)  
+
+### 注意
+kcptun(tcp) 启动时会修改防火墙规则, 详见tcp.go
+
 ### QuickStart
 
 Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).

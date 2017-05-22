@@ -242,6 +242,15 @@ func main() {
 			Value: "", // when the value is not empty, the config path must exists
 			Usage: "config from json file, which will override the command from shell",
 		},
+		cli.BoolFlag{
+            Name:"tcp",
+            Usage:"tcp mode",
+        },
+        cli.StringFlag{
+            Name:   "interface,i",
+            Value:  "",
+            Usage:  "interface for live capture",
+        },
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
@@ -268,6 +277,8 @@ func main() {
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
 		config.Pprof = c.Bool("pprof")
+		config.Tcp = c.Bool("tcp")
+        config.Interface = c.String("interface")
 
 		if c.String("c") != "" {
 			//Now only support json config file
@@ -325,7 +336,15 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		lis, err := kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
+        var err error
+        var lis *kcp.Listener
+        if config.Tcp {
+            log.Println("tcp mode")
+            lis, err = kcp.ListenTCPWithOptions(config.Listen, block, config.DataShard, config.ParityShard, config.Interface)
+        } else {
+        	lis, err = kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
+    	}
+
 		checkError(err)
 		log.Println("listening on:", lis.Addr())
 		log.Println("target:", config.Target)

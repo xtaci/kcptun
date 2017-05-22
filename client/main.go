@@ -227,6 +227,15 @@ func main() {
 			Value: "", // when the value is not empty, the config path must exists
 			Usage: "config from json file, which will override the command from shell",
 		},
+		cli.BoolFlag{
+            Name:"tcp",
+            Usage:"tcp mode",
+        },
+        cli.StringFlag{
+            Name:   "interface,i",
+            Value:  "",
+            Usage:  "interface for live capture",
+        },
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
@@ -255,6 +264,8 @@ func main() {
 		config.Log = c.String("log")
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
+		config.Tcp = c.Bool("tcp")
+        config.Interface = c.String("interface")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -338,8 +349,23 @@ func main() {
 		smuxConfig.MaxReceiveBuffer = config.SockBuf
 		smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
 
+        var tcp *kcp.FakeTCP
+        if config.Tcp {
+            log.Println("tcp mode")
+            tcp = new(kcp.FakeTCP)
+            if err := tcp.Initialize(config.RemoteAddr, config.Interface, false); err != nil {
+                panic(err)
+            }
+        }
+
 		createConn := func() (*smux.Session, error) {
-			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
+			var kcpconn *kcp.UDPSession
+            var err error
+            if config.Tcp {
+                kcpconn, err = kcp.DialTCPWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard, tcp)
+            } else {
+                kcpconn, err = kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
+            }
 			if err != nil {
 				return nil, errors.Wrap(err, "createConn()")
 			}
