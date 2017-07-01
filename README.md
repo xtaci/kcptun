@@ -289,8 +289,6 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
 1. https://play.google.com/store/apps/details?id=com.k17game.k3 -- Battle Zone - Earth 2048, an online strategy game using kcp.
 
-Donate via bitcoin:
+Donate via ETH:
 
-![wallet](wallet.png)
-
-bitcoin: 1Bfr3HPr6XxZPWji1EKEUMMq2FZLbmuX34
+Address: 0x8CC9C5317A2A47d8dB45dA83fdA34139CDd7cD51
