@@ -21,6 +21,8 @@
 
 <img src="kcptun.png" alt="kcptun" height="300px"/>
 
+> *kcptun maintains a single website — [github.com/xtaci/kcptun](github.com/xtaci/kcptun) – and kcptun does not solicit, offer, or sell securities via the Internet. Any representations to the contrary and any websites other than [github.com/xtaci/kcptun](github.com/xtaci/kcptun) are not endorsed by xtaci.*
+
 ### QuickStart
 
 Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
@@ -292,3 +294,5 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 Donate via ETH:
 
 Address: 0x8CC9C5317A2A47d8dB45dA83fdA34139CDd7cD51
+
+
