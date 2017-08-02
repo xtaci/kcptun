@@ -21,7 +21,7 @@
 
 <img src="kcptun.png" alt="kcptun" height="300px"/>
 
-> *kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) – and kcptun does not solicit, offer, or sell securities via the Internet. Any representations to the contrary and any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
+> *kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci. kcptun won't publish anything on any social media.*
 
 ### QuickStart
 
