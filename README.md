@@ -293,6 +293,8 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 
 Donate via ETH:
 
-Address: 0x8CC9C5317A2A47d8dB45dA83fdA34139CDd7cD51
+Address: 0x2e4b43ab3d0983da282592571eef61ae5e60f726
 
+QR Code:
 
+![ETH](0x2e4b43ab3d0983da282592571eef61ae5e60f726.png)
