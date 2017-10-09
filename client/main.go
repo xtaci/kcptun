@@ -116,7 +116,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "crypt",
 			Value: "aes",
-			Usage: "aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, none",
+			Usage: "aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none",
 		},
 		cli.StringFlag{
 			Name:  "mode",
@@ -289,6 +289,8 @@ func main() {
 		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		var block kcp.BlockCrypt
 		switch config.Crypt {
+		case "sm4":
+			block, _ = kcp.NewSM4BlockCrypt(pass[:16])
 		case "tea":
 			block, _ = kcp.NewTEABlockCrypt(pass[:16])
 		case "xor":
