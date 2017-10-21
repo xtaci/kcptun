@@ -81,13 +81,15 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			log.Println(err)
 			continue
 		}
-		go handleClient(p1, p2)
+		go handleClient(p1, p2, config.Quiet)
 	}
 }
 
-func handleClient(p1, p2 io.ReadWriteCloser) {
-	log.Println("stream opened")
-	defer log.Println("stream closed")
+func handleClient(p1, p2 io.ReadWriteCloser, quiet bool) {
+	if !quiet {
+		log.Println("stream opened")
+		defer log.Println("stream closed")
+	}
 	defer p1.Close()
 	defer p2.Close()
 
@@ -237,6 +239,10 @@ func main() {
 			Value: "",
 			Usage: "specify a log file to output, default goes to stderr",
 		},
+		cli.BoolFlag{
+			Name:  "quiet",
+			Usage: "to suppress the 'stream open/close' messages",
+		},
 		cli.StringFlag{
 			Name:  "c",
 			Value: "", // when the value is not empty, the config path must exists
@@ -268,6 +274,7 @@ func main() {
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
 		config.Pprof = c.Bool("pprof")
+		config.Quiet = c.Bool("quiet")
 
 		if c.String("c") != "" {
 			//Now only support json config file

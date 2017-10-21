@@ -55,9 +55,12 @@ func newCompStream(conn net.Conn) *compStream {
 	return c
 }
 
-func handleClient(sess *smux.Session, p1 io.ReadWriteCloser) {
-	log.Println("stream opened")
-	defer log.Println("stream closed")
+func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
+	if !quiet {
+		log.Println("stream opened")
+		defer log.Println("stream closed")
+	}
+
 	defer p1.Close()
 	p2, err := sess.OpenStream()
 	if err != nil {
@@ -222,6 +225,10 @@ func main() {
 			Value: "",
 			Usage: "specify a log file to output, default goes to stderr",
 		},
+		cli.BoolFlag{
+			Name:  "quiet",
+			Usage: "to suppress the 'stream open/close' messages",
+		},
 		cli.StringFlag{
 			Name:  "c",
 			Value: "", // when the value is not empty, the config path must exists
@@ -255,6 +262,7 @@ func main() {
 		config.Log = c.String("log")
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
+		config.Quiet = c.Bool("quiet")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -418,7 +426,7 @@ func main() {
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 			}
 
-			go handleClient(muxes[idx].session, p1)
+			go handleClient(muxes[idx].session, p1, config.Quiet)
 			rr++
 		}
 	}
