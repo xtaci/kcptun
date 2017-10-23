@@ -23,6 +23,8 @@
 
 > *kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci. kcptun won't publish anything on any social media.*
 
+> *KCP communication group: 364933586 (QQ group number), KCP integration, tuning, network transmission and related technical discussions.*
+
 ### QuickStart
 
 Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
