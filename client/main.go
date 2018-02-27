@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
+	. "github.com/xtaci/kcptun/client/tools"
 	"github.com/xtaci/smux"
 )
 
@@ -265,7 +266,7 @@ func main() {
 		config.Quiet = c.Bool("quiet")
 
 		if c.String("c") != "" {
-			err := parseJSONConfig(&config, c.String("c"))
+			err := ParseJSONConfig(&config, c.String("c"))
 			checkError(err)
 		}
 
