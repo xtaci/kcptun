@@ -1,4 +1,4 @@
-package main
+package tools
 
 import (
 	"encoding/json"
@@ -35,7 +35,7 @@ type Config struct {
 	Quiet        bool   `json:"quiet"`
 }
 
-func parseJSONConfig(config *Config, path string) error {
+func ParseJSONConfig(config *Config, path string) error {
 	file, err := os.Open(path) // For read access.
 	if err != nil {
 		return err

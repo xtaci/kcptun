@@ -15,6 +15,8 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
+	. "github.com/xtaci/kcptun/server/tools"
+
 	"github.com/golang/snappy"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
@@ -278,7 +280,7 @@ func main() {
 
 		if c.String("c") != "" {
 			//Now only support json config file
-			err := parseJSONConfig(&config, c.String("c"))
+			err := ParseJSONConfig(&config, c.String("c"))
 			checkError(err)
 		}
 

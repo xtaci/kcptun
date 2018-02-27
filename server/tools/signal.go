@@ -1,6 +1,6 @@
 // +build linux darwin freebsd
 
-package main
+package tools
 
 import (
 	"log"
