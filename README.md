@@ -27,6 +27,10 @@
 
 ### QuickStart
 
+Increase number of open files on your server, as:
+
+`ulimit -n 65535`, or write it in `~/.bashrc`.
+
 Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
 ```
