@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"sync"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -69,12 +68,18 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 	}
 	defer p2.Close()
 
-	// tunnel setup
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() { io.Copy(p1, p2); wg.Done() }()
-	go func() { io.Copy(p2, p1); wg.Done() }()
-	wg.Wait()
+	// start tunnel
+	p1die := make(chan struct{})
+	go func() { io.Copy(p1, p2); close(p1die) }()
+
+	p2die := make(chan struct{})
+	go func() { io.Copy(p2, p1); close(p2die) }()
+
+	// wait for tunnel termination
+	select {
+	case <-p1die:
+	case <-p2die:
+	}
 }
 
 func checkError(err error) {
