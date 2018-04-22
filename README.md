@@ -75,7 +75,7 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 > eg: `-mode fast3`    
 
-> Aggresiveness/Responsiveness on retransmission for embeded modes are:
+> Aggressiveness/Responsiveness on retransmission for embeded modes are:
 
 > *fast3 > fast2 > fast > normal > default*
 
