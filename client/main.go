@@ -19,7 +19,7 @@ import (
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
 
-    "path/filepath"
+	"path/filepath"
 )
 
 var (
@@ -478,11 +478,10 @@ func snmpLogger(path string, interval int) {
 	for {
 		select {
 		case <-ticker.C:
-            // TODO : Please review
-            // split path into dirname and filename
-            logdir, logfile := filepath.Split(path)
-            // only format logfile
-			f, err := os.OpenFile(logdir + time.Now().Format(logfile), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			// split path into dirname and filename
+			logdir, logfile := filepath.Split(path)
+			// only format logfile
+			f, err := os.OpenFile(logdir+time.Now().Format(logfile), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 			if err != nil {
 				log.Println(err)
 				return
