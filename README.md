@@ -23,33 +23,32 @@
 
 > *kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci. kcptun won't publish anything on any social media.*
 
-> *KCP communication group: 364933586 (QQ group number), KCP integration, tuning, network transmission and related technical discussions.*
+> *KCP discussion QQ group: 364933586, KCP integration, tuning, network transmission and related technical discussions.*
 
 ### QuickStart
 
-Increase number of open files on your server, as:
+Increase the number of open files on your server, as:
 
 `ulimit -n 65535`, or write it in `~/.bashrc`.
 
-Download precompiled [Releases](https://github.com/xtaci/kcptun/releases).
+Download a corresponding precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
 ```
 KCP Client: ./client_darwin_amd64 -r "KCP_SERVER_IP:4000" -l ":8388" -mode fast2
 KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2
 ```
-The above commands will establish port forwarding for 8388/tcp as:
+The above commands will establish port forwarding channel for 8388/tcp as:
 
 > Application -> **KCP Client(8388/tcp) -> KCP Server(4000/udp)** -> Target Server(8388/tcp) 
 
-Tunnels the original connection:
+which tunnels the original connection:
 
 > Application -> Target Server(8388/tcp) 
 
 ### Install from source
 
 ```
-$go get -u github.com/xtaci/kcptun/client
-$go get -u github.com/xtaci/kcptun/server
+$go get -u github.com/xtaci/kcptun/...
 ```
 
 All precompiled releases are genereated from `build-release.sh` script.
