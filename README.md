@@ -206,7 +206,7 @@ BenchmarkSalsa20-4     	  300000	      4998 ns/op
 
 #### Memory Control
 
-Routers, mobile devices are sensitive to memory consumption; by setting GOGC environment(eg: GOGC=20) will lower memory consumption.
+Routers, mobile devices are susceptible to memory consumption; by setting GOGC environment(eg: GOGC=20) will make the garbage collector to recycle faster.
 Reference: https://blog.golang.org/go15gc
 
 #### Compression
