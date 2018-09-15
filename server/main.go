@@ -304,6 +304,7 @@ func main() {
 		}
 
 		log.Println("version:", VERSION)
+		log.Println("initiating key derivation")
 		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		var block kcp.BlockCrypt
 		switch config.Crypt {
