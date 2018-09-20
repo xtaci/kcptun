@@ -31,6 +31,13 @@ Increase the number of open files on your server, as:
 
 `ulimit -n 65535`, or write it in `~/.bashrc`.
 
+Increase the OS UDP buffers to improve performance, as:
+
+```
+net.core.rmem_max=26214400
+net.core.rmem_default=26214400
+```
+
 Download a corresponding precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
 ```
