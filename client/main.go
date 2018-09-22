@@ -358,7 +358,7 @@ func main() {
 				return nil, errors.Wrap(err, "createConn()")
 			}
 			kcpconn.SetStreamMode(true)
-			kcpconn.SetWriteDelay(true)
+			kcpconn.SetWriteDelay(false)
 			kcpconn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
 			kcpconn.SetWindowSize(config.SndWnd, config.RcvWnd)
 			kcpconn.SetMtu(config.MTU)
