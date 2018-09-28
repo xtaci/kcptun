@@ -203,14 +203,12 @@ func main() {
 			Hidden: true,
 		},
 		cli.IntFlag{
-			Name:   "sockbuf",
-			Value:  4194304, // socket buffer size in bytes
-			Hidden: true,
+			Name:  "sockbuf",
+			Value: 4194304, // socket buffer size in bytes
 		},
 		cli.IntFlag{
-			Name:   "keepalive",
-			Value:  10, // nat keepalive interval in seconds
-			Hidden: true,
+			Name:  "keepalive",
+			Value: 10, // nat keepalive interval in seconds
 		},
 		cli.StringFlag{
 			Name:  "snmplog",
