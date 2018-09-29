@@ -38,11 +38,11 @@ net.core.rmem_max=26214400
 net.core.rmem_default=26214400
 ```
 
-You can also increase the per-socket buffer by adding parameters:
+You can also increase the per-socket buffer by adding parameter(default 4MB):
 ```
 -sockbuf 16777217
 ```
-parameter(default 4MB), increasing this works for most of the old model CPUs.
+increasing this would work for most of the old model CPUs.
 
 
 Download a corresponding precompiled [Releases](https://github.com/xtaci/kcptun/releases).
