@@ -45,7 +45,7 @@ You can also increase the per-socket buffer by adding parameter(default 4MB):
 increasing this would work for most of the old model CPUs.
 
 
-Download a corresponding precompiled [Releases](https://github.com/xtaci/kcptun/releases).
+Download a corresponding one from precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
 ```
 KCP Client: ./client_darwin_amd64 -r "KCP_SERVER_IP:4000" -l ":8388" -mode fast2
@@ -182,7 +182,7 @@ GLOBAL OPTIONS:
 
 #### Forward Error Correction
 
-In coding theory, the Reed–Solomon code belongs to the class of non-binary cyclic error-correcting codes. The Reed–Solomon code is based on univariate polynomials over finite fields.
+In coding theory, the [Reed–Solomon code](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction) belongs to the class of non-binary cyclic error-correcting codes. The Reed–Solomon code is based on univariate polynomials over finite fields.
 
 It is able to detect and correct multiple symbol errors. By adding t check symbols to the data, a Reed–Solomon code can detect any combination of up to t erroneous symbols, or correct up to ⌊t/2⌋ symbols. As an erasure code, it can correct up to t known erasures, or it can detect and correct combinations of errors and erasures. Furthermore, Reed–Solomon codes are suitable as multiple-burst bit-error correcting codes, since a sequence of b + 1 consecutive bit errors can affect at most two symbols of size b. The choice of t is up to the designer of the code, and may be selected within wide limits.
 
@@ -198,35 +198,37 @@ DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit dif
 
 setting each side with ```-dscp value```, Here are some [Commonly used DSCP values](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values).
 
-#### Security
+#### Security & Anonymity
 
-No matter what encryption you are using for application layer, if you specify ```-crypt none``` to kcptun, 
-the header will be ***PLAINTEXT*** to everyone; I suggest ```-crypt aes-128``` for encryption at least .
+Kcptun is shipped with builtin packet encryption powered by various encryption method and works in [Cipher Feedback Mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)), for each packet to be sent, the encryption process will start from encrypting a nonce from the [system entropy](https://en.wikipedia.org/wiki//dev/random), so the encryption to same plaintexts never leads to same ciphertexts thereafter.
+
+The contents of the packets are completely anonymous with encryption, including the headers(FEC,KCP), checksums and contents. Note that, no matter which encryption method you choose on you upper layer, if you disable encryption by specifying ```-crypt none``` to kcptun, the transmit will be insecure somehow, since the header is ***PLAINTEXT*** to everyone it would be susceptible to header tampering. ```aes-128``` is suggested for minimal encryption since modern CPUs are shipped with [AES-NI](https://en.wikipedia.org/wiki/AES_instruction_set) instructions and performs even better than `salsa20`(check the table below).
 
 `-crypt` and `-key` must be the same on both KCP Client & KCP Server.
 
-NOTICE: ```-crypt xor``` is also insecure, do not use this unless you know what you are doing.
+NOTICE: ```-crypt xor``` is also insecure and vulnerable to known-plaintext attack, do not use this unless you know what you are doing.
 
 Benchmarks for crypto algorithms supported by kcptun:
 
 ```
-BenchmarkAES128-4      	  200000	     11182 ns/op
-BenchmarkAES192-4      	  200000	     12699 ns/op
-BenchmarkAES256-4      	  100000	     13757 ns/op
-BenchmarkTEA-4         	   50000	     26441 ns/op
-BenchmarkSimpleXOR-4   	 3000000	       441 ns/op
-BenchmarkBlowfish-4    	   30000	     48036 ns/op
-BenchmarkNone-4        	20000000	       106 ns/op
-BenchmarkCast5-4       	   20000	     60222 ns/op
-BenchmarkTripleDES-4   	    2000	    878759 ns/op
-BenchmarkTwofish-4     	   20000	     68501 ns/op
-BenchmarkXTEA-4        	   20000	     77417 ns/op
-BenchmarkSalsa20-4     	  300000	      4998 ns/op
+BenchmarkSM4-4                 	   50000	     32087 ns/op	  93.49 MB/s	       0 B/op	       0 allocs/op
+BenchmarkAES128-4              	  500000	      3274 ns/op	 916.15 MB/s	       0 B/op	       0 allocs/op
+BenchmarkAES192-4              	  500000	      3587 ns/op	 836.34 MB/s	       0 B/op	       0 allocs/op
+BenchmarkAES256-4              	  300000	      3828 ns/op	 783.60 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTEA-4                 	  100000	     15359 ns/op	 195.32 MB/s	       0 B/op	       0 allocs/op
+BenchmarkXOR-4                 	20000000	        90.2 ns/op	33249.02 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBlowfish-4            	   50000	     26885 ns/op	 111.58 MB/s	       0 B/op	       0 allocs/op
+BenchmarkNone-4                	30000000	        45.8 ns/op	65557.11 MB/s	       0 B/op	       0 allocs/op
+BenchmarkCast5-4               	   50000	     34370 ns/op	  87.29 MB/s	       0 B/op	       0 allocs/op
+Benchmark3DES-4                	   10000	    117893 ns/op	  25.45 MB/s	       0 B/op	       0 allocs/op
+BenchmarkTwofish-4             	   50000	     33477 ns/op	  89.61 MB/s	       0 B/op	       0 allocs/op
+BenchmarkXTEA-4                	   30000	     45825 ns/op	  65.47 MB/s	       0 B/op	       0 allocs/op
+BenchmarkSalsa20-4             	  500000	      3282 ns/op	 913.90 MB/s	       0 B/op	       0 allocs/op
 ```
 
 
 
-#### Memory Control
+#### Memory Usage Control
 
 Routers, mobile devices are susceptible to memory consumption; by setting GOGC environment(eg: GOGC=20) will make the garbage collector to recycle faster.
 Reference: https://blog.golang.org/go15gc
