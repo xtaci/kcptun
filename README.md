@@ -267,7 +267,7 @@ kcptun has builtin snappy algorithms for compressing streams:
 
 > Reference: http://google.github.io/snappy/
 
-Compression may save bandwidth for **PLAINTEXT** data, such as HTTP data.
+Compression may save bandwidth for **PLAINTEXT** data, it's quite useful for specific scenarios as cross-datacenter replications, by compressing the redologs in dbms or kafka-like message queues and then transfer the data streams across the continent can be much faster.
 
 Compression is enabled by default, you can disable it by setting ```-nocomp``` on **BOTH** KCP Client & KCP Server **MUST** be **IDENTICAL**.
 
