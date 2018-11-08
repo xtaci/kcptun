@@ -212,6 +212,11 @@ func main() {
 			Value:  10, // nat keepalive interval in seconds
 			Hidden: true,
 		},
+		cli.IntFlag{
+			Name:   "timeout",
+			Value:  30, // keepalive timeout in seconds
+			Hidden: true,
+		},
 		cli.StringFlag{
 			Name:  "snmplog",
 			Value: "",
@@ -261,6 +266,7 @@ func main() {
 		config.NoCongestion = c.Int("nc")
 		config.SockBuf = c.Int("sockbuf")
 		config.KeepAlive = c.Int("keepalive")
+		config.Timeout = c.Int("timeout")
 		config.Log = c.String("log")
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
@@ -341,6 +347,7 @@ func main() {
 		log.Println("dscp:", config.DSCP)
 		log.Println("sockbuf:", config.SockBuf)
 		log.Println("keepalive:", config.KeepAlive)
+		log.Println("timeout:", config.Timeout)
 		log.Println("conn:", config.Conn)
 		log.Println("autoexpire:", config.AutoExpire)
 		log.Println("scavengettl:", config.ScavengeTTL)
@@ -351,6 +358,7 @@ func main() {
 		smuxConfig := smux.DefaultConfig()
 		smuxConfig.MaxReceiveBuffer = config.SockBuf
 		smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
+		smuxConfig.KeepAliveTimeout = time.Duration(config.Timeout) * time.Second
 
 		createConn := func() (*smux.Session, error) {
 			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)

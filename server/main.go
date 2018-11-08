@@ -64,6 +64,7 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 	smuxConfig := smux.DefaultConfig()
 	smuxConfig.MaxReceiveBuffer = config.SockBuf
 	smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
+	smuxConfig.KeepAliveTimeout = time.Duration(config.Timeout) * time.Second
 
 	mux, err := smux.Server(conn, smuxConfig)
 	if err != nil {
@@ -222,6 +223,11 @@ func main() {
 			Value:  10, // nat keepalive interval in seconds
 			Hidden: true,
 		},
+		cli.IntFlag{
+			Name:   "timeout",
+			Value:  30, // keepalive timeout in seconds
+			Hidden: true,
+		},
 		cli.StringFlag{
 			Name:  "snmplog",
 			Value: "",
@@ -272,6 +278,7 @@ func main() {
 		config.NoCongestion = c.Int("nc")
 		config.SockBuf = c.Int("sockbuf")
 		config.KeepAlive = c.Int("keepalive")
+		config.Timeout = c.Int("timeout")
 		config.Log = c.String("log")
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
@@ -351,6 +358,7 @@ func main() {
 		log.Println("dscp:", config.DSCP)
 		log.Println("sockbuf:", config.SockBuf)
 		log.Println("keepalive:", config.KeepAlive)
+		log.Println("timeout:", config.Timeout)
 		log.Println("snmplog:", config.SnmpLog)
 		log.Println("snmpperiod:", config.SnmpPeriod)
 		log.Println("pprof:", config.Pprof)
