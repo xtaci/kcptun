@@ -72,10 +72,12 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 
 	// start tunnel
 	p1die := make(chan struct{})
-	go func() { io.Copy(p1, p2); close(p1die) }()
+	buf1 := make([]byte, 65535)
+	go func() { io.CopyBuffer(p1, p2, buf1); close(p1die) }()
 
 	p2die := make(chan struct{})
-	go func() { io.Copy(p2, p1); close(p2die) }()
+	buf2 := make([]byte, 65535)
+	go func() { io.CopyBuffer(p2, p1, buf2); close(p2die) }()
 
 	// wait for tunnel termination
 	select {
@@ -203,14 +205,14 @@ func main() {
 			Hidden: true,
 		},
 		cli.IntFlag{
-			Name:   "sockbuf",
-			Value:  4194304, // socket buffer size in bytes
-			Hidden: true,
+			Name:  "sockbuf",
+			Value: 4194304, // socket buffer size in bytes
+			Usage: "per-socket buffer in bytes",
 		},
 		cli.IntFlag{
-			Name:   "keepalive",
-			Value:  10, // nat keepalive interval in seconds
-			Hidden: true,
+			Name:  "keepalive",
+			Value: 10, // nat keepalive interval in seconds
+			Usage: "seconds between heartbeats",
 		},
 		cli.IntFlag{
 			Name:   "timeout",
