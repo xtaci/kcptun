@@ -468,6 +468,8 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
+		log_init()
+
 		log.Println("listening on:", listener.Addr())
 		log.Println("nodelay parameters:", config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
 		log.Println("sndwnd:", config.SndWnd, "rcvwnd:", config.RcvWnd)
@@ -486,16 +488,14 @@ func main() {
 		log.Println("quiet:", config.Quiet)
 		log.Println("vpn:", config.Vpn)
 
-		if config.Vpn {
-			SetNetCallback()
-		}
+		VpnMode = config.Vpn
 
 		smuxConfig := smux.DefaultConfig()
 		smuxConfig.MaxReceiveBuffer = config.SockBuf
 		smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
 
 		createConn := func() (*smux.Session, error) {
-			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
+			kcpconn, err := DialKCP(config.RemoteAddr, block, config.DataShard, config.ParityShard)
 			if err != nil {
 				return nil, errors.Wrap(err, "createConn()")
 			}
