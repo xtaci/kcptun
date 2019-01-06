@@ -1,7 +1,6 @@
 package main
 
 import (
-	"C"
 	"crypto/sha1"
 	"encoding/csv"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"syscall"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -489,40 +487,7 @@ func main() {
 		log.Println("vpn:", config.Vpn)
 
 		if config.Vpn {
-
-			path := "protect_path"
-
-			callback := func(fd int, sotype int) {
-				socket, err := syscall.Socket(syscall.AF_UNIX, syscall.SOCK_STREAM, 0)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				defer syscall.Close(socket)
-
-				C.set_timeout(C.int(socket))
-
-				err = syscall.Connect(socket, &syscall.SockaddrUnix{Name: path})
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				C.ancil_send_fd(C.int(socket), C.int(fd))
-
-				dummy := []byte{1}
-				n, err := syscall.Read(socket, dummy)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				if n != 1 {
-					log.Println("Failed to protect fd: ", fd)
-					return
-				}
-			}
-
-			SetNetCallback(callback)
+			SetNetCallback()
 		}
 
 		smuxConfig := smux.DefaultConfig()
