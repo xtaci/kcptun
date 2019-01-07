@@ -59,10 +59,11 @@ func newCompStream(conn net.Conn) *compStream {
 }
 
 func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
-	if !quiet {
-		log.Println("stream opened")
-		defer log.Println("stream closed")
-	}
+
+	// if !quiet {
+	// 	log.Println("stream opened")
+	// 	defer log.Println("stream closed")
+	// }
 
 	defer p1.Close()
 	p2, err := sess.OpenStream()
