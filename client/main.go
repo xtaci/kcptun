@@ -139,7 +139,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "autoexpire",
-			Value: 0,
+			Value: 10,
 			Usage: "set auto expiration time(in seconds) for a single UDP connection, 0 to disable",
 		},
 		cli.IntFlag{
