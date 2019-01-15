@@ -28,6 +28,7 @@ var (
 	VERSION = "SELFBUILD"
 	// SALT is use for pbkdf2 key expansion
 	SALT = "kcp-go"
+	VpnMode = false
 )
 
 type compStream struct {

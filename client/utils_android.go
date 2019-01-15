@@ -74,8 +74,6 @@ import (
 	"github.com/xtaci/kcp-go"
 )
 
-var VpnMode bool
-
 func ControlOnConnSetup(network string, address string, c syscall.RawConn) error {
 	if VpnMode {
 		fn := func(s uintptr) {
