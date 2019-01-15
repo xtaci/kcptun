@@ -50,8 +50,8 @@ for **slow processors**, increasing this buffer is **CRITICAL** to receive packe
 Download a corresponding one from precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
 ```
-KCP Client: ./client_darwin_amd64 -r "KCP_SERVER_IP:4000" -l ":8388" -mode fast2 -autoexpire 900 -sockbuf 16777217
-KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2 -sockbuf 16777217
+KCP Client: ./client_darwin_amd64 -r "KCP_SERVER_IP:4000" -l ":8388" -mode fast3 -nocomp -autoexpire 900 -sockbuf 16777217 -dscp 46
+KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast3 -nocomp -sockbuf 16777217 -dscp 46
 ```
 The above commands will establish port forwarding channel for 8388/tcp as:
 
