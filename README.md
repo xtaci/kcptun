@@ -38,15 +38,14 @@ net.core.rmem_max=26214400
 net.core.rmem_default=26214400
 net.core.wmem_max=26214400
 net.core.wmem_default=26214400
-net.core.netdev_max_backlog=2048
+net.core.netdev_max_backlog=2048 // proportional to -rcvwnd
 ```
 
 You can also increase the per-socket buffer by adding parameter(default 4MB):
 ```
 -sockbuf 16777217
 ```
-increasing this would work for most of the old model CPUs.
-
+for **slow processors**, increasing this buffer is **CRITICAL** to receive packets properly.
 
 Download a corresponding one from precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
