@@ -34,7 +34,7 @@ Increase the number of open files on your server, as:
 Suggested `sysctl.conf` parameters for better handling of UDP packets:
 
 ```
-net.core.rmem_max=26214400
+net.core.rmem_max=26214400 // BDP - bandwidth delay product
 net.core.rmem_default=26214400
 net.core.wmem_max=26214400
 net.core.wmem_default=26214400
