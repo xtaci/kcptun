@@ -341,7 +341,6 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 1. http://http2.github.io/ -- What is HTTP/2?
 1. http://www.lartc.org/ -- Linux Advanced Routing & Traffic Control
 1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
-1. https://play.google.com/store/apps/details?id=com.k17game.k3 -- Battle Zone - Earth 2048, an online strategy game using kcp.
 
 ### Donate 
 
