@@ -23,8 +23,6 @@
 
 > *Disclaimer: kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
 
-> *KCP discussion QQ group: 364933586, KCP integration, tuning, network transmission and related technical discussions.*
-
 ### QuickStart
 
 Increase the number of open files on your server, as:
