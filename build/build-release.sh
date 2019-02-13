@@ -1,4 +1,5 @@
 #!/bin/bash
+export GO111MODULE=on
 sum="sha1sum"
 
 if ! hash sha1sum 2>/dev/null; then
