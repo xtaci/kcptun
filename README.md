@@ -349,3 +349,5 @@ via Ethereum(ETH): Address: 0x2e4b43ab3d0983da282592571eef61ae5e60f726 , Or scan
 via WeChat
 
 <img src="wechat_donate.jpg" alt="kcptun" height="120px" /> 
+
+（注意：我没有任何社交网站的账号，请小心骗子。）
