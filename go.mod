@@ -9,7 +9,7 @@ require (
 	github.com/templexxx/xor v0.0.0-20181023030647-4e92f724b73b // indirect
 	github.com/tjfoc/gmsm v1.0.1 // indirect
 	github.com/urfave/cli v1.20.0
-	github.com/xtaci/kcp-go v5.1.1+incompatible
+	github.com/xtaci/kcp-go v5.1.2+incompatible
 	github.com/xtaci/smux v1.1.1
 	golang.org/x/crypto v0.0.0-20190320223903-b7391e95e576
 	golang.org/x/net v0.0.0-20190320064053-1272bf9dcd53 // indirect
