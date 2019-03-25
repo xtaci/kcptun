@@ -92,7 +92,10 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 > *fast3 > fast2 > fast > normal > default*
 
+#### HOLB
 
+Since streams are multiplexed into a single physical channel, head of line blocking may appear under certain circumstances, by
+increasing `-smuxbuf` to a larger value (default 4MB) may mitigate this problem, obviously this will costs more memory.
 
 ### Expert Tuning Guide
 
