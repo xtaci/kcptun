@@ -69,7 +69,11 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 ### Performance
 
-<img src="fast.png" alt="fast.com" height="256px" />       
+<img src="fast.png" alt="fast.com" height="256px" />    
+
+<img src="bw.png" alt="bandwidth usage graph" height="256px" />       
+
+> Practical bandwidth graph with parameters:  -mode fast3 -ds 10 -ps 3
 
 ### Basic Tuning Guide
 
