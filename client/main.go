@@ -70,19 +70,19 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 	}
 	defer p2.Close()
 
-	// start tunnel
-	p1die := make(chan struct{})
-	buf1 := make([]byte, 65535)
-	go func() { io.CopyBuffer(p1, p2, buf1); close(p1die) }()
+	// start tunnel & wait for tunnel termination
+	streamCopy := func(dst io.Writer, src io.Reader) chan struct{} {
+		die := make(chan struct{})
+		go func() {
+			io.CopyBuffer(dst, src, make([]byte, 65535))
+			close(die)
+		}()
+		return die
+	}
 
-	p2die := make(chan struct{})
-	buf2 := make([]byte, 65535)
-	go func() { io.CopyBuffer(p2, p1, buf2); close(p2die) }()
-
-	// wait for tunnel termination
 	select {
-	case <-p1die:
-	case <-p2die:
+	case <-streamCopy(p1, p2):
+	case <-streamCopy(p2, p1):
 	}
 }
 
