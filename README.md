@@ -101,6 +101,11 @@ All precompiled releases are genereated from `build-release.sh` script.
 Since streams are multiplexed into a single physical channel, head of line blocking may appear under certain circumstances, by
 increasing `-smuxbuf` to a larger value (default 4MB) may mitigate this problem, obviously this will costs more memory.
 
+#### Slow Devices
+
+kcptun made use of **ReedSolomon-Codes** to recover lost packets, which requires massive amount of computation, a low-end ARM device cannot satisfy kcptun well. To unleash the full potential of kcptun, a multi-core x86 homeserver CPU like AMD Opteron is recommended.
+If you insist on running under some ARM routers, you'd better turn off `FEC` and use `salsa20` as the encryption method.
+
 ### Expert Tuning Guide
 
 #### Overview
