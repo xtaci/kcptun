@@ -115,15 +115,15 @@ If you insist on running under some ARM routers, you'd better turn off `FEC` and
 #### Usage
 
 ```
-$ ./client_darwin_amd64 -h
+xtaci@gw:~$ ./client_linux_amd64 -h
 NAME:
    kcptun - client(with SMUX)
 
 USAGE:
-   client_darwin_amd64 [global options] command [command options] [arguments...]
+   client_linux_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20180922
+   20190409
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
@@ -144,8 +144,9 @@ GLOBAL OPTIONS:
    --parityshard value, --ps value  set reed-solomon erasure coding - parityshard (default: 3)
    --dscp value                     set DSCP(6bit) (default: 0)
    --nocomp                         disable compression
-   --sockbuf value                  (default: 4194304)
-   --keepalive value                (default: 10)
+   --sockbuf value                  per-socket buffer in bytes (default: 4194304)
+   --smuxbuf value                  the overall de-mux buffer in bytes (default: 4194304)
+   --keepalive value                seconds between heartbeats (default: 10)
    --snmplog value                  collect snmp to file, aware of timeformat in golang, like: ./snmp-20060102.log
    --snmpperiod value               snmp collect period, in seconds (default: 60)
    --log value                      specify a log file to output, default goes to stderr
@@ -153,16 +154,16 @@ GLOBAL OPTIONS:
    -c value                         config from json file, which will override the command from shell
    --help, -h                       show help
    --version, -v                    print the version
-
-$ ./server_darwin_amd64 -h
+   
+xtaci@gw:~$ ./server_linux_amd64 -h
 NAME:
    kcptun - server(with SMUX)
 
 USAGE:
-   server_darwin_amd64 [global options] command [command options] [arguments...]
+   server_linux_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20180922
+   20190409
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
@@ -180,8 +181,9 @@ GLOBAL OPTIONS:
    --parityshard value, --ps value  set reed-solomon erasure coding - parityshard (default: 3)
    --dscp value                     set DSCP(6bit) (default: 0)
    --nocomp                         disable compression
-   --sockbuf value                  (default: 4194304)
-   --keepalive value                (default: 10)
+   --sockbuf value                  per-socket buffer in bytes (default: 4194304)
+   --smuxbuf value                  the overall de-mux buffer in bytes (default: 4194304)
+   --keepalive value                seconds between heartbeats (default: 10)
    --snmplog value                  collect snmp to file, aware of timeformat in golang, like: ./snmp-20060102.log
    --snmpperiod value               snmp collect period, in seconds (default: 60)
    --pprof                          start profiling server on :6060
