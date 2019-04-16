@@ -1,6 +1,8 @@
 #!/bin/bash
 sum="sha1sum"
 
+echo "If you need reproducible build, export GO111MODULE=on first"
+
 if ! hash sha1sum 2>/dev/null; then
 	if ! hash shasum 2>/dev/null; then
 		echo "I can't see 'sha1sum' or 'shasum'"
