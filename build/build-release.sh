@@ -21,21 +21,34 @@ VERSION=`date -u +%Y%m%d`
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
 GCFLAGS=""
 
+# AMD64 
 OSES=(linux darwin windows freebsd)
-ARCHS=(amd64 386)
 for os in ${OSES[@]}; do
-	for arch in ${ARCHS[@]}; do
-		suffix=""
-		if [ "$os" == "windows" ]
-		then
-			suffix=".exe"
-		fi
-		env CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_${os}_${arch}${suffix} github.com/xtaci/kcptun/client
-		env CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_${os}_${arch}${suffix} github.com/xtaci/kcptun/server
-		if $UPX; then upx -9 client_${os}_${arch}${suffix} server_${os}_${arch}${suffix};fi
-		tar -zcf kcptun-${os}-${arch}-$VERSION.tar.gz client_${os}_${arch}${suffix} server_${os}_${arch}${suffix}
-		$sum kcptun-${os}-${arch}-$VERSION.tar.gz
-	done
+	suffix=""
+	if [ "$os" == "windows" ]
+	then
+		suffix=".exe"
+	fi
+	env CGO_ENABLED=0 GOOS=$os GOARCH=amd64 go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_${os}_amd64${suffix} github.com/xtaci/kcptun/client
+	env CGO_ENABLED=0 GOOS=$os GOARCH=amd64 go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_${os}_amd64${suffix} github.com/xtaci/kcptun/server
+	if $UPX; then upx -9 client_${os}_amd64${suffix} server_${os}_amd64${suffix};fi
+	tar -zcf kcptun-${os}-amd64-$VERSION.tar.gz client_${os}_amd64${suffix} server_${os}_amd64${suffix}
+	$sum kcptun-${os}-amd64-$VERSION.tar.gz
+done
+
+# 386
+OSES=(linux windows)
+for os in ${OSES[@]}; do
+	suffix=""
+	if [ "$os" == "windows" ]
+	then
+		suffix=".exe"
+	fi
+	env CGO_ENABLED=0 GOOS=$os GOARCH=386 go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_${os}_386${suffix} github.com/xtaci/kcptun/client
+	env CGO_ENABLED=0 GOOS=$os GOARCH=386 go build -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_${os}_386${suffix} github.com/xtaci/kcptun/server
+	if $UPX; then upx -9 client_${os}_386${suffix} server_${os}_386${suffix};fi
+	tar -zcf kcptun-${os}-386-$VERSION.tar.gz client_${os}_386${suffix} server_${os}_386${suffix}
+	$sum kcptun-${os}-386-$VERSION.tar.gz
 done
 
 # ARM
