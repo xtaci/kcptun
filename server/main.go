@@ -72,18 +72,21 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 	}
 	defer mux.Close()
 	for {
-		p1, err := mux.AcceptStream()
+		stream, err := mux.AcceptStream()
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		p2, err := net.DialTimeout("tcp", config.Target, 5*time.Second)
-		if err != nil {
-			p1.Close()
-			log.Println(err)
-			continue
-		}
-		go handleClient(p1, p2, config.Quiet)
+
+		go func(p1 *smux.Stream) {
+			p2, err := net.Dial("tcp", config.Target)
+			if err != nil {
+				p1.Close()
+				log.Println(err)
+				return
+			}
+			handleClient(p1, p2, config.Quiet)
+		}(stream)
 	}
 }
 
