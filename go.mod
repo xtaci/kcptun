@@ -10,7 +10,7 @@ require (
 	github.com/tjfoc/gmsm v1.0.1 // indirect
 	github.com/urfave/cli v1.20.0
 	github.com/xtaci/kcp-go v5.2.3+incompatible
-	github.com/xtaci/smux v1.2.5
+	github.com/xtaci/smux v1.2.6
 	golang.org/x/crypto v0.0.0-20190417174047-f416ebab96af
 	golang.org/x/net v0.0.0-20190415214537-1da14a5a36f2 // indirect
 	golang.org/x/sys v0.0.0-20190416152802-12500544f89f // indirect
