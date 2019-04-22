@@ -11,6 +11,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -23,12 +24,14 @@ import (
 	"github.com/xtaci/smux"
 )
 
-var (
-	// VERSION is injected by buildflags
-	VERSION = "SELFBUILD"
-	// SALT is use for pbkdf2 key expansion
-	SALT = "kcp-go"
-)
+// SALT is use for pbkdf2 key expansion
+const SALT = "kcp-go"
+
+// VERSION is injected by buildflags
+var VERSION = "SELFBUILD"
+
+// A pool for stream copying
+var xmitBuf sync.Pool
 
 type compStream struct {
 	conn net.Conn
@@ -102,7 +105,9 @@ func handleClient(p1, p2 io.ReadWriteCloser, quiet bool) {
 	streamCopy := func(dst io.Writer, src io.Reader) chan struct{} {
 		die := make(chan struct{})
 		go func() {
-			io.CopyBuffer(dst, src, make([]byte, 65535))
+			buf := xmitBuf.Get().([]byte)
+			io.CopyBuffer(dst, src, buf)
+			xmitBuf.Put(buf)
 			close(die)
 		}()
 		return die
@@ -127,6 +132,10 @@ func main() {
 		// add more log flags for debugging
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
+	xmitBuf.New = func() interface{} {
+		return make([]byte, 65535)
+	}
+
 	myApp := cli.NewApp()
 	myApp.Name = "kcptun"
 	myApp.Usage = "server(with SMUX)"
