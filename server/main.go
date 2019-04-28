@@ -105,10 +105,18 @@ func handleClient(p1, p2 io.ReadWriteCloser, quiet bool) {
 	streamCopy := func(dst io.Writer, src io.Reader) chan struct{} {
 		die := make(chan struct{})
 		go func() {
-			buf := xmitBuf.Get().([]byte)
-			io.CopyBuffer(dst, src, buf)
-			xmitBuf.Put(buf)
-			close(die)
+			if wt, ok := src.(io.WriterTo); ok {
+				wt.WriteTo(dst)
+				close(die)
+			} else if rt, ok := dst.(io.ReaderFrom); ok {
+				rt.ReadFrom(src)
+				close(die)
+			} else {
+				buf := xmitBuf.Get().([]byte)
+				io.CopyBuffer(dst, src, buf)
+				xmitBuf.Put(buf)
+				close(die)
+			}
 		}()
 		return die
 	}
