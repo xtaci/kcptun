@@ -1,4 +1,8 @@
 #!/bin/bash
+BUILD_DIR=$(dirname "$0")/build
+mkdir -p $BUILD_DIR
+cd $BUILD_DIR
+
 sum="sha1sum"
 
 echo "If you need reproducible build, export GO111MODULE=on first"
