@@ -417,12 +417,12 @@ func main() {
 		// wait until a connection is ready
 		waitConn := func() *smux.Session {
 			for {
-				if session, err := createConn(); err == nil {
+				session, err := createConn()
+				if err == nil {
 					return session
-				} else {
-					log.Println("re-connecting:", err)
-					time.Sleep(time.Second)
 				}
+				log.Println("re-connecting:", err)
+				time.Sleep(time.Second)
 			}
 		}
 
