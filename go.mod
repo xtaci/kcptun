@@ -11,9 +11,9 @@ require (
 	github.com/urfave/cli v1.20.0
 	github.com/xtaci/kcp-go v5.2.8+incompatible
 	github.com/xtaci/smux v1.2.10
-	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
-	golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6 // indirect
-	golang.org/x/sys v0.0.0-20190426135247-a129542de9ae // indirect
-	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190428024724-550556f78a90 // indirect
+	godoc.org/golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
+	godoc.org/golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6 // indirect
+	godoc.org/golang.org/x/sys v0.0.0-20190426135247-a129542de9ae // indirect
+	godoc.org/golang.org/x/text v0.3.2 // indirect
+	godoc.org/golang.org/x/tools v0.0.0-20190428024724-550556f78a90 // indirect
 )
