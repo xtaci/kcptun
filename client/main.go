@@ -2,8 +2,6 @@ package main
 
 import (
 	"crypto/sha1"
-	"encoding/csv"
-	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -19,8 +17,6 @@ import (
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/kcptun/generic"
 	"github.com/xtaci/smux"
-
-	"path/filepath"
 )
 
 // SALT is use for pbkdf2 key expansion
@@ -407,7 +403,7 @@ func main() {
 
 		chScavenger := make(chan *smux.Session, 128)
 		go scavenger(chScavenger, config.ScavengeTTL)
-		go snmpLogger(config.SnmpLog, config.SnmpPeriod)
+		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
@@ -460,40 +456,6 @@ func scavenger(ch chan *smux.Session, ttl int) {
 				}
 			}
 			sessionList = newList
-		}
-	}
-}
-
-func snmpLogger(path string, interval int) {
-	if path == "" || interval == 0 {
-		return
-	}
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			// split path into dirname and filename
-			logdir, logfile := filepath.Split(path)
-			// only format logfile
-			f, err := os.OpenFile(logdir+time.Now().Format(logfile), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			w := csv.NewWriter(f)
-			// write header in empty file
-			if stat, err := f.Stat(); err == nil && stat.Size() == 0 {
-				if err := w.Write(append([]string{"Unix"}, kcp.DefaultSnmp.Header()...)); err != nil {
-					log.Println(err)
-				}
-			}
-			if err := w.Write(append([]string{fmt.Sprint(time.Now().Unix())}, kcp.DefaultSnmp.ToSlice()...)); err != nil {
-				log.Println(err)
-			}
-			kcp.DefaultSnmp.Reset()
-			w.Flush()
-			f.Close()
 		}
 	}
 }
