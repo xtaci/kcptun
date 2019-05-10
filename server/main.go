@@ -90,8 +90,8 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		go func(p1 *smux.Stream) {
 			p2, err := net.Dial("tcp", config.Target)
 			if err != nil {
-				p1.Close()
 				log.Println(err)
+				p1.Close()
 				return
 			}
 			handleClient(p1, p2, config.Quiet)
@@ -100,12 +100,6 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 }
 
 func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
-	logf := func(format string, v ...interface{}) {
-		if !quiet {
-			log.Printf(format, v...)
-		}
-	}
-
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -115,39 +109,32 @@ func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
 	logln("stream opened", p1.ID())
 	defer logln("stream closed", p1.ID())
 
-	defer p1.Close()
-	defer p2.Close()
-
+	var wg sync.WaitGroup
+	wg.Add(2)
 	// start tunnel & wait for tunnel termination
-	streamCopy := func(dst io.Writer, src io.Reader) chan struct{} {
-		die := make(chan struct{})
-		go func() {
-			if wt, ok := src.(io.WriterTo); ok {
-				if _, err := wt.WriteTo(dst); err != nil {
-					logf("%+v", err)
-				}
-				close(die)
-			} else if rt, ok := dst.(io.ReaderFrom); ok {
-				if _, err := rt.ReadFrom(src); err != nil {
-					logf("%+v", err)
-				}
-				close(die)
-			} else {
-				buf := xmitBuf.Get().([]byte)
-				if _, err := io.CopyBuffer(dst, src, buf); err != nil {
-					logf("%+v", err)
-				}
-				xmitBuf.Put(buf)
-				close(die)
+	streamCopy := func(dst io.Writer, src io.ReadCloser) {
+		if wt, ok := src.(io.WriterTo); ok {
+			if _, err := wt.WriteTo(dst); err != nil {
+				logln(err)
 			}
-		}()
-		return die
+		} else if rt, ok := dst.(io.ReaderFrom); ok {
+			if _, err := rt.ReadFrom(src); err != nil {
+				logln(err)
+			}
+		} else {
+			buf := xmitBuf.Get().([]byte)
+			if _, err := io.CopyBuffer(dst, src, buf); err != nil {
+				logln(err)
+			}
+			xmitBuf.Put(buf)
+		}
+		src.Close()
+		wg.Done()
 	}
 
-	select {
-	case <-streamCopy(p1, p2):
-	case <-streamCopy(p2, p1):
-	}
+	go streamCopy(p1, p2)
+	go streamCopy(p2, p1)
+	wg.Wait()
 }
 
 func checkError(err error) {
