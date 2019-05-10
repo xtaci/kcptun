@@ -18,8 +18,6 @@ import (
 
 	"path/filepath"
 
-	"github.com/golang/snappy"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/kcptun/generic"
@@ -34,39 +32,6 @@ var VERSION = "SELFBUILD"
 
 // A pool for stream copying
 var xmitBuf sync.Pool
-
-type compStream struct {
-	conn net.Conn
-	w    *snappy.Writer
-	r    *snappy.Reader
-}
-
-func (c *compStream) Read(p []byte) (n int, err error) {
-	return c.r.Read(p)
-}
-
-func (c *compStream) Write(p []byte) (n int, err error) {
-	if _, err := c.w.Write(p); err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	if err := c.w.Flush(); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	return len(p), err
-}
-
-func (c *compStream) Close() error {
-	return c.conn.Close()
-}
-
-func newCompStream(conn net.Conn) *compStream {
-	c := new(compStream)
-	c.conn = conn
-	c.w = snappy.NewBufferedWriter(conn)
-	c.r = snappy.NewReader(conn)
-	return c
-}
 
 // handle multiplex-ed connection
 func handleMux(conn io.ReadWriteCloser, config *Config) {
@@ -414,7 +379,7 @@ func main() {
 				if config.NoComp {
 					go handleMux(conn, &config)
 				} else {
-					go handleMux(newCompStream(conn), &config)
+					go handleMux(generic.NewCompStream(conn), &config)
 				}
 			} else {
 				log.Printf("%+v", err)

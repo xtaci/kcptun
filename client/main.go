@@ -14,7 +14,6 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/golang/snappy"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
@@ -32,39 +31,6 @@ var VERSION = "SELFBUILD"
 
 // A pool for stream copying
 var xmitBuf sync.Pool
-
-type compStream struct {
-	conn net.Conn
-	w    *snappy.Writer
-	r    *snappy.Reader
-}
-
-func (c *compStream) Read(p []byte) (n int, err error) {
-	return c.r.Read(p)
-}
-
-func (c *compStream) Write(p []byte) (n int, err error) {
-	if _, err := c.w.Write(p); err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	if err := c.w.Flush(); err != nil {
-		return 0, errors.WithStack(err)
-	}
-	return len(p), err
-}
-
-func (c *compStream) Close() error {
-	return c.conn.Close()
-}
-
-func newCompStream(conn net.Conn) *compStream {
-	c := new(compStream)
-	c.conn = conn
-	c.w = snappy.NewBufferedWriter(conn)
-	c.r = snappy.NewReader(conn)
-	return c
-}
 
 func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 	logln := func(v ...interface{}) {
@@ -407,7 +373,7 @@ func main() {
 			if config.NoComp {
 				session, err = smux.Client(kcpconn, smuxConfig)
 			} else {
-				session, err = smux.Client(newCompStream(kcpconn), smuxConfig)
+				session, err = smux.Client(generic.NewCompStream(kcpconn), smuxConfig)
 			}
 			if err != nil {
 				return nil, errors.Wrap(err, "createConn()")
