@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
+	"github.com/xtaci/kcptun/generic"
 	"github.com/xtaci/smux"
 
 	"path/filepath"
@@ -86,21 +87,11 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 	wg.Add(2)
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) {
-		if wt, ok := src.(io.WriterTo); ok {
-			if _, err := wt.WriteTo(dst); err != nil {
-				logln(err)
-			}
-		} else if rt, ok := dst.(io.ReaderFrom); ok {
-			if _, err := rt.ReadFrom(src); err != nil {
-				logln(err)
-			}
-		} else {
-			buf := xmitBuf.Get().([]byte)
-			if _, err := io.CopyBuffer(dst, src, buf); err != nil {
-				logln(err)
-			}
-			xmitBuf.Put(buf)
+		buf := xmitBuf.Get().([]byte)
+		if _, err := generic.CopyBuffer(dst, src, buf); err != nil {
+			logln(err)
 		}
+		xmitBuf.Put(buf)
 		src.Close()
 		wg.Done()
 	}
