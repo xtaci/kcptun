@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 
 	"github.com/golang/snappy"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
@@ -44,9 +45,14 @@ func (c *compStream) Read(p []byte) (n int, err error) {
 }
 
 func (c *compStream) Write(p []byte) (n int, err error) {
-	n, err = c.w.Write(p)
-	err = c.w.Flush()
-	return n, err
+	if _, err := c.w.Write(p); err != nil {
+		return 0, errors.WithStack(err)
+	}
+
+	if err := c.w.Flush(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	return len(p), err
 }
 
 func (c *compStream) Close() error {
@@ -93,11 +99,22 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 	}
 }
 
-func handleClient(p1, p2 io.ReadWriteCloser, quiet bool) {
-	if !quiet {
-		log.Println("stream opened")
-		defer log.Println("stream closed")
+func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
+	logf := func(format string, v ...interface{}) {
+		if !quiet {
+			log.Printf(format, v...)
+		}
 	}
+
+	logln := func(v ...interface{}) {
+		if !quiet {
+			log.Println(v...)
+		}
+	}
+
+	logln("stream opened", p1.ID())
+	defer logln("stream closed", p1.ID())
+
 	defer p1.Close()
 	defer p2.Close()
 
@@ -106,14 +123,20 @@ func handleClient(p1, p2 io.ReadWriteCloser, quiet bool) {
 		die := make(chan struct{})
 		go func() {
 			if wt, ok := src.(io.WriterTo); ok {
-				wt.WriteTo(dst)
+				if _, err := wt.WriteTo(dst); err != nil {
+					logf("+%v", err)
+				}
 				close(die)
 			} else if rt, ok := dst.(io.ReaderFrom); ok {
-				rt.ReadFrom(src)
+				if _, err := rt.ReadFrom(src); err != nil {
+					logf("+%v", err)
+				}
 				close(die)
 			} else {
 				buf := xmitBuf.Get().([]byte)
-				io.CopyBuffer(dst, src, buf)
+				if _, err := io.CopyBuffer(dst, src, buf); err != nil {
+					logf("+%v", err)
+				}
 				xmitBuf.Put(buf)
 				close(die)
 			}

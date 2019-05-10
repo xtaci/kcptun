@@ -43,9 +43,14 @@ func (c *compStream) Read(p []byte) (n int, err error) {
 }
 
 func (c *compStream) Write(p []byte) (n int, err error) {
-	n, err = c.w.Write(p)
-	err = c.w.Flush()
-	return n, err
+	if _, err := c.w.Write(p); err != nil {
+		return 0, errors.WithStack(err)
+	}
+
+	if err := c.w.Flush(); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	return len(p), err
 }
 
 func (c *compStream) Close() error {
@@ -61,31 +66,48 @@ func newCompStream(conn net.Conn) *compStream {
 }
 
 func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
-	if !quiet {
-		log.Println("stream opened")
-		defer log.Println("stream closed")
+	logf := func(format string, v ...interface{}) {
+		if !quiet {
+			log.Printf(format, v...)
+		}
+	}
+
+	logln := func(v ...interface{}) {
+		if !quiet {
+			log.Println(v...)
+		}
 	}
 
 	defer p1.Close()
 	p2, err := sess.OpenStream()
 	if err != nil {
+		logf("%+v", err)
 		return
 	}
 	defer p2.Close()
+
+	logln("stream opened", p2.ID())
+	defer logln("stream closed", p2.ID())
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.Reader) chan struct{} {
 		die := make(chan struct{})
 		go func() {
 			if wt, ok := src.(io.WriterTo); ok {
-				wt.WriteTo(dst)
+				if _, err := wt.WriteTo(dst); err != nil {
+					logf("+%v", err)
+				}
 				close(die)
 			} else if rt, ok := dst.(io.ReaderFrom); ok {
-				rt.ReadFrom(src)
+				if _, err := rt.ReadFrom(src); err != nil {
+					logf("+%v", err)
+				}
 				close(die)
 			} else {
 				buf := xmitBuf.Get().([]byte)
-				io.CopyBuffer(dst, src, buf)
+				if _, err := io.CopyBuffer(dst, src, buf); err != nil {
+					logf("+%v", err)
+				}
 				xmitBuf.Put(buf)
 				close(die)
 			}
@@ -444,7 +466,7 @@ func main() {
 		for {
 			p1, err := listener.AcceptTCP()
 			if err != nil {
-				log.Fatalln(err)
+				log.Fatalf("%+v", err)
 			}
 			checkError(err)
 			idx := rr % numconn
