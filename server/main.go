@@ -124,18 +124,18 @@ func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
 		go func() {
 			if wt, ok := src.(io.WriterTo); ok {
 				if _, err := wt.WriteTo(dst); err != nil {
-					logf("+%v", err)
+					logf("%+v", err)
 				}
 				close(die)
 			} else if rt, ok := dst.(io.ReaderFrom); ok {
 				if _, err := rt.ReadFrom(src); err != nil {
-					logf("+%v", err)
+					logf("%+v", err)
 				}
 				close(die)
 			} else {
 				buf := xmitBuf.Get().([]byte)
 				if _, err := io.CopyBuffer(dst, src, buf); err != nil {
-					logf("+%v", err)
+					logf("%+v", err)
 				}
 				xmitBuf.Put(buf)
 				close(die)
