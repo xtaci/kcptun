@@ -68,25 +68,29 @@ func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
 		}
 	}
 
+	defer p1.Close()
+	defer p2.Close()
+
 	logln("stream opened", p1.ID())
 	defer logln("stream closed", p1.ID())
 
-	var wg sync.WaitGroup
-	wg.Add(2)
 	// start tunnel & wait for tunnel termination
-	streamCopy := func(dst io.Writer, src io.ReadCloser) {
-		buf := xmitBuf.Get().([]byte)
-		if _, err := generic.CopyBuffer(dst, src, buf); err != nil {
-			logln(err)
-		}
-		xmitBuf.Put(buf)
-		src.Close()
-		wg.Done()
+	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
+		die := make(chan struct{})
+		go func() {
+			buf := xmitBuf.Get().([]byte)
+			if _, err := generic.CopyBuffer(dst, src, buf); err != nil {
+				logln(err)
+			}
+			xmitBuf.Put(buf)
+		}()
+		return die
 	}
 
-	go streamCopy(p1, p2)
-	go streamCopy(p2, p1)
-	wg.Wait()
+	select {
+	case <-streamCopy(p1, p2):
+	case <-streamCopy(p2, p1):
+	}
 }
 
 func checkError(err error) {
@@ -103,7 +107,7 @@ func main() {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 	xmitBuf.New = func() interface{} {
-		return make([]byte, 65535)
+		return make([]byte, 32768)
 	}
 
 	myApp := cli.NewApp()
