@@ -53,6 +53,7 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 			buf := xmitBuf.Get().([]byte)
 			generic.CopyBuffer(dst, src, buf)
 			xmitBuf.Put(buf)
+			close(die)
 		}()
 		return die
 	}
