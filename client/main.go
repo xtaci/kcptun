@@ -51,9 +51,7 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 		die := make(chan struct{})
 		go func() {
 			buf := xmitBuf.Get().([]byte)
-			if _, err := generic.CopyBuffer(dst, src, buf); err != nil {
-				logln(err)
-			}
+			generic.CopyBuffer(dst, src, buf)
 			xmitBuf.Put(buf)
 		}()
 		return die
