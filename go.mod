@@ -9,11 +9,11 @@ require (
 	github.com/templexxx/xor v0.0.0-20181023030647-4e92f724b73b // indirect
 	github.com/tjfoc/gmsm v1.0.1 // indirect
 	github.com/urfave/cli v1.20.0
-	github.com/xtaci/kcp-go v5.3.7+incompatible
-	github.com/xtaci/smux v1.2.11
-	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529
+	github.com/xtaci/kcp-go v5.3.8+incompatible
+	github.com/xtaci/smux v1.2.12
+	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
 	golang.org/x/net v0.0.0-20190509222800-a4d6f7feada5 // indirect
 	golang.org/x/sys v0.0.0-20190509141414-a5b02f93d862 // indirect
 	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190511041617-99f201b6807e // indirect
+	golang.org/x/tools v0.0.0-20190513233021-7d589f28aaf4 // indirect
 )
