@@ -447,10 +447,10 @@ func scavenger(ch chan *smux.Session, ttl int) {
 			for k := range sessionList {
 				s := sessionList[k]
 				if s.session.NumStreams() == 0 || s.session.IsClosed() {
-					log.Println("session normally closed", sess.RemoteAddr())
+					log.Println("session normally closed", s.session.RemoteAddr())
 					s.session.Close()
 				} else if ttl >= 0 && time.Since(s.ts) >= time.Duration(ttl)*time.Second {
-					log.Println("session reached scavenge ttl", sess.RemoteAddr())
+					log.Println("session reached scavenge ttl", s.session.RemoteAddr())
 					s.session.Close()
 				} else {
 					newList = append(newList, sessionList[k])
