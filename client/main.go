@@ -411,7 +411,6 @@ func main() {
 			if err != nil {
 				log.Fatalf("%+v", err)
 			}
-			checkError(err)
 			idx := rr % numconn
 
 			// do auto expiration && reconnection
