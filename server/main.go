@@ -71,8 +71,8 @@ func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
 	defer p1.Close()
 	defer p2.Close()
 
-	logln("stream opened", p1.ID())
-	defer logln("stream closed", p1.ID())
+	logln("stream opened", p1.ID(), "@", p1.RemoteAddr())
+	defer logln("stream closed", p1.ID(), "@", p1.RemoteAddr())
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
