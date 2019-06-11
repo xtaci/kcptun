@@ -29,22 +29,22 @@ var VERSION = "SELFBUILD"
 var xmitBuf sync.Pool
 
 func handleClient(sess *smux.Session, p1 *net.TCPConn, quiet bool) {
-	logln := func(v ...interface{}) {
+	logln := func(s string, v ...interface{}) {
 		if !quiet {
-			log.Println(v...)
+			log.Printf(s, v...)
 		}
 	}
 	defer p1.Close()
 	p2, err := sess.OpenStream()
 	if err != nil {
-		logln(err)
+		logln("%s", err)
 		return
 	}
 
 	defer p2.Close()
 
-	logln("stream opened", p2.ID(), " from:", p1.RemoteAddr())
-	defer logln("stream closed", p2.ID(), "from:", p1.RemoteAddr())
+	logln("stream opened %s(%d)", p1.RemoteAddr(), p2.ID())
+	defer logln("stream closed %s(%d)", p1.RemoteAddr(), p2.ID())
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
