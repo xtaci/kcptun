@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -61,7 +62,7 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 	}
 }
 
-func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
+func handleClient(p1 *smux.Stream, p2 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -71,8 +72,8 @@ func handleClient(p1 *smux.Stream, p2 io.ReadWriteCloser, quiet bool) {
 	defer p1.Close()
 	defer p2.Close()
 
-	logln("stream opened", p1.ID(), "@", p1.RemoteAddr())
-	defer logln("stream closed", p1.ID(), "@", p1.RemoteAddr())
+	logln("stream opened", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
+	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {

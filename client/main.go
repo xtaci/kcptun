@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -28,7 +29,7 @@ var VERSION = "SELFBUILD"
 // A pool for stream copying
 var xmitBuf sync.Pool
 
-func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
+func handleClient(sess *smux.Session, p1 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -43,8 +44,8 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 
 	defer p2.Close()
 
-	logln("stream opened", p2.ID(), "@", p2.RemoteAddr())
-	defer logln("stream closed", p2.ID(), "@", p2.RemoteAddr())
+	logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
