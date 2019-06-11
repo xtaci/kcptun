@@ -28,7 +28,7 @@ var VERSION = "SELFBUILD"
 // A pool for stream copying
 var xmitBuf sync.Pool
 
-func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
+func handleClient(sess *smux.Session, p1 *net.TCPConn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -43,8 +43,8 @@ func handleClient(sess *smux.Session, p1 io.ReadWriteCloser, quiet bool) {
 
 	defer p2.Close()
 
-	logln("stream opened", p2.ID())
-	defer logln("stream closed", p2.ID())
+	logln("stream opened", p2.ID(), " from:", p1.RemoteAddr())
+	defer logln("stream closed", p2.ID(), "from:", p1.RemoteAddr())
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
