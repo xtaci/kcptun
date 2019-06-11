@@ -57,6 +57,8 @@ github.com/xtaci/kcp-go v5.3.8+incompatible/go.mod h1:bN6vIwHQbfHaHtFpEssmWsN45a
 github.com/xtaci/kcp-go v5.3.9+incompatible/go.mod h1:bN6vIwHQbfHaHtFpEssmWsN45a+AZwO7eyRCmEIbtvE=
 github.com/xtaci/kcp-go v5.4.1+incompatible h1:zRYDrtFx/DBNI2pngZNOYxEDvWyGN6zZlIB2QcXHL9M=
 github.com/xtaci/kcp-go v5.4.1+incompatible/go.mod h1:bN6vIwHQbfHaHtFpEssmWsN45a+AZwO7eyRCmEIbtvE=
+github.com/xtaci/kcp-go v5.4.2+incompatible h1:srUoSnFj4dkRzo2b+yz1WENGB32vAv0iuMS8wjYmaEI=
+github.com/xtaci/kcp-go v5.4.2+incompatible/go.mod h1:bN6vIwHQbfHaHtFpEssmWsN45a+AZwO7eyRCmEIbtvE=
 github.com/xtaci/smux v1.1.1 h1:ZyIo9XHuHkAeENzHR8yGWC+6xUSCTeP2tPTRE8mnLvc=
 github.com/xtaci/smux v1.1.1/go.mod h1:f+nYm6SpuHMy/SH0zpbvAFHT1QoMcgLOsWcFip5KfPw=
 github.com/xtaci/smux v1.1.2 h1:AeAzHKqvDeFEcicL9Q06LTjIVW2I55iooUbpDRGHth4=
