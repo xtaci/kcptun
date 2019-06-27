@@ -1,9 +1,11 @@
 language: go
 go:
-    - 1.9.x
     - 1.10.x
     - 1.11.x
+    - 1.12.x
 before_install:
+    - sudo apt update
+    - sudo apt install libpcap-dev
     - go get github.com/mattn/goveralls
     - go get golang.org/x/tools/cmd/cover
 install:

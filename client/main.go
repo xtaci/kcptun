@@ -18,6 +18,7 @@ import (
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/kcptun/generic"
 	"github.com/xtaci/smux"
+	"github.com/xtaci/tcpraw"
 )
 
 // SALT is use for pbkdf2 key expansion
@@ -221,6 +222,10 @@ func main() {
 			Name:  "quiet",
 			Usage: "to suppress the 'stream open/close' messages",
 		},
+		cli.BoolFlag{
+			Name:  "tcp",
+			Usage: "to emulate a TCP connection",
+		},
 		cli.StringFlag{
 			Name:  "c",
 			Value: "", // when the value is not empty, the config path must exists
@@ -256,6 +261,7 @@ func main() {
 		config.SnmpLog = c.String("snmplog")
 		config.SnmpPeriod = c.Int("snmpperiod")
 		config.Quiet = c.Bool("quiet")
+		config.TCP = c.Bool("tcp")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -339,13 +345,26 @@ func main() {
 		log.Println("snmplog:", config.SnmpLog)
 		log.Println("snmpperiod:", config.SnmpPeriod)
 		log.Println("quiet:", config.Quiet)
+		log.Println("tcp:", config.TCP)
 
 		smuxConfig := smux.DefaultConfig()
 		smuxConfig.MaxReceiveBuffer = config.SmuxBuf
 		smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
 
 		createConn := func() (*smux.Session, error) {
-			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
+			var kcpconn *kcp.UDPSession
+			if config.TCP {
+				conn, err := tcpraw.Dial("tcp", config.RemoteAddr)
+				if err != nil {
+					return nil, errors.Wrap(err, "tcpraw.Dial()")
+				}
+				kcpconn, err = kcp.NewConn(config.RemoteAddr, block, config.DataShard, config.ParityShard, conn)
+				if err != nil {
+					return nil, errors.Wrap(err, "createConn()")
+				}
+			}
+
+			kcpconn, err = kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
 			if err != nil {
 				return nil, errors.Wrap(err, "createConn()")
 			}
