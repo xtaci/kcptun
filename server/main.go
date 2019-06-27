@@ -344,9 +344,10 @@ func main() {
 			checkError(err)
 			lis, err = kcp.ServeConn(block, config.DataShard, config.ParityShard, conn)
 			checkError(err)
+		} else {
+			lis, err = kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
+			checkError(err)
 		}
-		lis, err = kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
-		checkError(err)
 		log.Println("listening on:", lis.Addr())
 		log.Println("target:", config.Target)
 		log.Println("encryption:", config.Crypt)

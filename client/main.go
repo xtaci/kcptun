@@ -362,11 +362,11 @@ func main() {
 				if err != nil {
 					return nil, errors.Wrap(err, "createConn()")
 				}
-			}
-
-			kcpconn, err = kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
-			if err != nil {
-				return nil, errors.Wrap(err, "createConn()")
+			} else {
+				kcpconn, err = kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
+				if err != nil {
+					return nil, errors.Wrap(err, "createConn()")
+				}
 			}
 			kcpconn.SetStreamMode(true)
 			kcpconn.SetWriteDelay(false)
