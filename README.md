@@ -60,9 +60,9 @@ which tunnels the original connection:
 > Application -> Target Server(8388/tcp) 
 
 ### Install from source
-
 ```
-$go get -u github.com/xtaci/kcptun/...
+$ sudo apt install libpcap-dev
+$ go get -u github.com/xtaci/kcptun/...
 ```
 
 All precompiled releases are genereated from `build-release.sh` script.
