@@ -376,22 +376,3 @@ via WeChat
 <img src="wechat_donate.jpg" alt="kcptun" height="120px" /> 
 
 （注意：我没有任何社交网站的账号，请小心骗子。）
-
-## Contributors
-
-This project exists thanks to all the people who contribute. 
-<a href="https://github.com/xtaci/kcptun/graphs/contributors"><img src="https://opencollective.com/kcptun/contributors.svg?width=890&button=false" /></a>
-
-
-## Backers
-
-Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/kcptun#backer)]
-
-<a href="https://opencollective.com/kcptun#backers" target="_blank"><img src="https://opencollective.com/kcptun/backers.svg?width=890"></a>
-
-
-## Sponsors
-
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/kcptun#sponsor)]
-
-
