@@ -34,8 +34,9 @@ fi
 
 VERSION=`date -u +%Y%m%d`
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
-LDFLAGS_LINUX='-X main.VERSION=$VERSION -s -w -linkmode "external" -extldflags "-static"'
-LDFLAGS_LINUX32='-X main.VERSION=$VERSION -s -w -linkmode "external" -extldflags "-static -m32 -L/usr/lib32"'
+LDFLAGS_LINUX='-X main.VERSION='$VERSION' -s -w -linkmode "external" -extldflags "-static"'
+LDFLAGS_LINUX32='-X main.VERSION='$VERSION' -s -w -linkmode "external" -extldflags "-static -m32 -L/usr/lib32"'
+echo $LDFLAGS_LINUX
 
 # 386
 OSES=(linux windows)
