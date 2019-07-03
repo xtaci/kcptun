@@ -238,6 +238,10 @@ func main() {
 			Name:  "quiet",
 			Usage: "to suppress the 'stream open/close' messages",
 		},
+		cli.BoolFlag{
+			Name:  "tcp",
+			Usage: "to emulate a TCP connection",
+		},
 		cli.StringFlag{
 			Name:  "c",
 			Value: "", // when the value is not empty, the config path must exists
@@ -271,6 +275,7 @@ func main() {
 		config.SnmpPeriod = c.Int("snmpperiod")
 		config.Pprof = c.Bool("pprof")
 		config.Quiet = c.Bool("quiet")
+		config.TCP = c.Bool("tcp")
 
 		if c.String("c") != "" {
 			//Now only support json config file
@@ -350,6 +355,7 @@ func main() {
 		log.Println("snmpperiod:", config.SnmpPeriod)
 		log.Println("pprof:", config.Pprof)
 		log.Println("quiet:", config.Quiet)
+		log.Println("tcp:", config.TCP)
 
 		if err := lis.SetDSCP(config.DSCP); err != nil {
 			log.Println("SetDSCP:", err)
