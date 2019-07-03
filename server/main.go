@@ -1,5 +1,3 @@
-// +build !linux,amd64
-
 package main
 
 import (
@@ -333,7 +331,7 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		lis, err := kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
+		lis, err := listen(&config, block)
 		checkError(err)
 		log.Println("listening on:", lis.Addr())
 		log.Println("target:", config.Target)

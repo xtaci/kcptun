@@ -1,5 +1,3 @@
-// +build !linux,amd64
-
 package main
 
 import (
@@ -347,9 +345,9 @@ func main() {
 		smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
 
 		createConn := func() (*smux.Session, error) {
-			kcpconn, err := kcp.DialWithOptions(config.RemoteAddr, block, config.DataShard, config.ParityShard)
+			kcpconn, err := dial(&config, block)
 			if err != nil {
-				return nil, errors.Wrap(err, "createConn()")
+				return nil, errors.Wrap(err, "dial()")
 			}
 			kcpconn.SetStreamMode(true)
 			kcpconn.SetWriteDelay(false)
