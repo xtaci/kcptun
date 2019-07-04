@@ -8,7 +8,7 @@ cd $BUILD_DIR
 sum="sha1sum"
 
 echo "If you need reproducible build, export GO111MODULE=on first"
-echo "Prerequisite for cross-compiling is written in build-release.sh"
+echo "Prerequisites for cross-compiling were written in build-release.sh"
 
 # required library for cross-compiling
 # sudo apt-get install -y automake autogen build-essential ca-certificates   gcc-5-arm-linux-gnueabi g++-5-arm-linux-gnueabi libc6-dev-armel-cross   gcc-5-arm-linux-gnueabihf g++-5-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-5-aarch64-linux-gnu g++-5-aarch64-linux-gnu libc6-dev-arm64-cross  gcc-5-mips-linux-gnu g++-5-mips-linux-gnu libc6-dev-mips-cross gcc-5-mipsel-linux-gnu g++-5-mipsel-linux-gnu libc6-dev-mipsel-cross  gcc-5-mips64-linux-gnuabi64 g++-5-mips64-linux-gnuabi64 libc6-dev-mips64-cross  gcc-5-mips64el-linux-gnuabi64 g++-5-mips64el-linux-gnuabi64 libc6-dev-mips64el-cross  gcc-5-multilib g++-5-multilib gcc-mingw-w64 g++-mingw-w64 clang llvm-dev   libtool libxml2-dev uuid-dev libssl-dev swig openjdk-8-jdk pkg-config patch  make xz-utils cpio wget zip unzip p7zip git mercurial bzr texinfo help2man --no-install-recommends
@@ -36,7 +36,11 @@ VERSION=`date -u +%Y%m%d`
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
 LDFLAGS_LINUX='-X main.VERSION='$VERSION' -s -w -linkmode "external" -extldflags "-static"'
 LDFLAGS_LINUX32='-X main.VERSION='$VERSION' -s -w -linkmode "external" -extldflags "-static -m32 -L/usr/lib32"'
-echo $LDFLAGS_LINUX
+echo "-ldflag for linux/amd64:" $LDFLAGS_LINUX
+echo "-ldflag for linux/386:" $LDFLAGS_LINUX32
+echo "-ldflag for other:" $LDFLAGS
+
+echo "=== Building ==="
 
 # 386
 OSES=(linux windows)
@@ -83,7 +87,7 @@ for os in ${OSES[@]}; do
 done
 
 # ARM-5
-CC=arm-linux-gnueabi-gcc-5 GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CGO_CFLAGS="-march=armv5" CGO_CXXFLAGS="-march=armv5" go install std
+#CC=arm-linux-gnueabi-gcc-5 GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CGO_CFLAGS="-march=armv5" CGO_CXXFLAGS="-march=armv5" go install std
 CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CGO_CFLAGS="-march=armv5" CGO_CXXFLAGS="-march=armv5" go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_arm5  github.com/xtaci/kcptun/client
 CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CGO_CFLAGS="-march=armv5" CGO_CXXFLAGS="-march=armv5" go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_arm5  github.com/xtaci/kcptun/server
 if $UPX; then upx -9 client_linux_arm5 server_linux_arm5;fi
@@ -91,7 +95,7 @@ tar -zcf kcptun-linux-arm5-$VERSION.tar.gz client_linux_arm5 server_linux_arm5
 $sum kcptun-linux-arm5-$VERSION.tar.gz
 
 # ARM-6
-CC=arm-linux-gnueabi-gcc-5 GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="-march=armv6" CGO_CXXFLAGS="-march=armv6" go install std
+#CC=arm-linux-gnueabi-gcc-5 GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="-march=armv6" CGO_CXXFLAGS="-march=armv6" go install std
 CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="-march=armv6" CGO_CXXFLAGS="-march=armv6" go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_arm6 github.com/xtaci/kcptun/client
 CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="-march=armv6" CGO_CXXFLAGS="-march=armv6" go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_arm6 github.com/xtaci/kcptun/server
 if $UPX; then upx -9 client_linux_arm6 server_linux_arm6;fi
@@ -100,7 +104,7 @@ $sum kcptun-linux-arm6-$VERSION.tar.gz
 
 # ARM-7
 ARMS=(7)
-CC=arm-linux-gnueabihf-gcc-5 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CGO_CFLAGS="-march=armv7-a" CGO_CXXFLAGS="-march=armv7-a" go install std
+#CC=arm-linux-gnueabihf-gcc-5 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CGO_CFLAGS="-march=armv7-a" CGO_CXXFLAGS="-march=armv7-a" go install std
 CC=arm-linux-gnueabihf-gcc-5 CXX=arm-linux-gnueabihf-g++-5 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CGO_CFLAGS="-march=armv7-a -fPIC" CGO_CXXFLAGS="-march=armv7-a -fPIC" go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_arm7  github.com/xtaci/kcptun/client
 CC=arm-linux-gnueabihf-gcc-5 CXX=arm-linux-gnueabihf-g++-5 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CGO_CFLAGS="-march=armv7-a -fPIC" CGO_CXXFLAGS="-march=armv7-a -fPIC" go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_arm7  github.com/xtaci/kcptun/server
 if $UPX; then upx -9 client_linux_arm7 server_linux_arm7;fi
@@ -127,3 +131,5 @@ tar -zcf kcptun-linux-mipsle-$VERSION.tar.gz client_linux_mipsle server_linux_mi
 tar -zcf kcptun-linux-mips-$VERSION.tar.gz client_linux_mips server_linux_mips
 $sum kcptun-linux-mipsle-$VERSION.tar.gz
 $sum kcptun-linux-mips-$VERSION.tar.gz
+
+echo "=== Building Completed ==="
