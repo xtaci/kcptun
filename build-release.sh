@@ -8,7 +8,9 @@ cd $BUILD_DIR
 sum="sha1sum"
 
 if [ "$GO111MODULE" != "on" ]; then
-	echo "If you need reproducible build, export GO111MODULE=on first"
+	echo "GO111MODULE is off"
+else
+	echo "GO111MODULE is on"
 fi 
 
 echo "Prerequisites for cross-compiling were written in build-release.sh"
