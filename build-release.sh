@@ -7,7 +7,10 @@ cd $BUILD_DIR
 
 sum="sha1sum"
 
-echo "If you need reproducible build, export GO111MODULE=on first"
+if [ "$GO111MODULE" != "on" ]; then
+	echo "If you need reproducible build, export GO111MODULE=on first"
+fi 
+
 echo "Prerequisites for cross-compiling were written in build-release.sh"
 
 # required library for cross-compiling
