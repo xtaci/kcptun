@@ -240,7 +240,7 @@ func main() {
 		},
 		cli.BoolFlag{
 			Name:  "tcp",
-			Usage: "to emulate a TCP connection",
+			Usage: "to emulate a TCP connection(linux)",
 		},
 		cli.StringFlag{
 			Name:  "c",
