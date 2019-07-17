@@ -10,6 +10,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,7 +52,16 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		}
 
 		go func(p1 *smux.Stream) {
-			p2, err := net.Dial("tcp", config.Target)
+			var network string
+			var target string
+			if strings.HasPrefix(config.Target, "unix://") {
+				network = "unix"
+				target = config.Target[7:len(config.Target)]
+			} else {
+				network = "tcp"
+				target = config.Target
+			}
+			p2, err := net.Dial(network, target)
 			if err != nil {
 				log.Println(err)
 				p1.Close()
