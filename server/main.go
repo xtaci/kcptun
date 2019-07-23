@@ -43,6 +43,13 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		return
 	}
 	defer mux.Close()
+
+	// check if target is unix domain socket
+	var isUnix bool
+	if _, _, err := net.SplitHostPort(config.Target); err != nil {
+		isUnix = true
+	}
+
 	for {
 		stream, err := mux.AcceptStream()
 		if err != nil {
@@ -51,20 +58,19 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		}
 
 		go func(p1 *smux.Stream) {
-			var err1, err2 error
 			var p2 net.Conn
-
-			p2, err1 = net.Dial("tcp", config.Target)
-			if err1 != nil { //  retry with unix domain socket
-				p2, err2 = net.Dial("unix", config.Target)
-				if err2 != nil {
-					log.Println(err1)
-					log.Println(err2)
-					p1.Close()
-					return
-				}
+			var err error
+			if !isUnix {
+				p2, err = net.Dial("tcp", config.Target)
+			} else {
+				p2, err = net.Dial("unix", config.Target)
 			}
 
+			if err != nil {
+				log.Println(err)
+				p1.Close()
+				return
+			}
 			handleClient(p1, p2, config.Quiet)
 		}(stream)
 	}
