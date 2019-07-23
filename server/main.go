@@ -55,7 +55,7 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 			var p2 net.Conn
 
 			p2, err1 = net.Dial("tcp", config.Target)
-			if err1 == nil { //  retry with unix domain socket
+			if err1 != nil { //  retry with unix domain socket
 				p2, err2 = net.Dial("unix", config.Target)
 				if err2 != nil {
 					log.Println(err1)
