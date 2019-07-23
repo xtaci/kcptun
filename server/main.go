@@ -51,12 +51,20 @@ func handleMux(conn io.ReadWriteCloser, config *Config) {
 		}
 
 		go func(p1 *smux.Stream) {
-			p2, err := net.Dial("tcp", config.Target)
-			if err != nil {
-				log.Println(err)
-				p1.Close()
-				return
+			var err1, err2 error
+			var p2 net.Conn
+
+			p2, err1 = net.Dial("tcp", config.Target)
+			if err1 == nil { //  retry with unix domain socket
+				p2, err2 = net.Dial("unix", config.Target)
+				if err2 != nil {
+					log.Println(err1)
+					log.Println(err2)
+					p1.Close()
+					return
+				}
 			}
+
 			handleClient(p1, p2, config.Quiet)
 		}(stream)
 	}
@@ -123,7 +131,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "target, t",
 			Value: "127.0.0.1:12948",
-			Usage: "target server address",
+			Usage: "target server address, or path/to/unix_socket",
 		},
 		cli.StringFlag{
 			Name:   "key",
