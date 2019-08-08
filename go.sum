@@ -63,6 +63,8 @@ github.com/xtaci/kcp-go v5.4.1+incompatible h1:zRYDrtFx/DBNI2pngZNOYxEDvWyGN6zZl
 github.com/xtaci/kcp-go v5.4.1+incompatible/go.mod h1:bN6vIwHQbfHaHtFpEssmWsN45a+AZwO7eyRCmEIbtvE=
 github.com/xtaci/kcp-go v5.4.2+incompatible h1:srUoSnFj4dkRzo2b+yz1WENGB32vAv0iuMS8wjYmaEI=
 github.com/xtaci/kcp-go v5.4.2+incompatible/go.mod h1:bN6vIwHQbfHaHtFpEssmWsN45a+AZwO7eyRCmEIbtvE=
+github.com/xtaci/kcp-go v5.4.4+incompatible h1:QIJ0a0Q0N1G20yLHL2+fpdzyy2v/Cb3PI+xiwx/KK9c=
+github.com/xtaci/kcp-go v5.4.4+incompatible/go.mod h1:bN6vIwHQbfHaHtFpEssmWsN45a+AZwO7eyRCmEIbtvE=
 github.com/xtaci/smux v1.1.1 h1:ZyIo9XHuHkAeENzHR8yGWC+6xUSCTeP2tPTRE8mnLvc=
 github.com/xtaci/smux v1.1.1/go.mod h1:f+nYm6SpuHMy/SH0zpbvAFHT1QoMcgLOsWcFip5KfPw=
 github.com/xtaci/smux v1.1.2 h1:AeAzHKqvDeFEcicL9Q06LTjIVW2I55iooUbpDRGHth4=
@@ -169,6 +171,8 @@ github.com/xtaci/tcpraw v1.2.23 h1:1N3ovKY+gZHRc9cink+pigjufx23kjXwoB9FrTt0OcE=
 github.com/xtaci/tcpraw v1.2.23/go.mod h1:dKyZ2V75s0cZ7cbgJYdxPvms7af0joIeOyx1GgJQbLk=
 github.com/xtaci/tcpraw v1.2.24 h1:JMYbkSLh0jsXY5KQL8F5JU6kvEd1ZXIymV5IhvmDUy8=
 github.com/xtaci/tcpraw v1.2.24/go.mod h1:dKyZ2V75s0cZ7cbgJYdxPvms7af0joIeOyx1GgJQbLk=
+github.com/xtaci/tcpraw v1.2.25 h1:VDlqo0op17JeXBM6e2G9ocCNLOJcw9mZbobMbJjo0vk=
+github.com/xtaci/tcpraw v1.2.25/go.mod h1:dKyZ2V75s0cZ7cbgJYdxPvms7af0joIeOyx1GgJQbLk=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190320223903-b7391e95e576 h1:aUX/1G2gFSs4AsJJg2cL3HuoRhCSCz733FE5GUSuaT4=
 golang.org/x/crypto v0.0.0-20190320223903-b7391e95e576/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

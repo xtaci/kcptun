@@ -11,9 +11,9 @@ require (
 	github.com/templexxx/xor v0.0.0-20181023030647-4e92f724b73b // indirect
 	github.com/tjfoc/gmsm v1.0.1 // indirect
 	github.com/urfave/cli v1.20.0
-	github.com/xtaci/kcp-go v5.4.2+incompatible
+	github.com/xtaci/kcp-go v5.4.4+incompatible
 	github.com/xtaci/smux v1.3.4
-	github.com/xtaci/tcpraw v1.2.24
+	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5
 	golang.org/x/net v0.0.0-20190607181551-461777fb6f67 // indirect
 	golang.org/x/sys v0.0.0-20190610200419-93c9922d18ae // indirect
