@@ -364,6 +364,7 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 1. http://http2.github.io/ -- What is HTTP/2?
 1. http://www.lartc.org/ -- Linux Advanced Routing & Traffic Control
 1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
+1. https://zhuanlan.zhihu.com/p/53849089 -- kcptun开发小记
 
 ### Donate 
 
