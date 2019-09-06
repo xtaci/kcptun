@@ -19,6 +19,7 @@ import (
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/kcptun/generic"
 	"github.com/xtaci/smux"
+	"github.com/xtaci/tcpraw"
 )
 
 // SALT is use for pbkdf2 key expansion
@@ -350,9 +351,7 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		lis, err := listen(&config, block)
-		checkError(err)
-		log.Println("listening on:", lis.Addr())
+		log.Println("listening on:", config.Listen)
 		log.Println("target:", config.Target)
 		log.Println("encryption:", config.Crypt)
 		log.Println("nodelay parameters:", config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
@@ -371,40 +370,64 @@ func main() {
 		log.Println("quiet:", config.Quiet)
 		log.Println("tcp:", config.TCP)
 
-		if err := lis.SetDSCP(config.DSCP); err != nil {
-			log.Println("SetDSCP:", err)
-		}
-		if err := lis.SetReadBuffer(config.SockBuf); err != nil {
-			log.Println("SetReadBuffer:", err)
-		}
-		if err := lis.SetWriteBuffer(config.SockBuf); err != nil {
-			log.Println("SetWriteBuffer:", err)
-		}
-
 		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
 
-		for {
-			if conn, err := lis.AcceptKCP(); err == nil {
-				log.Println("remote address:", conn.RemoteAddr())
-				conn.SetStreamMode(true)
-				conn.SetWriteDelay(false)
-				conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
-				conn.SetMtu(config.MTU)
-				conn.SetWindowSize(config.SndWnd, config.RcvWnd)
-				conn.SetACKNoDelay(config.AckNodelay)
+		// main loop
+		var wg sync.WaitGroup
+		loop := func(lis *kcp.Listener) {
+			defer wg.Done()
+			if err := lis.SetDSCP(config.DSCP); err != nil {
+				log.Println("SetDSCP:", err)
+			}
+			if err := lis.SetReadBuffer(config.SockBuf); err != nil {
+				log.Println("SetReadBuffer:", err)
+			}
+			if err := lis.SetWriteBuffer(config.SockBuf); err != nil {
+				log.Println("SetWriteBuffer:", err)
+			}
 
-				if config.NoComp {
-					go handleMux(conn, &config)
+			for {
+				if conn, err := lis.AcceptKCP(); err == nil {
+					log.Println("remote address:", conn.RemoteAddr())
+					conn.SetStreamMode(true)
+					conn.SetWriteDelay(false)
+					conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+					conn.SetMtu(config.MTU)
+					conn.SetWindowSize(config.SndWnd, config.RcvWnd)
+					conn.SetACKNoDelay(config.AckNodelay)
+
+					if config.NoComp {
+						go handleMux(conn, &config)
+					} else {
+						go handleMux(generic.NewCompStream(conn), &config)
+					}
 				} else {
-					go handleMux(generic.NewCompStream(conn), &config)
+					log.Printf("%+v", err)
 				}
-			} else {
-				log.Printf("%+v", err)
 			}
 		}
+
+		if config.TCP { // tcp dual stack
+			if conn, err := tcpraw.Listen("tcp", config.Listen); err == nil {
+				lis, err := kcp.ServeConn(block, config.DataShard, config.ParityShard, conn)
+				checkError(err)
+				wg.Add(1)
+				go loop(lis)
+			} else {
+				log.Println(err)
+			}
+		}
+
+		// udp stack
+		lis, err := kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
+		checkError(err)
+		wg.Add(1)
+		go loop(lis)
+		wg.Wait()
+		return nil
 	}
 	myApp.Run(os.Args)
 }
