@@ -18,10 +18,14 @@ import (
 	kcp "github.com/xtaci/kcp-go"
 	"github.com/xtaci/kcptun/generic"
 	"github.com/xtaci/smux"
+	smuxv2 "github.com/xtaci/smux/v2"
 )
 
 // SALT is use for pbkdf2 key expansion
 const SALT = "kcp-go"
+
+// maximum supported smux version
+const maxSmuxVer = 2
 
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
@@ -29,14 +33,14 @@ var VERSION = "SELFBUILD"
 // A pool for stream copying
 var xmitBuf sync.Pool
 
-func handleClient(sess *smux.Session, p1 net.Conn, quiet bool) {
+func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
 		}
 	}
 	defer p1.Close()
-	p2, err := sess.OpenStream()
+	p2, err := mux.Open()
 	if err != nil {
 		logln(err)
 		return
@@ -44,8 +48,10 @@ func handleClient(sess *smux.Session, p1 net.Conn, quiet bool) {
 
 	defer p2.Close()
 
-	logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	if s2, ok := p2.(generic.Stream); ok {
+		logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(s2.RemoteAddr(), "(", s2.ID(), ")"))
+		defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(s2.RemoteAddr(), "(", s2.ID(), ")"))
+	}
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
@@ -193,9 +199,19 @@ func main() {
 			Usage: "per-socket buffer in bytes",
 		},
 		cli.IntFlag{
+			Name:  "smuxver",
+			Value: 1,
+			Usage: "specify smux version, available 1,2",
+		},
+		cli.IntFlag{
 			Name:  "smuxbuf",
 			Value: 4194304,
 			Usage: "the overall de-mux buffer in bytes",
+		},
+		cli.IntFlag{
+			Name:  "streambuf",
+			Value: 2097152,
+			Usage: "per stream receive buffer in bytes, smux v2+",
 		},
 		cli.IntFlag{
 			Name:  "keepalive",
@@ -255,6 +271,8 @@ func main() {
 		config.NoCongestion = c.Int("nc")
 		config.SockBuf = c.Int("sockbuf")
 		config.SmuxBuf = c.Int("smuxbuf")
+		config.StreamBuf = c.Int("streambuf")
+		config.SmuxVer = c.Int("smuxver")
 		config.KeepAlive = c.Int("keepalive")
 		config.Log = c.String("log")
 		config.SnmpLog = c.String("snmplog")
@@ -336,7 +354,9 @@ func main() {
 		log.Println("acknodelay:", config.AckNodelay)
 		log.Println("dscp:", config.DSCP)
 		log.Println("sockbuf:", config.SockBuf)
+		log.Println("smuxver:", config.SmuxVer)
 		log.Println("smuxbuf:", config.SmuxBuf)
+		log.Println("streambuf:", config.StreamBuf)
 		log.Println("keepalive:", config.KeepAlive)
 		log.Println("conn:", config.Conn)
 		log.Println("autoexpire:", config.AutoExpire)
@@ -346,11 +366,12 @@ func main() {
 		log.Println("quiet:", config.Quiet)
 		log.Println("tcp:", config.TCP)
 
-		smuxConfig := smux.DefaultConfig()
-		smuxConfig.MaxReceiveBuffer = config.SmuxBuf
-		smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
+		// parameters check
+		if config.SmuxVer > maxSmuxVer {
+			log.Fatal("unsupported smux version:", config.SmuxVer)
+		}
 
-		createConn := func() (*smux.Session, error) {
+		createConn := func() (generic.Mux, error) {
 			kcpconn, err := dial(&config, block)
 			if err != nil {
 				return nil, errors.Wrap(err, "dial()")
@@ -372,22 +393,49 @@ func main() {
 				log.Println("SetWriteBuffer:", err)
 			}
 
-			// stream multiplex
-			var session *smux.Session
-			if config.NoComp {
-				session, err = smux.Client(kcpconn, smuxConfig)
-			} else {
-				session, err = smux.Client(generic.NewCompStream(kcpconn), smuxConfig)
+			switch config.SmuxVer {
+			case 1:
+				smuxConfig := smux.DefaultConfig()
+				smuxConfig.MaxReceiveBuffer = config.SmuxBuf
+				smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
+
+				// stream multiplex
+				var session *smux.Session
+				if config.NoComp {
+					session, err = smux.Client(kcpconn, smuxConfig)
+				} else {
+					session, err = smux.Client(generic.NewCompStream(kcpconn), smuxConfig)
+				}
+				if err != nil {
+					return nil, errors.Wrap(err, "createConn()")
+				}
+				log.Println("connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
+				return session, nil
+			case 2:
+				smuxConfig := smuxv2.DefaultConfig()
+				smuxConfig.MaxReceiveBuffer = config.SmuxBuf
+				smuxConfig.MaxStreamBuffer = config.StreamBuf
+				smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
+
+				// stream multiplex
+				var session *smuxv2.Session
+				if config.NoComp {
+					session, err = smuxv2.Client(kcpconn, smuxConfig)
+				} else {
+					session, err = smuxv2.Client(generic.NewCompStream(kcpconn), smuxConfig)
+				}
+				if err != nil {
+					return nil, errors.Wrap(err, "createConn()")
+				}
+				log.Println("connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
+				return session, nil
+			default:
+				panic("incorrect smux version")
 			}
-			if err != nil {
-				return nil, errors.Wrap(err, "createConn()")
-			}
-			log.Println("connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
-			return session, nil
 		}
 
 		// wait until a connection is ready
-		waitConn := func() *smux.Session {
+		waitConn := func() generic.Mux {
 			for {
 				if session, err := createConn(); err == nil {
 					return session
@@ -400,7 +448,7 @@ func main() {
 
 		numconn := uint16(config.Conn)
 		muxes := make([]struct {
-			session *smux.Session
+			session generic.Mux
 			ttl     time.Time
 		}, numconn)
 
@@ -409,7 +457,7 @@ func main() {
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 		}
 
-		chScavenger := make(chan *smux.Session, 128)
+		chScavenger := make(chan generic.Mux, 128)
 		go scavenger(chScavenger, config.ScavengeTTL)
 		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 		rr := uint16(0)
@@ -435,11 +483,11 @@ func main() {
 }
 
 type scavengeSession struct {
-	session *smux.Session
+	session generic.Mux
 	ts      time.Time
 }
 
-func scavenger(ch chan *smux.Session, ttl int) {
+func scavenger(ch chan generic.Mux, ttl int) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	var sessionList []scavengeSession

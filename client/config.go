@@ -28,7 +28,9 @@ type Config struct {
 	Resend       int    `json:"resend"`
 	NoCongestion int    `json:"nc"`
 	SockBuf      int    `json:"sockbuf"`
+	SmuxVer      int    `json:"smuxver"`
 	SmuxBuf      int    `json:"smuxbuf"`
+	StreamBuf    int    `json:"streamebuf"`
 	KeepAlive    int    `json:"keepalive"`
 	Log          string `json:"log"`
 	SnmpLog      string `json:"snmplog"`
