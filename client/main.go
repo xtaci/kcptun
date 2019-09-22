@@ -70,7 +70,7 @@ func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
 					case smux.ErrInvalidProtocol:
 						log.Println("smux version:1", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(s2.RemoteAddr(), "(", s2.ID(), ")"))
 					case smuxv2.ErrInvalidProtocol:
-						log.Println("smux version:1", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(s2.RemoteAddr(), "(", s2.ID(), ")"))
+						log.Println("smux version:2", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(s2.RemoteAddr(), "(", s2.ID(), ")"))
 					}
 				}
 			}
