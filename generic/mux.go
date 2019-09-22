@@ -16,6 +16,6 @@ type Mux interface {
 
 type Stream interface {
 	io.ReadWriteCloser
-	ID() int
+	ID() uint32
 	RemoteAddr() net.Addr
 }
