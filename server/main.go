@@ -121,7 +121,20 @@ func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, quiet bool) {
 		die := make(chan struct{})
 		go func() {
 			buf := xmitBuf.Get().([]byte)
-			generic.CopyBuffer(dst, src, buf)
+			if _, err := generic.CopyBuffer(dst, src, buf); err != nil {
+				// error handling
+				cause := err
+				if e, ok := err.(interface{ Cause() error }); ok {
+					cause = e.Cause()
+				}
+
+				switch cause {
+				case io.EOF:
+				case io.ErrClosedPipe:
+				default:
+					log.Println(err)
+				}
+			}
 			xmitBuf.Put(buf)
 			close(die)
 		}()
