@@ -210,7 +210,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "streambuf",
-			Value: 4194304,
+			Value: 2097152,
 			Usage: "per stream receive buffer in bytes, smux v2+",
 		},
 		cli.IntFlag{
