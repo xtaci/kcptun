@@ -408,7 +408,7 @@ func main() {
 			if err := kcpconn.SetWriteBuffer(config.SockBuf); err != nil {
 				log.Println("SetWriteBuffer:", err)
 			}
-
+			log.Println("smux version:", config.SmuxVer, "on connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
 			switch config.SmuxVer {
 			case 1:
 				smuxConfig := smux.DefaultConfig()
@@ -425,7 +425,6 @@ func main() {
 				if err != nil {
 					return nil, errors.Wrap(err, "createConn()")
 				}
-				log.Println("connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
 				return session, nil
 			case 2:
 				smuxConfig := smuxv2.DefaultConfig()
@@ -443,7 +442,6 @@ func main() {
 				if err != nil {
 					return nil, errors.Wrap(err, "createConn()")
 				}
-				log.Println("connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
 				return session, nil
 			default:
 				panic("incorrect smux version")

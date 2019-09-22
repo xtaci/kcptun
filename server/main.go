@@ -36,12 +36,13 @@ var VERSION = "SELFBUILD"
 var xmitBuf sync.Pool
 
 // handle multiplex-ed connection
-func handleMux(conn io.ReadWriteCloser, config *Config) {
+func handleMux(conn net.Conn, config *Config) {
 	// check if target is unix domain socket
 	var isUnix bool
 	if _, _, err := net.SplitHostPort(config.Target); err != nil {
 		isUnix = true
 	}
+	log.Println("smux version:", config.SmuxVer, "on connection:", conn.LocalAddr(), "->", conn.RemoteAddr())
 
 	// stream multiplex
 	var muxer generic.Mux
