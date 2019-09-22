@@ -122,17 +122,19 @@ func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, quiet bool) {
 		go func() {
 			buf := xmitBuf.Get().([]byte)
 			if _, err := generic.CopyBuffer(dst, src, buf); err != nil {
-				// error handling
-				cause := err
-				if e, ok := err.(interface{ Cause() error }); ok {
-					cause = e.Cause()
-				}
+				if s1, ok := p1.(generic.Stream); ok {
+					// verbose error handling
+					cause := err
+					if e, ok := err.(interface{ Cause() error }); ok {
+						cause = e.Cause()
+					}
 
-				switch cause {
-				case smux.ErrInvalidProtocol:
-					log.Println(err)
-				case smuxv2.ErrInvalidProtocol:
-					log.Println(err)
+					switch cause {
+					case smux.ErrInvalidProtocol:
+						log.Println("smux version:1", err, "in:", fmt.Sprint(s1.RemoteAddr(), "(", s1.ID(), ")"), "out:", p2.RemoteAddr())
+					case smuxv2.ErrInvalidProtocol:
+						log.Println("smux version:2", err, "in:", fmt.Sprint(s1.RemoteAddr(), "(", s1.ID(), ")"), "out:", p2.RemoteAddr())
+					}
 				}
 			}
 			xmitBuf.Put(buf)
