@@ -11,7 +11,7 @@ require (
 	github.com/templexxx/xor v0.0.0-20181023030647-4e92f724b73b // indirect
 	github.com/tjfoc/gmsm v1.0.1 // indirect
 	github.com/urfave/cli v1.21.0
-	github.com/xtaci/kcp-go v5.4.5+incompatible
+	github.com/xtaci/kcp-go v5.4.7+incompatible
 	github.com/xtaci/smux v1.4.4
 	github.com/xtaci/smux/v2 v2.0.10
 	github.com/xtaci/tcpraw v1.2.25
