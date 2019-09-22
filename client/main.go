@@ -66,9 +66,9 @@ func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
 				}
 
 				switch cause {
-				case io.EOF:
-				case io.ErrClosedPipe:
-				default:
+				case smux.ErrInvalidProtocol:
+					log.Println(err)
+				case smuxv2.ErrInvalidProtocol:
 					log.Println(err)
 				}
 			}

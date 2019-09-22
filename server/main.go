@@ -129,9 +129,9 @@ func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, quiet bool) {
 				}
 
 				switch cause {
-				case io.EOF:
-				case io.ErrClosedPipe:
-				default:
+				case smux.ErrInvalidProtocol:
+					log.Println(err)
+				case smuxv2.ErrInvalidProtocol:
 					log.Println(err)
 				}
 			}
