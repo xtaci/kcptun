@@ -13,7 +13,7 @@ require (
 	github.com/urfave/cli v1.21.0
 	github.com/xtaci/kcp-go v5.4.5+incompatible
 	github.com/xtaci/smux v1.4.3
-	github.com/xtaci/smux/v2 v2.0.8
+	github.com/xtaci/smux/v2 v2.0.9
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20190909091759-094676da4a83
 	golang.org/x/net v0.0.0-20190909003024-a7b16738d86b // indirect
