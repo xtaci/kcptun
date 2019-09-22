@@ -1,5 +1,6 @@
 FROM golang:alpine as builder
 MAINTAINER xtaci <daniel820313@gmail.com>
+ENV GO111MODULE=on
 RUN apk update && \
     apk upgrade && \
     apk add git gcc libc-dev linux-headers
