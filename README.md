@@ -354,6 +354,7 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 1. -nocomp
 1. -datashard
 1. -parityshard
+1. -smuxver
 
 ### References
 
