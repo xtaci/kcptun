@@ -62,7 +62,8 @@ which tunnels the original connection:
 ### Install from source
 
 ```
-$go get -u github.com/xtaci/kcptun/...
+$ export GO111MODULE=on
+$ go get -u github.com/xtaci/kcptun/...
 ```
 
 All precompiled releases are genereated from `build-release.sh` script.
