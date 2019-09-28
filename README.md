@@ -384,8 +384,6 @@ via Ethereum(ETH): Address: 0x2e4b43ab3d0983da282592571eef61ae5e60f726 , Or scan
 
 **ACCEPT any ERC20 shitcoins**
 
-*Looking for sponsors, sponsors will have his name printed when program starts, contact email: imap at live.com.*
-
 via WeChat
 
 <img src="wechat_donate.jpg" alt="kcptun" height="120px" /> 
