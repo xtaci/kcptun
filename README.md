@@ -376,15 +376,9 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
 1. https://zhuanlan.zhihu.com/p/53849089 -- kcptun开发小记
 
-### Donate 
+### Consulting 
 
-via Ethereum(ETH): Address: 0x2e4b43ab3d0983da282592571eef61ae5e60f726 , Or scan here:
-
-<img src="0x2e4b43ab3d0983da282592571eef61ae5e60f726.png" alt="kcptun" height="120px" /> 
-
-**ACCEPT any ERC20 shitcoins**
-
-via WeChat
+WeChat(付费技术咨询)
 
 <img src="wechat_donate.jpg" alt="kcptun" height="120px" /> 
 
