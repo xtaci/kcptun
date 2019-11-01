@@ -376,10 +376,5 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
 1. https://zhuanlan.zhihu.com/p/53849089 -- kcptun开发小记
 
-### Consulting 
-
-WeChat(付费技术咨询)
-
-<img src="wechat_donate.jpg" alt="kcptun" height="120px" /> 
 
 （注意：我没有任何社交网站的账号，请小心骗子。）
