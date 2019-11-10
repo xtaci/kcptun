@@ -6,11 +6,8 @@ cd $BUILD_DIR
 
 sum="sha1sum"
 
-if [ "$GO111MODULE" != "on" ]; then
-	echo "GO111MODULE is off"
-else
-	echo "GO111MODULE is on"
-fi 
+export GO111MODULE=on
+echo "Setting GO111MODULE to" $GO111MODULE
 
 if ! hash sha1sum 2>/dev/null; then
 	if ! hash shasum 2>/dev/null; then
