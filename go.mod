@@ -14,7 +14,7 @@ require (
 	github.com/xtaci/kcp-go v5.4.19+incompatible
 	github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae // indirect
 	github.com/xtaci/smux v1.4.4
-	github.com/xtaci/smux/v2 v2.0.11
+	github.com/xtaci/smux/v2 v2.0.13
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20190909091759-094676da4a83
 	golang.org/x/net v0.0.0-20190909003024-a7b16738d86b // indirect
