@@ -164,7 +164,7 @@ func main() {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 	xmitBuf.New = func() interface{} {
-		return make([]byte, 32768)
+		return make([]byte, 4096)
 	}
 
 	myApp := cli.NewApp()
