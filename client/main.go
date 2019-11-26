@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"sync"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -29,9 +28,6 @@ const maxSmuxVer = 2
 
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
-
-// A pool for stream copying
-var xmitBuf sync.Pool
 
 func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
@@ -57,8 +53,7 @@ func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
 		die := make(chan struct{})
 		go func() {
-			buf := xmitBuf.Get().([]byte)
-			if _, err := generic.CopyBuffer(dst, src, buf); err != nil {
+			if _, err := generic.Copy(dst, src); err != nil {
 				if s2, ok := p2.(generic.Stream); ok {
 					// verbose error handling
 					cause := err
@@ -74,7 +69,6 @@ func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
 					}
 				}
 			}
-			xmitBuf.Put(buf)
 			close(die)
 		}()
 		return die
@@ -98,9 +92,6 @@ func main() {
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
-	}
-	xmitBuf.New = func() interface{} {
-		return make([]byte, 4096)
 	}
 
 	myApp := cli.NewApp()
