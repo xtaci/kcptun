@@ -16,17 +16,20 @@ func rawCopy(dst io.Writer, src *net.TCPConn, ctrl *CopyControl) (written int64,
 	}
 
 	buf := ctrl.Buffer
+	var locked bool
 	for {
 		var er error
 		var nr int
 		rr := c.Read(func(s uintptr) bool {
-			ctrl.Lock() // writelock will block reading
-			defer ctrl.Unlock()
+			ctrl.Lock() // acquire rights to read & write
+			locked = true
 			nr, er = syscall.Read(int(s), buf)
 			if er == syscall.EAGAIN {
+				ctrl.Unlock()
+				locked = false
 				return false
 			}
-			return true
+			return true // keep lock
 		})
 
 		// read EOF
@@ -35,9 +38,10 @@ func rawCopy(dst io.Writer, src *net.TCPConn, ctrl *CopyControl) (written int64,
 		}
 
 		if nr > 0 {
-			ctrl.Lock()
 			nw, ew := dst.Write(buf[0:nr])
 			ctrl.Unlock()
+			locked = false
+
 			if nw > 0 {
 				written += int64(nw)
 			}
@@ -62,6 +66,10 @@ func rawCopy(dst io.Writer, src *net.TCPConn, ctrl *CopyControl) (written int64,
 			}
 			break
 		}
+	}
+
+	if locked {
+		ctrl.Unlock()
 	}
 
 	return written, err
