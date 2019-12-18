@@ -40,7 +40,6 @@ func rawCopy(dst io.Writer, src *net.TCPConn, ctrl *CopyControl) (written int64,
 			ctrl.Lock()
 			nw, ew := dst.Write(buf[0:nr])
 			ctrl.Unlock()
-			buf = nil
 			if nw > 0 {
 				written += int64(nw)
 			}
