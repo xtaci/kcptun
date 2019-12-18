@@ -9,6 +9,7 @@ import (
 	"syscall"
 )
 
+// rawCopy can fan in N src into 1 dst with only 1 shared buffer
 func rawCopy(dst io.Writer, src *net.TCPConn, ctrl *CopyControl) (written int64, err error) {
 	c, err := src.SyscallConn()
 	if err != nil {
@@ -21,7 +22,11 @@ func rawCopy(dst io.Writer, src *net.TCPConn, ctrl *CopyControl) (written int64,
 		var er error
 		var nr int
 		rr := c.Read(func(s uintptr) bool {
-			ctrl.Lock() // acquire rights to read & write
+			// if the 'src' readable, acquire the shared lock first
+			// to make sure no other writers to 'dst' are blocked on dst.Write.
+			// With such design, we only need 1 buffer for a specific 'dst',
+			// especially when 'dst' is a multiplexed connection.
+			ctrl.Lock()
 			locked = true
 			nr, er = syscall.Read(int(s), buf)
 			if er == syscall.EAGAIN {
@@ -29,7 +34,9 @@ func rawCopy(dst io.Writer, src *net.TCPConn, ctrl *CopyControl) (written int64,
 				locked = false
 				return false
 			}
-			return true // keep lock
+			// keep the lock on the shared buffer
+			// for the following dst.Write
+			return true
 		})
 
 		// read EOF
