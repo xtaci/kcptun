@@ -23,11 +23,14 @@ import (
 	"github.com/xtaci/tcpraw"
 )
 
-// SALT is use for pbkdf2 key expansion
-const SALT = "kcp-go"
-
-// maximum supported smux version
-const maxSmuxVer = 2
+const (
+	// SALT is use for pbkdf2 key expansion
+	SALT = "kcp-go"
+	// maximum supported smux version
+	maxSmuxVer = 2
+	// stream copy buffer size
+	bufSize = 32768
+)
 
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
@@ -73,6 +76,9 @@ func handleMux(conn net.Conn, config *Config) {
 		panic("incorrect smux version")
 	}
 
+	// copy to stream control
+	copyControl := &generic.CopyControl{Buffer: make([]byte, bufSize)}
+
 	for {
 		stream, err := muxer.Accept()
 		if err != nil {
@@ -94,12 +100,12 @@ func handleMux(conn net.Conn, config *Config) {
 				p1.Close()
 				return
 			}
-			handleClient(p1, p2, config.Quiet)
+			handleClient(p1, p2, copyControl, config.Quiet)
 		}(stream)
 	}
 }
 
-func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, quiet bool) {
+func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, ctrl *generic.CopyControl, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -118,7 +124,7 @@ func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, quiet bool) {
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
 		die := make(chan struct{})
 		go func() {
-			if _, err := generic.Copy(dst, src); err != nil {
+			if _, err := generic.Copy(dst, src, ctrl); err != nil {
 				if s1, ok := p1.(generic.Stream); ok {
 					// verbose error handling
 					cause := err

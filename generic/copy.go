@@ -1,9 +1,20 @@
 package generic
 
-import "io"
+import (
+	"io"
+	"net"
+	"sync"
+)
 
-// Memory optimized Copy function specified for this library
-func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
+const bufSize = 4096
+
+type CopyControl struct {
+	Buffer []byte // shared buffer for copying controlled by mutex
+	sync.Mutex
+}
+
+// Memory optimized io.Copy function specified for this library
+func Copy(dst io.Writer, src io.Reader, ctrl *CopyControl) (written int64, err error) {
 	// If the reader has a WriteTo method, use it to do the copy.
 	// Avoids an allocation and a copy.
 	if wt, ok := src.(io.WriterTo); ok {
@@ -14,39 +25,16 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 		return rt.ReadFrom(src)
 	}
 
-	// limited to 4K per stream
-	size := 4096
-	if l, ok := src.(*io.LimitedReader); ok && int64(size) > l.N {
-		if l.N < 1 {
-			size = 1
-		} else {
-			size = int(l.N)
+	// if src is net.TCPConn, and dst is a multiplexed connection
+	// reading can be controlled by writable events of smux
+	// and make the reading serialized
+	if tcpconn, ok := src.(*net.TCPConn); ok {
+		if ctrl != nil {
+			return rawCopy(dst, tcpconn, ctrl)
 		}
 	}
-	buf := make([]byte, size)
 
-	for {
-		nr, er := src.Read(buf)
-		if nr > 0 {
-			nw, ew := dst.Write(buf[0:nr])
-			if nw > 0 {
-				written += int64(nw)
-			}
-			if ew != nil {
-				err = ew
-				break
-			}
-			if nr != nw {
-				err = io.ErrShortWrite
-				break
-			}
-		}
-		if er != nil {
-			if er != io.EOF {
-				err = er
-			}
-			break
-		}
-	}
-	return written, err
+	// fallback to standard io.CopyBuffer
+	buf := make([]byte, bufSize)
+	return io.CopyBuffer(dst, src, buf)
 }

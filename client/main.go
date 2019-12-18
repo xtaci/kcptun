@@ -20,16 +20,20 @@ import (
 	smuxv2 "github.com/xtaci/smux/v2"
 )
 
-// SALT is use for pbkdf2 key expansion
-const SALT = "kcp-go"
-
-// maximum supported smux version
-const maxSmuxVer = 2
+const (
+	// SALT is use for pbkdf2 key expansion
+	SALT = "kcp-go"
+	// maximum supported smux version
+	maxSmuxVer = 2
+	// stream copy buffer size
+	bufSize = 32768
+)
 
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
-func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
+// handleClient aggregates connection p1 on mux with 'writeLock'
+func handleClient(mux generic.Mux, p1 net.Conn, ctrl *generic.CopyControl, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -53,7 +57,7 @@ func handleClient(mux generic.Mux, p1 net.Conn, quiet bool) {
 	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
 		die := make(chan struct{})
 		go func() {
-			if _, err := generic.Copy(dst, src); err != nil {
+			if _, err := generic.Copy(dst, src, ctrl); err != nil {
 				if s2, ok := p2.(generic.Stream); ok {
 					// verbose error handling
 					cause := err
@@ -455,11 +459,13 @@ func main() {
 		muxes := make([]struct {
 			session generic.Mux
 			ttl     time.Time
+			ctrl    *generic.CopyControl // for control of memory in copying
 		}, numconn)
 
 		for k := range muxes {
 			muxes[k].session = waitConn()
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+			muxes[k].ctrl = &generic.CopyControl{Buffer: make([]byte, bufSize)}
 		}
 
 		chScavenger := make(chan generic.Mux, 128)
@@ -478,9 +484,10 @@ func main() {
 				chScavenger <- muxes[idx].session
 				muxes[idx].session = waitConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				muxes[idx].ctrl = &generic.CopyControl{Buffer: make([]byte, bufSize)}
 			}
 
-			go handleClient(muxes[idx].session, p1, config.Quiet)
+			go handleClient(muxes[idx].session, p1, muxes[idx].ctrl, config.Quiet)
 			rr++
 		}
 	}
