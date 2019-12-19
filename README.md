@@ -23,6 +23,15 @@
 
 > *Disclaimer: kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
 
+### Requirements
+
+| Target | Minimum | Recommended |
+| --- | --- | --- |
+| System | aix darwin dragonfly freebsd linux netbsd openbsd solaris windows | linux |
+| Memory | >20MB | >32MB |
+| CPU | ANY | amd64 with AES-NI & AVX2 |
+
+
 ### QuickStart
 
 Increase the number of open files on your server, as:
