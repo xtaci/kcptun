@@ -71,10 +71,11 @@ func handleClient(mux generic.Mux, p1 net.Conn, ctrl *generic.CopyControl, quiet
 				}
 			}
 		}
+		p1.Close()
+		p2.Close()
 	}
 
 	go streamCopy(p1, p2)
-	// errors reading from p1(net.Conn) can close p2 while return
 	streamCopy(p2, p1)
 }
 

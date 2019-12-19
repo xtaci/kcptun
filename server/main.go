@@ -138,10 +138,11 @@ func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, ctrl *generic.CopyControl,
 				}
 			}
 		}
+		p1.Close()
+		p2.Close()
 	}
 
 	go streamCopy(p2, p1)
-	// errors reading from p2(net.Conn) can close p1 while return
 	streamCopy(p1, p2)
 }
 
