@@ -121,34 +121,27 @@ func handleClient(p1 io.ReadWriteCloser, p2 net.Conn, ctrl *generic.CopyControl,
 	}
 
 	// start tunnel & wait for tunnel termination
-	streamCopy := func(dst io.Writer, src io.ReadCloser) chan struct{} {
-		die := make(chan struct{})
-		go func() {
-			if _, err := generic.Copy(dst, src, ctrl); err != nil {
-				if s1, ok := p1.(generic.Stream); ok {
-					// verbose error handling
-					cause := err
-					if e, ok := err.(interface{ Cause() error }); ok {
-						cause = e.Cause()
-					}
+	streamCopy := func(dst io.Writer, src io.ReadCloser) {
+		if _, err := generic.Copy(dst, src, ctrl); err != nil {
+			if s1, ok := p1.(generic.Stream); ok {
+				// verbose error handling
+				cause := err
+				if e, ok := err.(interface{ Cause() error }); ok {
+					cause = e.Cause()
+				}
 
-					switch cause {
-					case smux.ErrInvalidProtocol:
-						log.Println("smux version:1", err, "in:", fmt.Sprint(s1.RemoteAddr(), "(", s1.ID(), ")"), "out:", p2.RemoteAddr())
-					case smuxv2.ErrInvalidProtocol:
-						log.Println("smux version:2", err, "in:", fmt.Sprint(s1.RemoteAddr(), "(", s1.ID(), ")"), "out:", p2.RemoteAddr())
-					}
+				switch cause {
+				case smux.ErrInvalidProtocol:
+					log.Println("smux version:1", err, "in:", fmt.Sprint(s1.RemoteAddr(), "(", s1.ID(), ")"), "out:", p2.RemoteAddr())
+				case smuxv2.ErrInvalidProtocol:
+					log.Println("smux version:2", err, "in:", fmt.Sprint(s1.RemoteAddr(), "(", s1.ID(), ")"), "out:", p2.RemoteAddr())
 				}
 			}
-			close(die)
-		}()
-		return die
+		}
 	}
 
-	select {
-	case <-streamCopy(p1, p2):
-	case <-streamCopy(p2, p1):
-	}
+	go streamCopy(p1, p2)
+	streamCopy(p2, p1)
 }
 
 func checkError(err error) {
