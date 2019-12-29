@@ -32,7 +32,7 @@ const (
 var VERSION = "SELFBUILD"
 
 // handleClient aggregates connection p1 on mux with 'writeLock'
-func handleClient(session *smux.Session, p1 net.Conn, ctrl *generic.CopyControl, quiet bool) {
+func handleClient(session *smux.Session, p1 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -52,7 +52,7 @@ func handleClient(session *smux.Session, p1 net.Conn, ctrl *generic.CopyControl,
 
 	// start tunnel & wait for tunnel termination
 	streamCopy := func(dst io.Writer, src io.ReadCloser) {
-		if _, err := generic.Copy(dst, src, ctrl); err != nil {
+		if _, err := generic.Copy(dst, src); err != nil {
 			// report protocol error
 			if err == smux.ErrInvalidProtocol {
 				log.Println("smux", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
@@ -425,13 +425,11 @@ func main() {
 		muxes := make([]struct {
 			session *smux.Session
 			ttl     time.Time
-			ctrl    *generic.CopyControl // for control of memory in copying
 		}, numconn)
 
 		for k := range muxes {
 			muxes[k].session = waitConn()
 			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-			muxes[k].ctrl = &generic.CopyControl{Buffer: make([]byte, bufSize)}
 		}
 
 		chScavenger := make(chan *smux.Session, 128)
@@ -450,10 +448,9 @@ func main() {
 				chScavenger <- muxes[idx].session
 				muxes[idx].session = waitConn()
 				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				muxes[idx].ctrl = &generic.CopyControl{Buffer: make([]byte, bufSize)}
 			}
 
-			go handleClient(muxes[idx].session, p1, muxes[idx].ctrl, config.Quiet)
+			go handleClient(muxes[idx].session, p1, config.Quiet)
 			rr++
 		}
 	}
