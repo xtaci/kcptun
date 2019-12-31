@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/pkg/errors"
-	kcp "github.com/xtaci/kcp-go"
+	kcp "github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/tcpraw"
 )
 

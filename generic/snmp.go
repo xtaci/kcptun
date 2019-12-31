@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/xtaci/kcp-go"
+	kcp "github.com/xtaci/kcp-go/v5"
 )
 
 func SnmpLogger(path string, interval int) {

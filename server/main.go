@@ -16,7 +16,7 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/urfave/cli"
-	kcp "github.com/xtaci/kcp-go"
+	kcp "github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/kcptun/generic"
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
