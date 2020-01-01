@@ -68,11 +68,13 @@ which tunnels the original connection:
 
 > Application -> Target Server(8388/tcp) 
 
-### Install from source
+### Build from source
 
 ```
-$ export GO111MODULE=on
-$ go get -u github.com/xtaci/kcptun/...
+$ git clone https://github.com/xtaci/kcptun.git
+$ cd kcptun
+$ ./build-release.sh
+$ cd build
 ```
 
 All precompiled releases are genereated from `build-release.sh` script.
