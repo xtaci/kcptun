@@ -8,13 +8,11 @@
 [4]: https://travis-ci.org/xtaci/kcptun
 [5]: https://goreportcard.com/badge/github.com/xtaci/kcptun
 [6]: https://goreportcard.com/report/github.com/xtaci/kcptun
-[7]: https://img.shields.io/badge/license-MIT-blue.svg
-[8]: https://raw.githubusercontent.com/xtaci/kcptun/master/LICENSE.md
-[11]: https://img.shields.io/badge/license-MIT-blue.svg
+[11]: https://img.shields.io/github/license/xtaci/kcptun
 [12]: LICENSE.md
-[13]: https://img.shields.io/github/release/xtaci/kcptun.svg
+[13]: https://img.shields.io/github/v/release/xtaci/kcptun?color=orange
 [14]: https://github.com/xtaci/kcptun/releases/latest
-[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800
+[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800&color=red
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
