@@ -2,8 +2,8 @@
 
 [![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2]
 
-[1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
-[2]: https://microbadger.com/images/xtaci/kcptun
+[1]:https://img.shields.io/docker/build/xtaci/kcptun
+[2]: https://hub.docker.com/r/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
 [4]: https://travis-ci.org/xtaci/kcptun
 [5]: https://goreportcard.com/badge/github.com/xtaci/kcptun
@@ -12,7 +12,7 @@
 [12]: LICENSE.md
 [13]: https://img.shields.io/github/v/release/xtaci/kcptun?color=orange
 [14]: https://github.com/xtaci/kcptun/releases/latest
-[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800&color=red
+[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800&color=orange
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
