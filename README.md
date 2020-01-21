@@ -1,8 +1,8 @@
 # <img src="logo.png" alt="kcptun" height="54px" /> 
 
-[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2]
+[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2] 
 
-[1]:https://img.shields.io/docker/build/xtaci/kcptun
+[1]: https://img.shields.io/docker/pulls/xtaci/kcptun
 [2]: https://hub.docker.com/r/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
 [4]: https://travis-ci.org/xtaci/kcptun
