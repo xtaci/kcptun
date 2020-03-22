@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -26,10 +27,79 @@ const (
 	maxSmuxVer = 2
 	// stream copy buffer size
 	bufSize = 4096
+
+	TYPE_DOWNLOAD = 0
+	TYPE_UPLOAD = 1
+
+	SIZE_1K = 1024
+	SIZE_1M = 1024 * 1024
+
+	// second
+	SLEEP_TIME = 1
 )
 
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
+
+var gStat StreamStatistics
+
+type StreamStatistics struct {
+	lastUploadBytes int64
+	currentUploadBytes int64
+
+	lastDownloadBytes int64
+	currentDownloadBytes int64
+
+	mutex sync.Mutex
+}
+
+func updateStreamStatistics(bytes int64, bytes_type int8) {
+	gStat.mutex.Lock()
+	defer gStat.mutex.Unlock()
+
+	if (bytes_type == int8(TYPE_DOWNLOAD)) {
+		gStat.currentDownloadBytes += bytes
+	} else if(bytes_type == int8(TYPE_UPLOAD)) {
+		gStat.currentUploadBytes += bytes
+	} else {
+		panic("unknown error")
+	}
+}
+
+func printBytesPerSecond(msg string, bytes int64) {
+	if bytes < SIZE_1K {
+		log.Printf("%s: %dB", msg, bytes)
+	} else if bytes < SIZE_1M {
+		log.Printf("%s: %fKB", msg, float64(bytes) / 1024.0)
+	} else if bytes >= 0 {
+		log.Printf("%s: %fMB", msg, float64(bytes) / (1024.0 * 1024))
+	} else {
+		panic("bytes is less than zero")
+	}
+}
+
+func printStreamStatuisticsOnce() {
+	gStat.mutex.Lock()
+	defer gStat.mutex.Unlock()
+
+	downloadBytesPerSecond := gStat.currentDownloadBytes - gStat.lastDownloadBytes
+	uploadBytesPerSecond := gStat.currentUploadBytes - gStat.lastUploadBytes
+
+	gStat.lastDownloadBytes = gStat.currentDownloadBytes
+	gStat.lastUploadBytes = gStat.currentUploadBytes
+
+	printBytesPerSecond("download speed", downloadBytesPerSecond / SLEEP_TIME)
+	printBytesPerSecond("upload speed", uploadBytesPerSecond / SLEEP_TIME)
+}
+
+func printStreamStatistics() {
+
+	for {
+		time.Sleep(SLEEP_TIME * time.Second)
+
+		printStreamStatuisticsOnce()
+	}
+}
 
 // handleClient aggregates connection p1 on mux with 'writeLock'
 func handleClient(session *smux.Session, p1 net.Conn, quiet bool) {
@@ -51,19 +121,37 @@ func handleClient(session *smux.Session, p1 net.Conn, quiet bool) {
 	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
 
 	// start tunnel & wait for tunnel termination
-	streamCopy := func(dst io.Writer, src io.ReadCloser) {
-		if _, err := generic.Copy(dst, src); err != nil {
-			// report protocol error
-			if err == smux.ErrInvalidProtocol {
-				log.Println("smux", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	streamCopy := func(dst io.Writer, src io.ReadCloser, copy_type int8) {
+		for {
+			bytes, err := generic.Copy(dst, src)
+
+			if bytes != 0 {
+				updateStreamStatistics(bytes, copy_type)
 			}
+
+			if err != nil {
+				if err.Error() == "timeout" {
+					continue
+				}
+
+				// report protocol error
+				if err == smux.ErrInvalidProtocol {
+					log.Println("smux", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+				}
+			}
+
+			break
 		}
+
 		p1.Close()
 		p2.Close()
 	}
 
-	go streamCopy(p1, p2)
-	streamCopy(p2, p1)
+	p2.SetReadDeadline(time.Now().Add(time.Second))
+	p2.SetWriteDeadline(time.Now().Add(time.Second))
+
+	go streamCopy(p1, p2, TYPE_DOWNLOAD)
+	streamCopy(p2, p1, TYPE_UPLOAD)
 }
 
 func checkError(err error) {
@@ -240,6 +328,8 @@ func main() {
 		},
 	}
 	myApp.Action = func(c *cli.Context) error {
+		go printStreamStatistics()
+
 		config := Config{}
 		config.LocalAddr = c.String("localaddr")
 		config.RemoteAddr = c.String("remoteaddr")
