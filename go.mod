@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/tjfoc/gmsm v1.3.0 // indirect
 	github.com/urfave/cli v1.21.0
-	github.com/xtaci/kcp-go/v5 v5.5.10
+	github.com/xtaci/kcp-go/v5 v5.5.11
 	github.com/xtaci/smux v1.5.12
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20200320181102-891825fb96df
