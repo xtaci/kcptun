@@ -1,17 +1,20 @@
-package main
+package mclient
 
 import (
 	"encoding/json"
 	"os"
 )
 
-// Config for server
+// Config for client
 type Config struct {
-	Listen       string `json:"listen"`
-	Target       string `json:"target"`
+	LocalAddr    string `json:"localaddr"`
+	RemoteAddr   string `json:"remoteaddr"`
 	Key          string `json:"key"`
 	Crypt        string `json:"crypt"`
 	Mode         string `json:"mode"`
+	Conn         int    `json:"conn"`
+	AutoExpire   int    `json:"autoexpire"`
+	ScavengeTTL  int    `json:"scavengettl"`
 	MTU          int    `json:"mtu"`
 	SndWnd       int    `json:"sndwnd"`
 	RcvWnd       int    `json:"rcvwnd"`
@@ -25,14 +28,13 @@ type Config struct {
 	Resend       int    `json:"resend"`
 	NoCongestion int    `json:"nc"`
 	SockBuf      int    `json:"sockbuf"`
+	SmuxVer      int    `json:"smuxver"`
 	SmuxBuf      int    `json:"smuxbuf"`
 	StreamBuf    int    `json:"streambuf"`
-	SmuxVer      int    `json:"smuxver"`
 	KeepAlive    int    `json:"keepalive"`
 	Log          string `json:"log"`
 	SnmpLog      string `json:"snmplog"`
 	SnmpPeriod   int    `json:"snmpperiod"`
-	Pprof        bool   `json:"pprof"`
 	Quiet        bool   `json:"quiet"`
 	TCP          bool   `json:"tcp"`
 }
