@@ -6,9 +6,12 @@ require (
 	github.com/google/gopacket v1.1.17 // indirect
 	github.com/klauspost/cpuid v1.2.3 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161 // indirect
+	github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b // indirect
 	github.com/tjfoc/gmsm v1.3.0 // indirect
 	github.com/urfave/cli v1.21.0
-	github.com/xtaci/kcp-go/v5 v5.5.11
+	github.com/xtaci/kcp-go v5.4.20+incompatible // indirect
+	github.com/xtaci/kcp-go/v5 v5.5.14
 	github.com/xtaci/smux v1.5.14
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.0.0-20200320181102-891825fb96df
