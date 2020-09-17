@@ -238,6 +238,16 @@ func main() {
 			Value: "", // when the value is not empty, the config path must exists
 			Usage: "config from json file, which will override the command from shell",
 		},
+		cli.StringFlag{
+			Name:  "bindudp,b", //hedahong add
+			Value: "", // when the value is not empty, OS automatic route
+			Usage: "bind output network address for udp socket",
+		},
+		cli.IntFlag{
+			Name:  "tcpbuf", //hedahong add
+			Value: 0, // tcp socket buffer size in bytes( linux defaults 2MB) //212992
+			Usage: "per-socket buffer in bytes",
+		},
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
@@ -271,6 +281,8 @@ func main() {
 		config.SnmpPeriod = c.Int("snmpperiod")
 		config.Quiet = c.Bool("quiet")
 		config.TCP = c.Bool("tcp")
+		config.BindUDP = c.String("bindudp") //hedahong add
+		config.TCPBuf = c.Int("tcpbuf")      //hedahong add
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -324,6 +336,8 @@ func main() {
 		log.Println("snmpperiod:", config.SnmpPeriod)
 		log.Println("quiet:", config.Quiet)
 		log.Println("tcp:", config.TCP)
+		log.Println("---bindudp:", config.BindUDP)
+		log.Println("---tcpbuf:", config.TCPBuf)
 
 		// parameters check
 		if config.SmuxVer > maxSmuxVer {
@@ -441,6 +455,17 @@ func main() {
 			if err != nil {
 				log.Fatalf("%+v", err)
 			}
+
+			//hedahong add
+			log.Println("new client:", p1.RemoteAddr(), "-->", p1.LocalAddr())
+			if config.TCPBuf > 0 {
+				p1.SetReadBuffer(config.TCPBuf);  // hedahong add
+				p1.SetWriteBuffer(config.TCPBuf); // hedahong add
+				//log.Println("config.TCPBuf === ",config.TCPBuf)
+			} else {
+				//log.Println("config.TCPBuf = 0 ,OS setting default")
+			}
+
 			idx := rr % numconn
 
 			// do auto expiration && reconnection
