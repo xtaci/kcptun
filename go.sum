@@ -25,7 +25,7 @@ github.com/templexxx/xorsimd v0.4.1 h1:iUZcywbOYDRAZUasAs2eSCUW8eobuZDy0I9FJiORk
 github.com/templexxx/xorsimd v0.4.1/go.mod h1:W+ffZz8jJMH2SXwuKu9WhygqBMbFnp14G2fqEr8qaNo=
 github.com/tjfoc/gmsm v1.0.1 h1:R11HlqhXkDospckjZEihx9SW/2VW0RgdwrykyWMFOQU=
 github.com/tjfoc/gmsm v1.0.1/go.mod h1:XxO4hdhhrzAd+G4CjDqaOkd0hUzmtPR/d3EiBBMn/wc=
-github.com/tjfoc/gmsm v1.3.0 h1:i7c6Za/IlgBvnGxYpfD7L3TGuaS+v6oGcgq+J9/ecEA=
+github.com/tjfoc/gmsm v1.3.0 h1:qhgkrZru95jFP9NbVPknJvc9vgkMXhOEzkOASKdc0oQ=
 github.com/tjfoc/gmsm v1.3.0/go.mod h1:HaUcFuY0auTiaHB9MHFGCPx5IaLhTUd2atbCFBQXn9w=
 github.com/urfave/cli v1.21.0 h1:wYSSj06510qPIzGSua9ZqsncMmWE3Zr55KBERygyrxE=
 github.com/urfave/cli v1.21.0/go.mod h1:lxDj6qX9Q6lWQxIrbrT0nwecwUtRnhVZAJjJZrVUZZQ=
