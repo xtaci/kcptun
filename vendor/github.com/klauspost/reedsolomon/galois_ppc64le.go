@@ -32,6 +32,10 @@ func galMulPpcXor(low, high, in, out []byte) {
 */
 
 func galMulSlice(c byte, in, out []byte, o *options) {
+	if c == 1 {
+		copy(out, in)
+		return
+	}
 	done := (len(in) >> 4) << 4
 	if done > 0 {
 		galMulPpc(mulTableLow[c][:], mulTableHigh[c][:], in[:done], out)
@@ -46,6 +50,10 @@ func galMulSlice(c byte, in, out []byte, o *options) {
 }
 
 func galMulSliceXor(c byte, in, out []byte, o *options) {
+	if c == 1 {
+		sliceXor(in, out, o)
+		return
+	}
 	done := (len(in) >> 4) << 4
 	if done > 0 {
 		galMulPpcXor(mulTableLow[c][:], mulTableHigh[c][:], in[:done], out)
@@ -60,11 +68,8 @@ func galMulSliceXor(c byte, in, out []byte, o *options) {
 }
 
 // slice galois add
-func sliceXor(in, out []byte, sse2 bool) {
+func sliceXor(in, out []byte, o *options) {
 	for n, input := range in {
 		out[n] ^= input
 	}
-}
-
-func (r reedSolomon) codeSomeShardsAvx512(matrixRows, inputs, outputs [][]byte, outputCount, byteCount int) {
 }

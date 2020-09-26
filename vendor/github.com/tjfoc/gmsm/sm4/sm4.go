@@ -246,6 +246,9 @@ func DecryptBlock(key SM4Key, dst, src []byte) {
 
 func ReadKeyFromMem(data []byte, pwd []byte) (SM4Key, error) {
 	block, _ := pem.Decode(data)
+	if block == nil {
+		return nil, errors.New("SM4: pem decode failed")
+	}
 	if x509.IsEncryptedPEMBlock(block) {
 		if block.Type != "SM4 ENCRYPTED KEY" {
 			return nil, errors.New("SM4: unknown type")

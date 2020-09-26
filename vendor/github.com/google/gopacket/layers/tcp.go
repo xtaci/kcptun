@@ -268,6 +268,7 @@ func (tcp *TCP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	tcp.Payload = data[dataStart:]
 	// From here on, data points just to the header options.
 	data = data[20:dataStart]
+OPTIONS:
 	for len(data) > 0 {
 		tcp.Options = append(tcp.Options, TCPOption{OptionType: TCPOptionKind(data[0])})
 		opt := &tcp.Options[len(tcp.Options)-1]
@@ -275,7 +276,7 @@ func (tcp *TCP) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 		case TCPOptionKindEndList: // End of options
 			opt.OptionLength = 1
 			tcp.Padding = data[1:]
-			break
+			break OPTIONS
 		case TCPOptionKindNop: // 1 byte padding
 			opt.OptionLength = 1
 		default:

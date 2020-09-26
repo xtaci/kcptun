@@ -12,12 +12,21 @@ var debugOptions bool
 
 var X86 x86
 
+// "Loads data or instructions from memory to the second-level cache.
+// To use the streamer, organize the data or instructions in blocks of 128 bytes,
+// aligned on 128 bytes."
+// From <Intel® 64 and IA-32 architectures optimization reference manual>,
+// in section 3.7.3 "Hardware Prefetching for Second-Level Cache"
+//
+// In practice, I have found use 128bytes can gain better performance than 64bytes (one cache line).
+const X86FalseSharingRange = 128
+
 // The booleans in x86 contain the correspondingly named cpuid feature bit.
 // HasAVX and HasAVX2 are only set if the OS does support XMM and YMM registers
 // in addition to the cpuid feature bit being set.
 // The struct is padded to avoid false sharing.
 type x86 struct {
-	_            [CacheLineSize]byte
+	_            [X86FalseSharingRange]byte
 	HasAES       bool
 	HasADX       bool
 	HasAVX       bool
@@ -38,9 +47,27 @@ type x86 struct {
 	HasSSSE3     bool
 	HasSSE41     bool
 	HasSSE42     bool
+	// The invariant TSC will run at a constant rate in all ACPI P-, C-, and T-states.
+	// This is the architectural behavior moving forward. On processors with
+	// invariant TSC support, the OS may use the TSC for wall clock timer services (instead of ACPI or HPET timers).
+	HasInvariantTSC bool
 
 	Cache Cache
-	_     [CacheLineSize]byte
+
+	// TSCFrequency only meaningful when HasInvariantTSC == true.
+	// Unit: Hz.
+	//
+	// Warn:
+	// 1. If it's 0, means can't get it. Don't use it.
+	// 2. Don't use it if you want "100%" precise timestamp.
+	TSCFrequency uint64
+
+	Name      string
+	Signature string // DisplayFamily_DisplayModel.
+	Family    uint32 // CPU family number.
+	Model     uint32 // CPU model number.
+
+	_ [X86FalseSharingRange]byte
 }
 
 // CPU Cache Size.

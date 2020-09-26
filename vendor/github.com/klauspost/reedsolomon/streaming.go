@@ -131,12 +131,15 @@ func (s StreamWriteError) String() string {
 // distribution of datashards and parity shards.
 // Construct if using NewStream()
 type rsStream struct {
-	r  *reedSolomon
-	bs int // Block size
+	r *reedSolomon
+	o options
+
 	// Shard reader
 	readShards func(dst [][]byte, in []io.Reader) error
 	// Shard writer
 	writeShards func(out []io.Writer, in [][]byte) error
+
+	blockPool sync.Pool
 }
 
 // NewStream creates a new encoder and initializes it to
@@ -144,14 +147,43 @@ type rsStream struct {
 // you want to use. You can reuse this encoder.
 // Note that the maximum number of data shards is 256.
 func NewStream(dataShards, parityShards int, o ...Option) (StreamEncoder, error) {
+	r := rsStream{o: defaultOptions}
+	for _, opt := range o {
+		opt(&r.o)
+	}
+	// Override block size if shard size is set.
+	if r.o.streamBS == 0 && r.o.shardSize > 0 {
+		r.o.streamBS = r.o.shardSize
+	}
+	if r.o.streamBS <= 0 {
+		r.o.streamBS = 4 << 20
+	}
+	if r.o.shardSize == 0 && r.o.maxGoroutines == defaultOptions.maxGoroutines {
+		o = append(o, WithAutoGoroutines(r.o.streamBS))
+	}
+
 	enc, err := New(dataShards, parityShards, o...)
 	if err != nil {
 		return nil, err
 	}
-	rs := enc.(*reedSolomon)
-	r := rsStream{r: rs, bs: 4 << 20}
+	r.r = enc.(*reedSolomon)
+
+	r.blockPool.New = func() interface{} {
+		out := make([][]byte, dataShards+parityShards)
+		for i := range out {
+			out[i] = make([]byte, r.o.streamBS)
+		}
+		return out
+	}
 	r.readShards = readShards
 	r.writeShards = writeShards
+	if r.o.concReads {
+		r.readShards = cReadShards
+	}
+	if r.o.concWrites {
+		r.writeShards = cWriteShards
+	}
+
 	return &r, err
 }
 
@@ -160,27 +192,13 @@ func NewStream(dataShards, parityShards int, o ...Option) (StreamEncoder, error)
 //
 // This functions as 'NewStream', but allows you to enable CONCURRENT reads and writes.
 func NewStreamC(dataShards, parityShards int, conReads, conWrites bool, o ...Option) (StreamEncoder, error) {
-	enc, err := New(dataShards, parityShards, o...)
-	if err != nil {
-		return nil, err
-	}
-	rs := enc.(*reedSolomon)
-	r := rsStream{r: rs, bs: 4 << 20}
-	r.readShards = readShards
-	r.writeShards = writeShards
-	if conReads {
-		r.readShards = cReadShards
-	}
-	if conWrites {
-		r.writeShards = cWriteShards
-	}
-	return &r, err
+	return NewStream(dataShards, parityShards, append(o, WithConcurrentStreamReads(conReads), WithConcurrentStreamWrites(conWrites))...)
 }
 
-func createSlice(n, length int) [][]byte {
-	out := make([][]byte, n)
+func (r *rsStream) createSlice() [][]byte {
+	out := r.blockPool.Get().([][]byte)
 	for i := range out {
-		out[i] = make([]byte, length)
+		out[i] = out[i][:r.o.streamBS]
 	}
 	return out
 }
@@ -200,7 +218,7 @@ func createSlice(n, length int) [][]byte {
 // If a data stream returns an error, a StreamReadError type error
 // will be returned. If a parity writer returns an error, a
 // StreamWriteError will be returned.
-func (r rsStream) Encode(data []io.Reader, parity []io.Writer) error {
+func (r *rsStream) Encode(data []io.Reader, parity []io.Writer) error {
 	if len(data) != r.r.DataShards {
 		return ErrTooFewShards
 	}
@@ -209,7 +227,8 @@ func (r rsStream) Encode(data []io.Reader, parity []io.Writer) error {
 		return ErrTooFewShards
 	}
 
-	all := createSlice(r.r.Shards, r.bs)
+	all := r.createSlice()
+	defer r.blockPool.Put(all)
 	in := all[:r.r.DataShards]
 	out := all[r.r.DataShards:]
 	read := 0
@@ -242,11 +261,11 @@ func (r rsStream) Encode(data []io.Reader, parity []io.Writer) error {
 // Trim the shards so they are all the same size
 func trimShards(in [][]byte, size int) [][]byte {
 	for i := range in {
-		if in[i] != nil {
+		if len(in[i]) != 0 {
 			in[i] = in[i][0:size]
 		}
 		if len(in[i]) < size {
-			in[i] = nil
+			in[i] = in[i][:0]
 		}
 	}
 	return in
@@ -259,7 +278,7 @@ func readShards(dst [][]byte, in []io.Reader) error {
 	size := -1
 	for i := range in {
 		if in[i] == nil {
-			dst[i] = nil
+			dst[i] = dst[i][:0]
 			continue
 		}
 		n, err := io.ReadFull(in[i], dst[i])
@@ -323,7 +342,7 @@ func cReadShards(dst [][]byte, in []io.Reader) error {
 	res := make(chan readResult, len(in))
 	for i := range in {
 		if in[i] == nil {
-			dst[i] = nil
+			dst[i] = dst[i][:0]
 			wg.Done()
 			continue
 		}
@@ -405,13 +424,14 @@ func cWriteShards(out []io.Writer, in [][]byte) error {
 // Each reader must supply the same number of bytes.
 // If a shard stream returns an error, a StreamReadError type error
 // will be returned.
-func (r rsStream) Verify(shards []io.Reader) (bool, error) {
+func (r *rsStream) Verify(shards []io.Reader) (bool, error) {
 	if len(shards) != r.r.Shards {
 		return false, ErrTooFewShards
 	}
 
 	read := 0
-	all := createSlice(r.r.Shards, r.bs)
+	all := r.createSlice()
+	defer r.blockPool.Put(all)
 	for {
 		err := r.readShards(all, shards)
 		if err == io.EOF {
@@ -451,7 +471,7 @@ var ErrReconstructMismatch = errors.New("valid shards and fill shards are mutual
 // The reconstructed shard set is complete when explicitly asked for all missing shards.
 // However its integrity is not automatically verified.
 // Use the Verify function to check in case the data set is complete.
-func (r rsStream) Reconstruct(valid []io.Reader, fill []io.Writer) error {
+func (r *rsStream) Reconstruct(valid []io.Reader, fill []io.Writer) error {
 	if len(valid) != r.r.Shards {
 		return ErrTooFewShards
 	}
@@ -459,7 +479,8 @@ func (r rsStream) Reconstruct(valid []io.Reader, fill []io.Writer) error {
 		return ErrTooFewShards
 	}
 
-	all := createSlice(r.r.Shards, r.bs)
+	all := r.createSlice()
+	defer r.blockPool.Put(all)
 	reconDataOnly := true
 	for i := range valid {
 		if valid[i] != nil && fill[i] != nil {
@@ -507,7 +528,7 @@ func (r rsStream) Reconstruct(valid []io.Reader, fill []io.Writer) error {
 // You must supply the exact output size you want.
 // If there are to few shards given, ErrTooFewShards will be returned.
 // If the total data size is less than outSize, ErrShortData will be returned.
-func (r rsStream) Join(dst io.Writer, shards []io.Reader, outSize int64) error {
+func (r *rsStream) Join(dst io.Writer, shards []io.Reader, outSize int64) error {
 	// Do we have enough shards?
 	if len(shards) < r.r.DataShards {
 		return ErrTooFewShards
@@ -546,7 +567,7 @@ func (r rsStream) Join(dst io.Writer, shards []io.Reader, outSize int64) error {
 // You must supply the total size of your input.
 // 'ErrShortData' will be returned if it is unable to retrieve the
 // number of bytes indicated.
-func (r rsStream) Split(data io.Reader, dst []io.Writer, size int64) error {
+func (r *rsStream) Split(data io.Reader, dst []io.Writer, size int64) error {
 	if size == 0 {
 		return ErrShortData
 	}

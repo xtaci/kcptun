@@ -1,38 +1,51 @@
-# github.com/coreos/go-iptables v0.4.2
+# github.com/coreos/go-iptables v0.4.5
 ## explicit
 github.com/coreos/go-iptables/iptables
-# github.com/golang/snappy v0.0.1
+# github.com/cpuguy83/go-md2man/v2 v2.0.0
+## explicit
+github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/golang/snappy v0.0.2
 ## explicit
 github.com/golang/snappy
-# github.com/google/gopacket v1.1.17
+# github.com/google/gopacket v1.1.18
 ## explicit
 github.com/google/gopacket
 github.com/google/gopacket/layers
-# github.com/klauspost/cpuid v1.2.3
-## explicit
+# github.com/klauspost/cpuid v1.3.1
 github.com/klauspost/cpuid
-# github.com/klauspost/reedsolomon v1.9.3
+# github.com/klauspost/reedsolomon v1.9.9
 github.com/klauspost/reedsolomon
+# github.com/mmcloughlin/avo v0.0.0-20200803215136-443f81d77104
+github.com/mmcloughlin/avo/attr
+github.com/mmcloughlin/avo/build
+github.com/mmcloughlin/avo/buildtags
+github.com/mmcloughlin/avo/gotypes
+github.com/mmcloughlin/avo/internal/prnt
+github.com/mmcloughlin/avo/internal/stack
+github.com/mmcloughlin/avo/ir
+github.com/mmcloughlin/avo/operand
+github.com/mmcloughlin/avo/pass
+github.com/mmcloughlin/avo/printer
+github.com/mmcloughlin/avo/reg
+github.com/mmcloughlin/avo/src
+github.com/mmcloughlin/avo/x86
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/templexxx/cpu v0.0.1
+# github.com/russross/blackfriday/v2 v2.0.1
+github.com/russross/blackfriday/v2
+# github.com/shurcooL/sanitized_anchor_name v1.0.0
+github.com/shurcooL/sanitized_anchor_name
+# github.com/templexxx/cpu v0.0.7
 github.com/templexxx/cpu
-# github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161
-## explicit
-# github.com/templexxx/xor v0.0.0-20191217153810-f85b25db303b
-## explicit
 # github.com/templexxx/xorsimd v0.4.1
 github.com/templexxx/xorsimd
-# github.com/tjfoc/gmsm v1.3.0
-## explicit
+# github.com/tjfoc/gmsm v1.3.2
 github.com/tjfoc/gmsm/sm4
-# github.com/urfave/cli v1.21.0
+# github.com/urfave/cli v1.22.4
 ## explicit
 github.com/urfave/cli
-# github.com/xtaci/kcp-go v5.4.20+incompatible
-## explicit
-# github.com/xtaci/kcp-go/v5 v5.5.14
+# github.com/xtaci/kcp-go/v5 v5.5.15
 ## explicit
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/smux v1.5.14
@@ -41,7 +54,7 @@ github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.25
 ## explicit
 github.com/xtaci/tcpraw
-# golang.org/x/crypto v0.0.0-20200320181102-891825fb96df
+# golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 ## explicit
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
@@ -52,14 +65,33 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/tea
 golang.org/x/crypto/twofish
 golang.org/x/crypto/xtea
-# golang.org/x/net v0.0.0-20200320220750-118fecf932d8
+# golang.org/x/mod v0.3.0
+golang.org/x/mod/semver
+# golang.org/x/net v0.0.0-20200925080053-05aa5d4ee321
 ## explicit
 golang.org/x/net/bpf
 golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
-# golang.org/x/sys v0.0.0-20200321134203-328b4cd54aae
+# golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d
 ## explicit
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# golang.org/x/tools v0.0.0-20200925191224-5d1fdd8fa346
+## explicit
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/gcimporter
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/go/packages
+golang.org/x/tools/internal/event
+golang.org/x/tools/internal/event/core
+golang.org/x/tools/internal/event/keys
+golang.org/x/tools/internal/event/label
+golang.org/x/tools/internal/gocommand
+golang.org/x/tools/internal/packagesinternal
+golang.org/x/tools/internal/typesinternal
+# golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+golang.org/x/xerrors
+golang.org/x/xerrors/internal

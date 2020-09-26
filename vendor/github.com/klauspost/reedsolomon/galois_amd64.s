@@ -234,3 +234,135 @@ loopback_xor_sse2:
 
 done_xor_sse2:
 	RET
+
+// func galMulAVX2Xor_64(low, high, in, out []byte)
+TEXT ·galMulAVX2Xor_64(SB), 7, $0
+	MOVQ  low+0(FP), SI     // SI: &low
+	MOVQ  high+24(FP), DX   // DX: &high
+	MOVQ  $15, BX           // BX: low mask
+	MOVQ  BX, X5
+	MOVOU (SI), X6          // X6: low
+	MOVOU (DX), X7          // X7: high
+	MOVQ  in_len+56(FP), R9 // R9: len(in)
+
+	VINSERTI128  $1, X6, Y6, Y6 // low
+	VINSERTI128  $1, X7, Y7, Y7 // high
+	VPBROADCASTB X5, Y8         // Y8: lomask (unpacked)
+
+	SHRQ  $6, R9           // len(in) / 64
+	MOVQ  out+72(FP), DX   // DX: &out
+	MOVQ  in+48(FP), SI    // SI: &in
+	TESTQ R9, R9
+	JZ    done_xor_avx2_64
+
+loopback_xor_avx2_64:
+	VMOVDQU (SI), Y0
+	VMOVDQU 32(SI), Y10
+	VMOVDQU (DX), Y4
+	VMOVDQU 32(DX), Y14
+	VPSRLQ  $4, Y0, Y1    // Y1: high input
+	VPSRLQ  $4, Y10, Y11  // Y11: high input 2
+	VPAND   Y8, Y0, Y0    // Y0: low input
+	VPAND   Y8, Y10, Y10  // Y10: low input 2
+	VPAND   Y8, Y1, Y1    // Y11: high input
+	VPAND   Y8, Y11, Y11  // Y11: high input 2
+	VPSHUFB Y0, Y6, Y2    // Y2: mul low part
+	VPSHUFB Y10, Y6, Y12  // Y12: mul low part 2
+	VPSHUFB Y1, Y7, Y3    // Y3: mul high part
+	VPSHUFB Y11, Y7, Y13  // Y13: mul high part 2
+	VPXOR   Y3, Y2, Y3    // Y3: Result
+	VPXOR   Y13, Y12, Y13 // Y13: Result 2
+	VPXOR   Y4, Y3, Y4    // Y4: Result
+	VPXOR   Y14, Y13, Y14 // Y4: Result 2
+	VMOVDQU Y4, (DX)
+	VMOVDQU Y14, 32(DX)
+
+	ADDQ $64, SI              // in+=64
+	ADDQ $64, DX              // out+=64
+	SUBQ $1, R9
+	JNZ  loopback_xor_avx2_64
+
+done_xor_avx2_64:
+	VZEROUPPER
+	RET
+
+// func galMulAVX2_64(low, high, in, out []byte)
+TEXT ·galMulAVX2_64(SB), 7, $0
+	MOVQ  low+0(FP), SI     // SI: &low
+	MOVQ  high+24(FP), DX   // DX: &high
+	MOVQ  $15, BX           // BX: low mask
+	MOVQ  BX, X5
+	MOVOU (SI), X6          // X6: low
+	MOVOU (DX), X7          // X7: high
+	MOVQ  in_len+56(FP), R9 // R9: len(in)
+
+	VINSERTI128  $1, X6, Y6, Y6 // low
+	VINSERTI128  $1, X7, Y7, Y7 // high
+	VPBROADCASTB X5, Y8         // Y8: lomask (unpacked)
+
+	SHRQ  $6, R9         // len(in) / 64
+	MOVQ  out+72(FP), DX // DX: &out
+	MOVQ  in+48(FP), SI  // SI: &in
+	TESTQ R9, R9
+	JZ    done_avx2_64
+
+loopback_avx2_64:
+	VMOVDQU (SI), Y0
+	VMOVDQU 32(SI), Y10
+	VPSRLQ  $4, Y0, Y1    // Y1: high input
+	VPSRLQ  $4, Y10, Y11  // Y11: high input 2
+	VPAND   Y8, Y0, Y0    // Y0: low input
+	VPAND   Y8, Y10, Y10  // Y10: low input
+	VPAND   Y8, Y1, Y1    // Y1: high input
+	VPAND   Y8, Y11, Y11  // Y11: high input 2
+	VPSHUFB Y0, Y6, Y2    // Y2: mul low part
+	VPSHUFB Y10, Y6, Y12  // Y12: mul low part 2
+	VPSHUFB Y1, Y7, Y3    // Y3: mul high part
+	VPSHUFB Y11, Y7, Y13  // Y13: mul high part 2
+	VPXOR   Y3, Y2, Y4    // Y4: Result
+	VPXOR   Y13, Y12, Y14 // Y14: Result 2
+	VMOVDQU Y4, (DX)
+	VMOVDQU Y14, 32(DX)
+
+	ADDQ $64, SI          // in+=64
+	ADDQ $64, DX          // out+=64
+	SUBQ $1, R9
+	JNZ  loopback_avx2_64
+
+done_avx2_64:
+	VZEROUPPER
+	RET
+
+// func sSE2XorSlice_64(in, out []byte)
+TEXT ·sSE2XorSlice_64(SB), 7, $0
+	MOVQ in+0(FP), SI     // SI: &in
+	MOVQ in_len+8(FP), R9 // R9: len(in)
+	MOVQ out+24(FP), DX   // DX: &out
+	SHRQ $6, R9           // len(in) / 64
+	CMPQ R9, $0
+	JEQ  done_xor_sse2_64
+
+loopback_xor_sse2_64:
+	MOVOU (SI), X0             // in[x]
+	MOVOU 16(SI), X2           // in[x]
+	MOVOU 32(SI), X4           // in[x]
+	MOVOU 48(SI), X6           // in[x]
+	MOVOU (DX), X1             // out[x]
+	MOVOU 16(DX), X3           // out[x]
+	MOVOU 32(DX), X5           // out[x]
+	MOVOU 48(DX), X7           // out[x]
+	PXOR  X0, X1
+	PXOR  X2, X3
+	PXOR  X4, X5
+	PXOR  X6, X7
+	MOVOU X1, (DX)
+	MOVOU X3, 16(DX)
+	MOVOU X5, 32(DX)
+	MOVOU X7, 48(DX)
+	ADDQ  $64, SI              // in+=64
+	ADDQ  $64, DX              // out+=64
+	SUBQ  $1, R9
+	JNZ   loopback_xor_sse2_64
+
+done_xor_sse2_64:
+	RET

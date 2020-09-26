@@ -25,7 +25,7 @@ Specification has this to say:
     be used for all interfaces.
 
 This decoder only supports the compact form, because that is the only
-one for which data was avaialble.
+one for which data was available.
 
 The datagram is composed of one or more samples of type flow or counter,
 and each sample is composed of one or more records describing the sample.

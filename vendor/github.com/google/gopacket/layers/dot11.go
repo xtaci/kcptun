@@ -922,6 +922,7 @@ func (m *Dot11) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	}
 	m.Type = Dot11Type((data[0])&0xFC) >> 2
 
+	m.DataLayer = nil
 	m.Proto = uint8(data[0]) & 0x0003
 	m.Flags = Dot11Flags(data[1])
 	m.DurationID = binary.LittleEndian.Uint16(data[2:4])

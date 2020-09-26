@@ -88,12 +88,20 @@ func (d *DHCPv6) LayerType() gopacket.LayerType { return LayerTypeDHCPv6 }
 
 // DecodeFromBytes decodes the given bytes into this layer.
 func (d *DHCPv6) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	if len(data) < 4 {
+		df.SetTruncated()
+		return fmt.Errorf("DHCPv6 length %d too short", len(data))
+	}
 	d.BaseLayer = BaseLayer{Contents: data}
 	d.Options = d.Options[:0]
 	d.MsgType = DHCPv6MsgType(data[0])
 
 	offset := 0
 	if d.MsgType == DHCPv6MsgTypeRelayForward || d.MsgType == DHCPv6MsgTypeRelayReply {
+		if len(data) < 34 {
+			df.SetTruncated()
+			return fmt.Errorf("DHCPv6 length %d too short for message type %d", len(data), d.MsgType)
+		}
 		d.HopCount = data[1]
 		d.LinkAddr = net.IP(data[2:18])
 		d.PeerAddr = net.IP(data[18:34])

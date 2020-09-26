@@ -611,6 +611,20 @@ func (s *UDPSession) GetRTO() uint32 {
 	return s.kcp.rx_rto
 }
 
+// GetSRTT gets current srtt of the session
+func (s *UDPSession) GetSRTT() int32 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.kcp.rx_srtt
+}
+
+// GetRTTVar gets current rtt variance of the session
+func (s *UDPSession) GetSRTTVar() int32 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.kcp.rx_rttvar
+}
+
 func (s *UDPSession) notifyReadEvent() {
 	select {
 	case s.chReadEvent <- struct{}{}:
