@@ -6,6 +6,11 @@
 
 package cpu
 
+import (
+	"fmt"
+	"strings"
+)
+
 const CacheLineSize = 64
 
 // cpuid is implemented in cpu_x86.s.
@@ -40,6 +45,9 @@ const (
 	cpuid_AVX512DQ = 1 << 17
 	cpuid_AVX512BW = 1 << 30
 	cpuid_AVX512VL = 1 << 31
+
+	// edx bits
+	cpuid_Invariant_TSC = 1 << 8
 )
 
 func doinit() {
@@ -62,6 +70,7 @@ func doinit() {
 		{"avx512dq", &X86.HasAVX512DQ},
 		{"avx512bw", &X86.HasAVX512BW},
 		{"avx512vl", &X86.HasAVX512VL},
+		{"invariant_tsc", &X86.HasInvariantTSC},
 
 		// sse2 set as last element so it can easily be removed again. See code below.
 		{"sse2", &X86.HasSSE2},
@@ -120,10 +129,155 @@ func doinit() {
 	X86.HasADX = isSet(ebx7, cpuid_ADX)
 
 	X86.Cache = getCacheSize()
+
+	X86.HasInvariantTSC = hasInvariantTSC()
+
+	X86.Family, X86.Model = getFamilyModel()
+
+	X86.Signature = makeSignature(X86.Family, X86.Model)
+
+	X86.Name = getName()
+
+	X86.TSCFrequency = getNativeTSCFrequency(X86.Name, X86.Signature)
 }
 
 func isSet(hwc uint32, value uint32) bool {
 	return hwc&value != 0
+}
+
+func hasInvariantTSC() bool {
+	if maxExtendedFunction() < 0x80000007 {
+		return false
+	}
+	_, _, _, edx := cpuid(0x80000007, 0)
+	return isSet(edx, cpuid_Invariant_TSC)
+}
+
+func getName() string {
+	if maxExtendedFunction() >= 0x80000004 {
+		v := make([]uint32, 0, 48)
+		for i := uint32(0); i < 3; i++ {
+			a, b, c, d := cpuid(0x80000002+i, 0)
+			v = append(v, a, b, c, d)
+		}
+		return strings.Trim(string(valAsString(v...)), " ")
+	}
+	return "unknown"
+}
+
+// getNativeTSCFrequency gets TSC frequency from CPUID,
+// only supports Intel (Skylake or later microarchitecture) & key information is from Intel manual & kernel codes
+// (especially this commit: https://github.com/torvalds/linux/commit/604dc9170f2435d27da5039a3efd757dceadc684).
+func getNativeTSCFrequency(name, sign string) uint64 {
+
+	if vendorID() != Intel {
+		return 0
+	}
+
+	if maxFunctionID() < 0x15 {
+		return 0
+	}
+
+	// ApolloLake, GeminiLake, CannonLake (and presumably all new chipsets
+	// from this point) report the crystal frequency directly via CPUID.0x15.
+	// That's definitive data that we can rely upon.
+	eax, ebx, ecx, _ := cpuid(0x15, 0)
+
+	// If ebx is 0, the TSC/”core crystal clock” ratio is not enumerated.
+	// We won't provide TSC frequency detection in this situation.
+	if eax == 0 || ebx == 0 {
+		return 0
+	}
+
+	// Skylake, Kabylake and all variants of those two chipsets report a
+	// crystal frequency of zero.
+	if ecx == 0 { // Crystal clock frequency is not enumerated.
+		ecx = getCrystalClockFrequency(sign)
+	}
+
+	// TSC frequency = “core crystal clock frequency” * EBX/EAX.
+	return uint64(ecx) * (uint64(ebx) / uint64(eax))
+}
+
+// Copied from: CPUID Signature values of DisplayFamily and DisplayModel,
+// in Intel® 64 and IA-32 Architectures Software Developer’s Manual
+// Volume 4: Model-Specific Registers
+// & https://github.com/torvalds/linux/blob/master/arch/x86/include/asm/intel-family.h
+const (
+	IntelFam6SkylakeL  = "06_4EH"
+	IntelFam6Skylake   = "06_5EH"
+	IntelFam6SkylakeX  = "06_55H"
+	IntelFam6KabylakeL = "06_8EH"
+	IntelFam6Kabylake  = "06_9EH"
+)
+
+// getCrystalClockFrequency gets crystal clock frequency
+// for Intel processors in which CPUID.15H.EBX[31:0] ÷ CPUID.0x15.EAX[31:0] is enumerated
+// but CPUID.15H.ECX is not enumerated using this function to get nominal core crystal clock frequency.
+//
+// Actually these crystal clock frequencies provided by Intel hardcoded tables are not so accurate in some cases,
+// e.g. SkyLake server CPU may have issue (All SKX subject the crystal to an EMI reduction circuit that
+//reduces its actual frequency by (approximately) -0.25%):
+// see https://lore.kernel.org/lkml/ff6dcea166e8ff8f2f6a03c17beab2cb436aa779.1513920414.git.len.brown@intel.com/
+// for more details.
+// With this report, I set a coefficient (0.9975) for IntelFam6SkyLakeX.
+//
+// Unlike the kernel way (mentioned in https://github.com/torvalds/linux/commit/604dc9170f2435d27da5039a3efd757dceadc684),
+// I prefer the Intel hardcoded tables,
+// because after some testing (comparing with wall clock, see https://github.com/templexxx/tsc/tsc_test.go for more details),
+// I found hardcoded tables are more accurate.
+func getCrystalClockFrequency(sign string) uint32 {
+
+	if maxFunctionID() < 0x16 {
+		return 0
+	}
+
+	switch sign {
+	case IntelFam6SkylakeL:
+		return 24 * 1000 * 1000
+	case IntelFam6Skylake:
+		return 24 * 1000 * 1000
+	case IntelFam6SkylakeX:
+		return 25 * 1000 * 1000 * 0.9975
+	case IntelFam6KabylakeL:
+		return 24 * 1000 * 1000
+	case IntelFam6Kabylake:
+		return 24 * 1000 * 1000
+	}
+
+	return 0
+}
+
+func getFamilyModel() (uint32, uint32) {
+	if maxFunctionID() < 0x1 {
+		return 0, 0
+	}
+	eax, _, _, _ := cpuid(1, 0)
+	family := (eax >> 8) & 0xf
+	displayFamily := family
+	if family == 0xf {
+		displayFamily = ((eax >> 20) & 0xff) + family
+	}
+	model := (eax >> 4) & 0xf
+	displayModel := model
+	if family == 0x6 || family == 0xf {
+		displayModel = ((eax >> 12) & 0xf0) + model
+	}
+	return displayFamily, displayModel
+}
+
+// signature format: XX_XXH
+func makeSignature(family, model uint32) string {
+	signature := strings.ToUpper(fmt.Sprintf("0%x_0%xH", family, model))
+	ss := strings.Split(signature, "_")
+	for i, s := range ss {
+		// Maybe insert too more `0`, drop it.
+		if len(s) > 2 {
+			s = s[1:]
+			ss[i] = s
+		}
+	}
+	return strings.Join(ss, "_")
 }
 
 // getCacheSize is from

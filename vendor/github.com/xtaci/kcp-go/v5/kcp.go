@@ -656,9 +656,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 
 	if windowSlides { // if window has slided, flush
 		kcp.flush(false)
-	}
-
-	if ackNoDelay && len(kcp.acklist) > 0 { // ack immediately
+	} else if ackNoDelay && len(kcp.acklist) > 0 { // ack immediately
 		kcp.flush(true)
 	}
 	return 0

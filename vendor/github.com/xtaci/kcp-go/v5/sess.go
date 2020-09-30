@@ -611,6 +611,20 @@ func (s *UDPSession) GetRTO() uint32 {
 	return s.kcp.rx_rto
 }
 
+// GetSRTT gets current srtt of the session
+func (s *UDPSession) GetSRTT() int32 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.kcp.rx_srtt
+}
+
+// GetRTTVar gets current rtt variance of the session
+func (s *UDPSession) GetSRTTVar() int32 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.kcp.rx_rttvar
+}
+
 func (s *UDPSession) notifyReadEvent() {
 	select {
 	case s.chReadEvent <- struct{}{}:
@@ -762,7 +776,7 @@ type (
 		ownConn      bool           // true if we created conn internally, false if provided by caller
 
 		sessions        map[string]*UDPSession // all sessions accepted by this Listener
-		sessionLock     sync.Mutex
+		sessionLock     sync.RWMutex
 		chAccepts       chan *UDPSession // Listen() backlog
 		chSessionClosed chan net.Addr    // session close queue
 		headerSize      int              // the additional header to a KCP frame
@@ -797,9 +811,9 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 	}
 
 	if dataValid {
-		l.sessionLock.Lock()
+		l.sessionLock.RLock()
 		s, ok := l.sessions[addr.String()]
-		l.sessionLock.Unlock()
+		l.sessionLock.RUnlock()
 
 		var conv, sn uint32
 		convValid := false

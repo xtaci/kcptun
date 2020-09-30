@@ -21,6 +21,15 @@ func galMulAVX2(low, high, in, out []byte)
 //go:noescape
 func sSE2XorSlice(in, out []byte)
 
+//go:noescape
+func galMulAVX2Xor_64(low, high, in, out []byte)
+
+//go:noescape
+func galMulAVX2_64(low, high, in, out []byte)
+
+//go:noescape
+func sSE2XorSlice_64(in, out []byte)
+
 // This is what the assembler routines do in blocks of 16 bytes:
 /*
 func galMulSSSE3(low, high, in, out []byte) {
@@ -40,53 +49,90 @@ func galMulSSSE3Xor(low, high, in, out []byte) {
 }
 */
 
+// bigSwitchover is the size where 64 bytes are processed per loop.
+const bigSwitchover = 128
+
 func galMulSlice(c byte, in, out []byte, o *options) {
-	var done int
+	if c == 1 {
+		copy(out, in)
+		return
+	}
 	if o.useAVX2 {
-		galMulAVX2(mulTableLow[c][:], mulTableHigh[c][:], in, out)
-		done = (len(in) >> 5) << 5
+		if len(in) >= bigSwitchover {
+			galMulAVX2_64(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			done := (len(in) >> 6) << 6
+			in = in[done:]
+			out = out[done:]
+		}
+		if len(in) > 32 {
+			galMulAVX2(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			done := (len(in) >> 5) << 5
+			in = in[done:]
+			out = out[done:]
+		}
 	} else if o.useSSSE3 {
 		galMulSSSE3(mulTableLow[c][:], mulTableHigh[c][:], in, out)
-		done = (len(in) >> 4) << 4
+		done := (len(in) >> 4) << 4
+		in = in[done:]
+		out = out[done:]
 	}
-	remain := len(in) - done
-	if remain > 0 {
-		mt := mulTable[c][:256]
-		for i := done; i < len(in); i++ {
-			out[i] = mt[in[i]]
-		}
+	out = out[:len(in)]
+	mt := mulTable[c][:256]
+	for i := range in {
+		out[i] = mt[in[i]]
 	}
 }
 
 func galMulSliceXor(c byte, in, out []byte, o *options) {
-	var done int
+	if c == 1 {
+		sliceXor(in, out, o)
+		return
+	}
+
 	if o.useAVX2 {
-		galMulAVX2Xor(mulTableLow[c][:], mulTableHigh[c][:], in, out)
-		done = (len(in) >> 5) << 5
+		if len(in) >= bigSwitchover {
+			galMulAVX2Xor_64(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			done := (len(in) >> 6) << 6
+			in = in[done:]
+			out = out[done:]
+		}
+		if len(in) >= 32 {
+			galMulAVX2Xor(mulTableLow[c][:], mulTableHigh[c][:], in, out)
+			done := (len(in) >> 5) << 5
+			in = in[done:]
+			out = out[done:]
+		}
 	} else if o.useSSSE3 {
 		galMulSSSE3Xor(mulTableLow[c][:], mulTableHigh[c][:], in, out)
-		done = (len(in) >> 4) << 4
+		done := (len(in) >> 4) << 4
+		in = in[done:]
+		out = out[done:]
 	}
-	remain := len(in) - done
-	if remain > 0 {
-		mt := mulTable[c][:256]
-		for i := done; i < len(in); i++ {
-			out[i] ^= mt[in[i]]
-		}
+	out = out[:len(in)]
+	mt := mulTable[c][:256]
+	for i := range in {
+		out[i] ^= mt[in[i]]
 	}
 }
 
 // slice galois add
-func sliceXor(in, out []byte, sse2 bool) {
-	var done int
-	if sse2 {
-		sSE2XorSlice(in, out)
-		done = (len(in) >> 4) << 4
-	}
-	remain := len(in) - done
-	if remain > 0 {
-		for i := done; i < len(in); i++ {
-			out[i] ^= in[i]
+func sliceXor(in, out []byte, o *options) {
+	if o.useSSE2 {
+		if len(in) >= bigSwitchover {
+			sSE2XorSlice_64(in, out)
+			done := (len(in) >> 6) << 6
+			in = in[done:]
+			out = out[done:]
 		}
+		if len(in) >= 16 {
+			sSE2XorSlice(in, out)
+			done := (len(in) >> 4) << 4
+			in = in[done:]
+			out = out[done:]
+		}
+	}
+	out = out[:len(in)]
+	for i := range in {
+		out[i] ^= in[i]
 	}
 }

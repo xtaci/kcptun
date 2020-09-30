@@ -10,28 +10,38 @@ import (
 type Option func(*options)
 
 type options struct {
-	maxGoroutines                         int
-	minSplitSize                          int
+	maxGoroutines int
+	minSplitSize  int
+	shardSize     int
+	perRound      int
+
 	useAVX512, useAVX2, useSSSE3, useSSE2 bool
 	usePAR1Matrix                         bool
 	useCauchy                             bool
-	shardSize                             int
+	fastOneParity                         bool
+
+	// stream options
+	concReads  bool
+	concWrites bool
+	streamBS   int
 }
 
 var defaultOptions = options{
 	maxGoroutines: 384,
-	minSplitSize:  1024,
+	minSplitSize:  -1,
+	fastOneParity: false,
+
+	// Detect CPU capabilities.
+	useSSSE3:  cpuid.CPU.SSSE3(),
+	useSSE2:   cpuid.CPU.SSE2(),
+	useAVX2:   cpuid.CPU.AVX2(),
+	useAVX512: cpuid.CPU.AVX512F() && cpuid.CPU.AVX512BW(),
 }
 
 func init() {
 	if runtime.GOMAXPROCS(0) <= 1 {
 		defaultOptions.maxGoroutines = 1
 	}
-	// Detect CPU capabilities.
-	defaultOptions.useSSSE3 = cpuid.CPU.SSSE3()
-	defaultOptions.useSSE2 = cpuid.CPU.SSE2()
-	defaultOptions.useAVX2 = cpuid.CPU.AVX2()
-	defaultOptions.useAVX512 = cpuid.CPU.AVX512F() && cpuid.CPU.AVX512BW() && amd64
 }
 
 // WithMaxGoroutines is the maximum number of goroutines number for encoding & decoding.
@@ -61,6 +71,7 @@ func WithAutoGoroutines(shardSize int) Option {
 }
 
 // WithMinSplitSize is the minimum encoding size in bytes per goroutine.
+// By default this parameter is determined by CPU cache characteristics.
 // See WithMaxGoroutines on how jobs are split.
 // If n <= 0, it is ignored.
 func WithMinSplitSize(n int) Option {
@@ -71,7 +82,44 @@ func WithMinSplitSize(n int) Option {
 	}
 }
 
-func withSSE3(enabled bool) Option {
+// WithConcurrentStreams will enable concurrent reads and writes on the streams.
+// Default: Disabled, meaning only one stream will be read/written at the time.
+// Ignored if not used on a stream input.
+func WithConcurrentStreams(enabled bool) Option {
+	return func(o *options) {
+		o.concReads, o.concWrites = enabled, enabled
+	}
+}
+
+// WithConcurrentStreamReads will enable concurrent reads from the input streams.
+// Default: Disabled, meaning only one stream will be read at the time.
+// Ignored if not used on a stream input.
+func WithConcurrentStreamReads(enabled bool) Option {
+	return func(o *options) {
+		o.concReads = enabled
+	}
+}
+
+// WithConcurrentStreamWrites will enable concurrent writes to the the output streams.
+// Default: Disabled, meaning only one stream will be written at the time.
+// Ignored if not used on a stream input.
+func WithConcurrentStreamWrites(enabled bool) Option {
+	return func(o *options) {
+		o.concWrites = enabled
+	}
+}
+
+// WithStreamBlockSize allows to set a custom block size per round of reads/writes.
+// If not set, any shard size set with WithAutoGoroutines will be used.
+// If WithAutoGoroutines is also unset, 4MB will be used.
+// Ignored if not used on stream.
+func WithStreamBlockSize(n int) Option {
+	return func(o *options) {
+		o.streamBS = n
+	}
+}
+
+func withSSSE3(enabled bool) Option {
 	return func(o *options) {
 		o.useSSSE3 = enabled
 	}
@@ -114,5 +162,14 @@ func WithCauchyMatrix() Option {
 	return func(o *options) {
 		o.useCauchy = true
 		o.usePAR1Matrix = false
+	}
+}
+
+// WithFastOneParityMatrix will switch the matrix to a simple xor
+// if there is only one parity shard.
+// The PAR1 matrix already has this property so it has little effect there.
+func WithFastOneParityMatrix() Option {
+	return func(o *options) {
+		o.fastOneParity = true
 	}
 }
