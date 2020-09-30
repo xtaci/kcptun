@@ -858,11 +858,11 @@ func (l *Listener) notifyReadError(err error) {
 		close(l.chSocketReadError)
 
 		// propagate read error to all sessions
-		l.sessionLock.Lock()
+		l.sessionLock.RLock()
 		for _, s := range l.sessions {
 			s.notifyReadError(err)
 		}
-		l.sessionLock.Unlock()
+		l.sessionLock.RUnlock()
 	})
 }
 
