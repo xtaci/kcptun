@@ -1,4 +1,4 @@
-package main
+package mclient
 
 import (
 	"github.com/pkg/errors"
