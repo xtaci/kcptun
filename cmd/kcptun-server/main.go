@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/xtaci/kcptun/mcode/mserver"
+	"github.com/ProtossGenius/kcptun/mcode/mserver"
 )
 
 func main() {

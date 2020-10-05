@@ -1,6 +1,6 @@
 package main
 
-import "github.com/xtaci/kcptun/mcode/mclient"
+import "github.com/ProtossGenius/kcptun/mcode/mclient"
 
 func main() {
 	mclient.Main()
