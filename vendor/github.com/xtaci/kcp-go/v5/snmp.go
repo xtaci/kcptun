@@ -25,7 +25,7 @@ type Snmp struct {
 	RetransSegs      uint64 // accmulated retransmited segments
 	FastRetransSegs  uint64 // accmulated fast retransmitted segments
 	EarlyRetransSegs uint64 // accmulated early retransmitted segments
-	LostSegs         uint64 // number of segs infered as lost
+	LostSegs         uint64 // number of segs inferred as lost
 	RepeatSegs       uint64 // number of segs duplicated
 	FECRecovered     uint64 // correct packets recovered from FEC
 	FECErrs          uint64 // incorrect packets recovered from FEC

@@ -224,8 +224,6 @@ It is able to detect and correct multiple symbol errors. By adding t check symbo
 
 ![FED](FEC.png)
 
-Setting parameters of RS-Code with ```-datashard m -parityshard n``` on **BOTH** KCP Client & KCP Server **MUST** be **IDENTICAL**.
-
 #### DSCP
 
 Differentiated services or DiffServ is a computer networking architecture that specifies a simple, scalable and coarse-grained mechanism for classifying and managing network traffic and providing quality of service (QoS) on modern IP networks. DiffServ can, for example, be used to provide low-latency to critical network traffic such as voice or streaming media while providing simple best-effort service to non-critical services such as web traffic or file transfers.
@@ -357,13 +355,11 @@ Low-level KCP configuration can be altered by using manual mode like above, make
 
 ### Identical Parmeters
 
-The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
+These parameters **MUST** be **IDENTICAL** on **BOTH** side:
 
 1. -key
 1. -crypt
 1. -nocomp
-1. -datashard
-1. -parityshard
 1. -smuxver
 
 ### References

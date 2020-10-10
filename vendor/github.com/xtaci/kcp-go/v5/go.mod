@@ -5,6 +5,7 @@ require (
 	github.com/klauspost/reedsolomon v1.9.9
 	github.com/mmcloughlin/avo v0.0.0-20200803215136-443f81d77104 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/stretchr/testify v1.6.1
 	github.com/templexxx/cpu v0.0.7 // indirect
 	github.com/templexxx/xorsimd v0.4.1
 	github.com/tjfoc/gmsm v1.3.2

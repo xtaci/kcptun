@@ -34,8 +34,8 @@ const (
 // monotonic reference time point
 var refTime time.Time = time.Now()
 
-// currentMs returns current elasped monotonic milliseconds since program startup
-func currentMs() uint32 { return uint32(time.Now().Sub(refTime) / time.Millisecond) }
+// currentMs returns current elapsed monotonic milliseconds since program startup
+func currentMs() uint32 { return uint32(time.Since(refTime) / time.Millisecond) }
 
 // output_callback is a prototype which ought capture conn and call conn.Write
 type output_callback func(buf []byte, size int)
