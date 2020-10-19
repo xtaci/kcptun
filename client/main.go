@@ -405,7 +405,7 @@ func main() {
 					config.Quiet = quiet
 				}
 			}
-			if _, b := opts.Get("V"); b {
+			if _, b := opts.Get("__android_vpn"); b {
 				config.Vpn = true
 			}
 		}
