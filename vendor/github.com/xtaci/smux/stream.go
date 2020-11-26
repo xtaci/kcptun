@@ -272,6 +272,12 @@ func (s *Stream) waitRead() error {
 	case <-s.chReadEvent:
 		return nil
 	case <-s.chFinEvent:
+		// BUG(xtaci): Fix for https://github.com/xtaci/smux/issues/82
+		s.bufferLock.Lock()
+		defer s.bufferLock.Unlock()
+		if len(s.buffers) > 0 {
+			return nil
+		}
 		return io.EOF
 	case <-s.sess.chSocketReadError:
 		return s.sess.socketReadError.Load().(error)

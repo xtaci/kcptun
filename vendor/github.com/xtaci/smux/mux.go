@@ -17,6 +17,9 @@ type Config struct {
 	// SMUX Protocol version, support 1,2
 	Version int
 
+	// Disabled keepalive
+	KeepAliveDisabled bool
+
 	// KeepAliveInterval is how often to send a NOP command to the remote
 	KeepAliveInterval time.Duration
 
@@ -54,11 +57,13 @@ func VerifyConfig(config *Config) error {
 	if !(config.Version == 1 || config.Version == 2) {
 		return errors.New("unsupported protocol version")
 	}
-	if config.KeepAliveInterval == 0 {
-		return errors.New("keep-alive interval must be positive")
-	}
-	if config.KeepAliveTimeout < config.KeepAliveInterval {
-		return fmt.Errorf("keep-alive timeout must be larger than keep-alive interval")
+	if !config.KeepAliveDisabled {
+		if config.KeepAliveInterval == 0 {
+			return errors.New("keep-alive interval must be positive")
+		}
+		if config.KeepAliveTimeout < config.KeepAliveInterval {
+			return fmt.Errorf("keep-alive timeout must be larger than keep-alive interval")
+		}
 	}
 	if config.MaxFrameSize <= 0 {
 		return errors.New("max frame size must be positive")

@@ -104,7 +104,9 @@ func newSession(config *Config, conn io.ReadWriteCloser, client bool) *Session {
 	go s.shaperLoop()
 	go s.recvLoop()
 	go s.sendLoop()
-	go s.keepalive()
+	if !config.KeepAliveDisabled {
+		go s.keepalive()
+	}
 	return s
 }
 
