@@ -73,6 +73,11 @@ func checkError(err error) {
 	}
 }
 
+type timedSession struct {
+	session    *smux.Session
+	expiryDate time.Time
+}
+
 func main() {
 	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
@@ -421,20 +426,24 @@ func main() {
 			}
 		}
 
-		numconn := uint16(config.Conn)
-		muxes := make([]struct {
-			session *smux.Session
-			ttl     time.Time
-		}, numconn)
+		// start snmp logger
+		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 
+		// start scavenger
+		chScavenger := make(chan *smux.Session, 128)
+		go scavenger(chScavenger, &config)
+
+		// start listener
+		numconn := uint16(config.Conn)
+		muxes := make([]timedSession, numconn)
 		for k := range muxes {
 			muxes[k].session = waitConn()
-			muxes[k].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+			muxes[k].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+			if config.AutoExpire > 0 {
+				chScavenger <- muxes[k].session
+			}
 		}
 
-		chScavenger := make(chan *smux.Session, 128)
-		go scavenger(chScavenger, config.ScavengeTTL)
-		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
@@ -444,10 +453,12 @@ func main() {
 			idx := rr % numconn
 
 			// do auto expiration && reconnection
-			if muxes[idx].session.IsClosed() || (config.AutoExpire > 0 && time.Now().After(muxes[idx].ttl)) {
-				chScavenger <- muxes[idx].session
+			if muxes[idx].session.IsClosed() || (config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
 				muxes[idx].session = waitConn()
-				muxes[idx].ttl = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
+				if config.AutoExpire > 0 {
+					chScavenger <- muxes[idx].session
+				}
 			}
 
 			go handleClient(muxes[idx].session, p1, config.Quiet)
@@ -457,28 +468,23 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-type scavengeSession struct {
-	session *smux.Session
-	ts      time.Time
-}
-
-func scavenger(ch chan *smux.Session, ttl int) {
+func scavenger(ch chan *smux.Session, config *Config) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
-	var sessionList []scavengeSession
+	var sessionList []timedSession
 	for {
 		select {
 		case sess := <-ch:
-			sessionList = append(sessionList, scavengeSession{sess, time.Now()})
-			log.Println("session marked as expired", sess.RemoteAddr())
+			sessionList = append(sessionList, timedSession{
+				sess,
+				time.Now().Add(time.Duration(config.ScavengeTTL+config.AutoExpire) * time.Second)})
 		case <-ticker.C:
-			var newList []scavengeSession
+			var newList []timedSession
 			for k := range sessionList {
 				s := sessionList[k]
-				if s.session.NumStreams() == 0 || s.session.IsClosed() {
+				if s.session.IsClosed() {
 					log.Println("session normally closed", s.session.RemoteAddr())
-					s.session.Close()
-				} else if ttl >= 0 && time.Since(s.ts) >= time.Duration(ttl)*time.Second {
+				} else if config.AutoExpire > 0 && time.Now().After(s.expiryDate) {
 					log.Println("session reached scavenge ttl", s.session.RemoteAddr())
 					s.session.Close()
 				} else {
