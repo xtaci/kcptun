@@ -468,6 +468,12 @@ func main() {
 }
 
 func scavenger(ch chan *smux.Session, config *Config) {
+	// When AutoExpire is set to 0 (default), sessionList will keep empty.
+	// Then this routine won't need to do anything; thus just terminate it.
+	if config.AutoExpire <= 0 {
+		return
+	}
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	var sessionList []timedSession
