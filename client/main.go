@@ -439,7 +439,7 @@ func main() {
 		for k := range muxes {
 			muxes[k].session = waitConn()
 			muxes[k].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-			if config.AutoExpire > 0 {
+			if config.AutoExpire > 0 { // only when autoexpire set
 				chScavenger <- muxes[k].session
 			}
 		}
@@ -456,7 +456,7 @@ func main() {
 			if muxes[idx].session.IsClosed() || (config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
 				muxes[idx].session = waitConn()
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				if config.AutoExpire > 0 {
+				if config.AutoExpire > 0 { // only when autoexpire set
 					chScavenger <- muxes[idx].session
 				}
 			}
@@ -484,7 +484,7 @@ func scavenger(ch chan *smux.Session, config *Config) {
 				s := sessionList[k]
 				if s.session.IsClosed() {
 					log.Println("session normally closed", s.session.RemoteAddr())
-				} else if config.AutoExpire > 0 && time.Now().After(s.expiryDate) {
+				} else if time.Now().After(s.expiryDate) {
 					log.Println("session reached scavenge ttl", s.session.RemoteAddr())
 					s.session.Close()
 				} else {
