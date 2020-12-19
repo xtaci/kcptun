@@ -308,7 +308,7 @@ func main() {
 		checkError(err)
 
 		log.Println("smux version:", config.SmuxVer)
-		log.Println("listening on:", listener.Addr())
+		log.Println("listening on (TCP):", listener.Addr())
 		log.Println("encryption:", config.Crypt)
 		log.Println("nodelay parameters:", config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
 		log.Println("remote address:", config.RemoteAddr)
@@ -437,23 +437,22 @@ func main() {
 		numconn := uint16(config.Conn)
 		muxes := make([]timedSession, numconn)
 		for k := range muxes {
-			muxes[k].session = waitConn()
+			muxes[k].session = nil
 			muxes[k].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-			if config.AutoExpire > 0 { // only when autoexpire set
-				chScavenger <- muxes[k].session
-			}
 		}
 
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
+			log.Println("accepted an TCP conn:", p1.RemoteAddr())
 			if err != nil {
 				log.Fatalf("%+v", err)
 			}
 			idx := rr % numconn
 
 			// do auto expiration && reconnection
-			if muxes[idx].session.IsClosed() || (config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
+			if muxes[idx].session == nil || muxes[idx].session.IsClosed() ||
+					(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
 				muxes[idx].session = waitConn()
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				if config.AutoExpire > 0 { // only when autoexpire set
@@ -483,10 +482,10 @@ func scavenger(ch chan *smux.Session, config *Config) {
 			for k := range sessionList {
 				s := sessionList[k]
 				if s.session.IsClosed() {
-					log.Println("session normally closed", s.session.RemoteAddr())
+					log.Println("scavenger: session normally closed:", s.session.LocalAddr())
 				} else if time.Now().After(s.expiryDate) {
-					log.Println("session reached scavenge ttl", s.session.RemoteAddr())
 					s.session.Close()
+					log.Println("scavenger: session closed due to ttl:", s.session.LocalAddr())
 				} else {
 					newList = append(newList, sessionList[k])
 				}
