@@ -436,11 +436,6 @@ func main() {
 		// start listener
 		numconn := uint16(config.Conn)
 		muxes := make([]timedSession, numconn)
-		for k := range muxes {
-			muxes[k].session = nil
-			muxes[k].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-		}
-
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
