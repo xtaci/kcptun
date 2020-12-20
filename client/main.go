@@ -129,7 +129,7 @@ func main() {
 		cli.IntFlag{
 			Name:  "scavengettl",
 			Value: 600,
-			Usage: "set how long an expired connection can live(in sec)",
+			Usage: "set how long an expired connection can live (in seconds)",
 		},
 		cli.IntFlag{
 			Name:  "mtu",
