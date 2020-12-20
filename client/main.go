@@ -308,7 +308,7 @@ func main() {
 		checkError(err)
 
 		log.Println("smux version:", config.SmuxVer)
-		log.Println("listening on (TCP):", listener.Addr())
+		log.Println("listening on:", listener.Addr())
 		log.Println("encryption:", config.Crypt)
 		log.Println("nodelay parameters:", config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
 		log.Println("remote address:", config.RemoteAddr)
