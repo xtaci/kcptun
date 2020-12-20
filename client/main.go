@@ -129,7 +129,7 @@ func main() {
 		cli.IntFlag{
 			Name:  "scavengettl",
 			Value: 600,
-			Usage: "set how long an expired connection can live(in sec), -1 to disable",
+			Usage: "set how long an expired connection can live (in seconds)",
 		},
 		cli.IntFlag{
 			Name:  "mtu",
@@ -430,34 +430,30 @@ func main() {
 		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 
 		// start scavenger
-		chScavenger := make(chan *smux.Session, 128)
+		chScavenger := make(chan timedSession, 128)
 		go scavenger(chScavenger, &config)
 
 		// start listener
 		numconn := uint16(config.Conn)
 		muxes := make([]timedSession, numconn)
-		for k := range muxes {
-			muxes[k].session = waitConn()
-			muxes[k].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-			if config.AutoExpire > 0 { // only when autoexpire set
-				chScavenger <- muxes[k].session
-			}
-		}
-
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
 			if err != nil {
 				log.Fatalf("%+v", err)
 			}
+			if !config.Quiet {
+				log.Println("accepted an TCP conn:", p1.RemoteAddr())
+			}
 			idx := rr % numconn
 
 			// do auto expiration && reconnection
-			if muxes[idx].session.IsClosed() || (config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
+			if muxes[idx].session == nil || muxes[idx].session.IsClosed() ||
+					(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
 				muxes[idx].session = waitConn()
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				if config.AutoExpire > 0 { // only when autoexpire set
-					chScavenger <- muxes[idx].session
+					chScavenger <- muxes[idx]
 				}
 			}
 
@@ -468,25 +464,35 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-func scavenger(ch chan *smux.Session, config *Config) {
+func scavenger(ch chan timedSession, config *Config) {
+	// When AutoExpire is set to 0 (default), sessionList will keep empty.
+	// Then this routine won't need to do anything; thus just terminate it.
+	if config.AutoExpire <= 0 {
+		return
+	}
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	var sessionList []timedSession
 	for {
 		select {
-		case sess := <-ch:
+		case item := <-ch:
 			sessionList = append(sessionList, timedSession{
-				sess,
-				time.Now().Add(time.Duration(config.ScavengeTTL+config.AutoExpire) * time.Second)})
+				item.session,
+				item.expiryDate.Add(time.Duration(config.ScavengeTTL) * time.Second)})
 		case <-ticker.C:
+			if len(sessionList) == 0 {
+				continue
+			}
+
 			var newList []timedSession
 			for k := range sessionList {
 				s := sessionList[k]
 				if s.session.IsClosed() {
-					log.Println("session normally closed", s.session.RemoteAddr())
+					log.Println("scavenger: session normally closed:", s.session.LocalAddr())
 				} else if time.Now().After(s.expiryDate) {
-					log.Println("session reached scavenge ttl", s.session.RemoteAddr())
 					s.session.Close()
+					log.Println("scavenger: session closed due to ttl:", s.session.LocalAddr())
 				} else {
 					newList = append(newList, sessionList[k])
 				}

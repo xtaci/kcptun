@@ -152,7 +152,7 @@ GLOBAL OPTIONS:
    --mode value                     profiles: fast3, fast2, fast, normal, manual (default: "fast")
    --conn value                     set num of UDP connections to server (default: 1)
    --autoexpire value               set auto expiration time(in seconds) for a single UDP connection, 0 to disable (default: 0)
-   --scavengettl value              set how long an expired connection can live(in sec), -1 to disable (default: 600)
+   --scavengettl value              set how long an expired connection can live (in seconds) (default: 600)
    --mtu value                      set maximum transmission unit for UDP packets (default: 1350)
    --sndwnd value                   set send window size(num of packets) (default: 128)
    --rcvwnd value                   set receive window size(num of packets) (default: 512)
