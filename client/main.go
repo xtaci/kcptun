@@ -444,7 +444,9 @@ func main() {
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
-			log.Println("accepted an TCP conn:", p1.RemoteAddr())
+			if !config.Quiet {
+				log.Println("accepted an TCP conn:", p1.RemoteAddr())
+			}
 			if err != nil {
 				log.Fatalf("%+v", err)
 			}
