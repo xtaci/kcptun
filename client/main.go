@@ -442,14 +442,11 @@ func main() {
 			if err != nil {
 				log.Fatalf("%+v", err)
 			}
-			if !config.Quiet {
-				log.Println("accepted an TCP conn:", p1.RemoteAddr())
-			}
 			idx := rr % numconn
 
 			// do auto expiration && reconnection
 			if muxes[idx].session == nil || muxes[idx].session.IsClosed() ||
-					(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
+				(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
 				muxes[idx].session = waitConn()
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				if config.AutoExpire > 0 { // only when autoexpire set
