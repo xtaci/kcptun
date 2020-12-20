@@ -430,7 +430,7 @@ func main() {
 		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 
 		// start scavenger
-		chScavenger := make(chan *smux.Session, 128)
+		chScavenger := make(chan timedSession, 128)
 		go scavenger(chScavenger, &config)
 
 		// start listener
@@ -456,7 +456,7 @@ func main() {
 				muxes[idx].session = waitConn()
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				if config.AutoExpire > 0 { // only when autoexpire set
-					chScavenger <- muxes[idx].session
+					chScavenger <- muxes[idx]
 				}
 			}
 
@@ -467,7 +467,7 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-func scavenger(ch chan *smux.Session, config *Config) {
+func scavenger(ch chan timedSession, config *Config) {
 	// When AutoExpire is set to 0 (default), sessionList will keep empty.
 	// Then this routine won't need to do anything; thus just terminate it.
 	if config.AutoExpire <= 0 {
@@ -479,11 +479,15 @@ func scavenger(ch chan *smux.Session, config *Config) {
 	var sessionList []timedSession
 	for {
 		select {
-		case sess := <-ch:
+		case item := <-ch:
 			sessionList = append(sessionList, timedSession{
-				sess,
-				time.Now().Add(time.Duration(config.ScavengeTTL+config.AutoExpire) * time.Second)})
+				item.session,
+				item.expiryDate.Add(time.Duration(config.ScavengeTTL) * time.Second)})
 		case <-ticker.C:
+			if len(sessionList) == 0 {
+				continue
+			}
+
 			var newList []timedSession
 			for k := range sessionList {
 				s := sessionList[k]
