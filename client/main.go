@@ -444,11 +444,11 @@ func main() {
 		rr := uint16(0)
 		for {
 			p1, err := listener.AcceptTCP()
-			if !config.Quiet {
-				log.Println("accepted an TCP conn:", p1.RemoteAddr())
-			}
 			if err != nil {
 				log.Fatalf("%+v", err)
+			}
+			if !config.Quiet {
+				log.Println("accepted an TCP conn:", p1.RemoteAddr())
 			}
 			idx := rr % numconn
 
