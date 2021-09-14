@@ -106,7 +106,7 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 > eg: `-mode fast3`    
 
-> Aggresiveness/Responsiveness on retransmission for embeded modes are:
+> Aggresiveness/Responsiveness on retransmission for embedded modes are:
 
 > *fast3 > fast2 > fast > normal > default*
 
@@ -291,7 +291,7 @@ Reference: https://blog.golang.org/go15gc
 Primary memory allocation are done from a global buffer pool *xmit.Buf*, in kcp-go, when we need to allocate some bytes, we can get from that pool, and a *fixed-capacity* 1500 bytes(mtuLimit) will be returned, the *rx queue*, *tx queue* and *fec queue* all receive bytes from there, and they will return the bytes to the pool after using to prevent *unnecessary zer0ing* of bytes. 
 The pool mechanism maintained a *high watermark* for slice objects, these *in-flight* objects from the pool will survive from the perodical garbage collection, meanwhile the pool kept the ability to return the memory to runtime if in idle, `-sndwnd`,`-rcvwnd`,`-ds`, `-ps`, these parameters affect this *high watermark*, the larger the value, the bigger the memory consumption will be.
 
-`-smuxbuf` also affects the maximum memory consumption, this parameter maintains a subtle balance between *concurrency* and *resource*, you can increase this value(default 4MB) to boost concurrency if you have many clients to serve and you get a powerful server at the same time, and also you can decrease this value to serve only 1 or 2 clients and hope this program can run under some embeded SoC system with limited memory and only you can access. (Notice that the `-smuxbuf` value is not proprotional to concurrency, you need to test.)
+`-smuxbuf` also affects the maximum memory consumption, this parameter maintains a subtle balance between *concurrency* and *resource*, you can increase this value(default 4MB) to boost concurrency if you have many clients to serve and you get a powerful server at the same time, and also you can decrease this value to serve only 1 or 2 clients and hope this program can run under some embedded SoC system with limited memory and only you can access. (Notice that the `-smuxbuf` value is not proprotional to concurrency, you need to test.)
 
 
 #### Compression
