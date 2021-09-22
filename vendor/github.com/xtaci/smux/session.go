@@ -24,7 +24,7 @@ var (
 )
 
 type writeRequest struct {
-	prio   uint64
+	prio   uint32
 	frame  Frame
 	result chan writeResult
 }
@@ -496,7 +496,7 @@ func (s *Session) writeFrame(f Frame) (n int, err error) {
 }
 
 // internal writeFrame version to support deadline used in keepalive
-func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, prio uint64) (int, error) {
+func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, prio uint32) (int, error) {
 	req := writeRequest{
 		prio:   prio,
 		frame:  f,
