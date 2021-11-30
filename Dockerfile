@@ -1,5 +1,5 @@
 FROM golang:1.17.3-alpine as builder
-MAINTAINER xtaci <daniel820313@gmail.com>
+LABEL MAINTAINER="xtaci <daniel820313@gmail.com>"
 ENV GO111MODULE=on
 RUN apk update && \
     apk upgrade && \
