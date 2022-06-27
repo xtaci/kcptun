@@ -1,6 +1,5 @@
-//+build !noasm
-//+build !appengine
-//+build !gccgo
+//go:build !noasm && !appengine && !gccgo
+// +build !noasm,!appengine,!gccgo
 
 // Copyright 2015, Klaus Post, see LICENSE for details.
 // Copyright 2019, Minio, Inc.
@@ -105,7 +104,7 @@ func setupMatrix84(matrixRows [][]byte, inputOffset, outputOffset int, matrix *[
 // Invoke AVX512 routine for single output row in parallel
 func galMulAVX512Parallel81(in, out [][]byte, matrixRows [][]byte, inputOffset, outputOffset, start, stop int, matrix81 *[matrixSize81]byte) {
 	done := stop - start
-	if done <= 0 {
+	if done <= 0 || len(in) == 0 || len(out) == 0 {
 		return
 	}
 
@@ -140,7 +139,7 @@ func galMulAVX512Parallel81(in, out [][]byte, matrixRows [][]byte, inputOffset, 
 // Invoke AVX512 routine for 2 output rows in parallel
 func galMulAVX512Parallel82(in, out [][]byte, matrixRows [][]byte, inputOffset, outputOffset, start, stop int, matrix82 *[matrixSize82]byte) {
 	done := stop - start
-	if done <= 0 {
+	if done <= 0 || len(in) == 0 || len(out) == 0 {
 		return
 	}
 
@@ -175,7 +174,7 @@ func galMulAVX512Parallel82(in, out [][]byte, matrixRows [][]byte, inputOffset, 
 // Invoke AVX512 routine for 4 output rows in parallel
 func galMulAVX512Parallel84(in, out [][]byte, matrixRows [][]byte, inputOffset, outputOffset, start, stop int, matrix84 *[matrixSize84]byte) {
 	done := stop - start
-	if done <= 0 {
+	if done <= 0 || len(in) == 0 || len(out) == 0 {
 		return
 	}
 
@@ -226,8 +225,9 @@ func galMulAVX512LastInput(inputOffset int, inputEnd int, outputOffset int, outp
 
 // Perform the same as codeSomeShards, but taking advantage of
 // AVX512 parallelism for up to 4x faster execution as compared to AVX2
-func (r *reedSolomon) codeSomeShardsAvx512(matrixRows, inputs, outputs [][]byte, outputCount, byteCount int) {
+func (r *reedSolomon) codeSomeShardsAvx512(matrixRows, inputs, outputs [][]byte, byteCount int) {
 	// Process using no goroutines
+	outputCount := len(outputs)
 	start, end := 0, r.o.perRound
 	if end > byteCount {
 		end = byteCount
@@ -273,7 +273,8 @@ func (r *reedSolomon) codeSomeShardsAvx512(matrixRows, inputs, outputs [][]byte,
 
 // Perform the same as codeSomeShards, but taking advantage of
 // AVX512 parallelism for up to 4x faster execution as compared to AVX2
-func (r *reedSolomon) codeSomeShardsAvx512P(matrixRows, inputs, outputs [][]byte, outputCount, byteCount int) {
+func (r *reedSolomon) codeSomeShardsAvx512P(matrixRows, inputs, outputs [][]byte, byteCount int) {
+	outputCount := len(outputs)
 	var wg sync.WaitGroup
 	do := byteCount / r.o.maxGoroutines
 	if do < r.o.minSplitSize {

@@ -1,8 +1,6 @@
 # Reed-Solomon
-[![GoDoc][1]][2] [![Build Status][3]][4]
+[![Go Reference](https://pkg.go.dev/badge/github.com/klauspost/reedsolomon.svg)](https://pkg.go.dev/github.com/klauspost/reedsolomon) [![Build Status][3]][4]
 
-[1]: https://godoc.org/github.com/klauspost/reedsolomon?status.svg
-[2]: https://pkg.go.dev/github.com/klauspost/reedsolomon?tab=doc
 [3]: https://travis-ci.org/klauspost/reedsolomon.svg?branch=master
 [4]: https://travis-ci.org/klauspost/reedsolomon
 
@@ -23,7 +21,19 @@ To get the package use the standard:
 go get -u github.com/klauspost/reedsolomon
 ```
 
+Using Go modules recommended.
+
 # Changes
+## 2021
+
+* Use `GOAMD64=v4` to enable faster AVX2.
+* Add progressive shard encoding.
+* Wider AVX2 loops
+* Limit concurrency on AVX2, since we are likely memory bound.
+* Allow 0 parity shards.
+* Allow disabling inversion cache.
+* Faster AVX2 encoding.
+
 
 ## May 2020
 
@@ -178,6 +188,17 @@ If you are only interested in the data shards (for reading purposes) you can cal
     err := enc.ReconstructData(data)
 ```
 
+If you don't need all data shards you can use `ReconstructSome()`:
+
+```Go
+    // Delete two data shards
+    data[3] = nil
+    data[7] = nil
+    
+    // Reconstruct just the shard 3
+    err := enc.ReconstructSome(data, []bool{false, false, false, true, false, false, false, false})
+```
+
 So to sum up reconstruction:
 * The number of data/parity shards must match the numbers used for encoding.
 * The order of shards must be the same as used when encoding.
@@ -207,6 +228,49 @@ To join a data set, use the `Join()` function, which will join the shards and wr
 ```Go
    // Join a data set and write it to io.Discard.
    err = enc.Join(io.Discard, data, len(bigfile))
+```
+
+# Progressive encoding
+
+It is possible to encode individual shards using EncodeIdx:
+
+```Go
+	// EncodeIdx will add parity for a single data shard.
+	// Parity shards should start out as 0. The caller must zero them.
+	// Data shards must be delivered exactly once. There is no check for this.
+	// The parity shards will always be updated and the data shards will remain the same.
+	EncodeIdx(dataShard []byte, idx int, parity [][]byte) error
+```
+
+This allows progressively encoding the parity by sending individual data shards.
+There is no requirement on shards being delivered in order, 
+but when sent in order it allows encoding shards one at the time,
+effectively allowing the operation to be streaming. 
+
+The result will be the same as encoding all shards at once.
+There is a minor speed penalty using this method, so send 
+shards at once if they are available.
+
+## Example
+
+```Go
+func test() {
+    // Create an encoder with 7 data and 3 parity slices.
+    enc, _ := reedsolomon.New(7, 3)
+
+    // This will be our output parity.
+    parity := make([][]byte, 3)
+    for i := range parity {
+        parity[i] = make([]byte, 10000)
+    }
+
+    for i := 0; i < 7; i++ {
+        // Send data shards one at the time.
+        _ = enc.EncodeIdx(make([]byte, 10000), i, parity)
+    }
+
+    // parity now contains parity, as if all data was sent in one call.
+}
 ```
 
 # Streaming/Merging
@@ -300,14 +364,16 @@ Performance depends mainly on the number of parity shards.
 In rough terms, doubling the number of parity shards will double the encoding time.
 
 Here are the throughput numbers with some different selections of data and parity shards. 
-For reference each shard is 1MB random data, and 2 CPU cores are used for encoding.
+For reference each shard is 1MB random data, and 16 CPU cores are used for encoding.
 
-| Data | Parity | Parity | MB/s   | SSSE3 MB/s  | SSSE3 Speed | Rel. Speed |
-|------|--------|--------|--------|-------------|-------------|------------|
-| 5    | 2      | 40%    | 576,11 | 2599,2      | 451%        | 100,00%    |
-| 10   | 2      | 20%    | 587,73 | 3100,28     | 528%        | 102,02%    |
-| 10   | 4      | 40%    | 298,38 | 2470,97     | 828%        | 51,79%     |
-| 50   | 20     | 40%    | 59,81  | 713,28      | 1193%       | 10,38%     |
+| Data | Parity | Go MB/s | SSSE3 MB/s | AVX2 MB/s |
+|------|--------|---------|------------|-----------|
+| 5    | 2      | 14287   | 66355      | 108755    |
+| 8    | 8      | 5569    | 34298      | 70516     |
+| 10   | 4      | 6766    | 48237      | 93875     |
+| 50   | 20     | 1540    | 12130      | 22090     |
+
+The throughput numbers here is the size of the encoded data and parity shards.
 
 If `runtime.GOMAXPROCS()` is set to a value higher than 1, 
 the encoder will use multiple goroutines to perform the calculations in `Verify`, `Encode` and `Reconstruct`.
