@@ -1,4 +1,4 @@
-package main
+package generic
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ func TestDial(t *testing.T) {
 	t.Log("minport:", minPort)
 	t.Log("maxport:", maxPort)
 
-	remoteAddr := fmt.Sprintf("%v:%v", matches[1], uint64(minPort)+dialCount%uint64(maxPort-minPort+1))
+	remoteAddr := fmt.Sprintf("%v:%v", matches[1], uint64(minPort)+1000%uint64(maxPort-minPort+1))
 
 	t.Log("RemoteAddr:", remoteAddr)
 
@@ -35,4 +35,17 @@ func TestDial(t *testing.T) {
 	for i := 0; i < len(matches); i++ {
 		t.Log(testcase2, "submatch", i, matches[i])
 	}
+
+	testcase3 := ":20000-20001"
+	matches = reg.FindStringSubmatch(testcase3)
+	for i := 0; i < len(matches); i++ {
+		t.Log(testcase3, "submatch", i, matches[i])
+	}
+
+	testcase4 := ":20000"
+	matches = reg.FindStringSubmatch(testcase4)
+	for i := 0; i < len(matches); i++ {
+		t.Log(testcase4, "submatch", i, matches[i])
+	}
+
 }
