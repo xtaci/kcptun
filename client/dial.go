@@ -10,7 +10,7 @@ import (
 	"github.com/xtaci/tcpraw"
 )
 
-var dialCount int
+var dialCount uint64
 
 func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
 	defer func() {
@@ -38,7 +38,7 @@ func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
 		}
 
 		// assign remote addr
-		remoteAddr = fmt.Sprintf("%v:%v", matches[1], minPort+dialCount%(maxPort-minPort+1))
+		remoteAddr = fmt.Sprintf("%v:%v", matches[1], uint64(minPort)+dialCount%uint64(maxPort-minPort+1))
 	}
 
 	if config.TCP {
