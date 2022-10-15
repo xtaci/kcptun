@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -9,19 +11,19 @@ import (
 	"github.com/xtaci/tcpraw"
 )
 
-var dialCount uint64
-
 func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
-	defer func() {
-		dialCount++
-	}()
-
 	mp, err := generic.ParseMultiPort(config.RemoteAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	remoteAddr := fmt.Sprintf("%v:%v", mp.Host, uint64(mp.MinPort)+dialCount%uint64(mp.MaxPort-mp.MinPort+1))
+	var randport uint64
+	err = binary.Read(rand.Reader, binary.LittleEndian, &randport)
+	if err != nil {
+		return nil, err
+	}
+
+	remoteAddr := fmt.Sprintf("%v:%v", mp.Host, uint64(mp.MinPort)+randport%uint64(mp.MaxPort-mp.MinPort+1))
 
 	if config.TCP {
 		conn, err := tcpraw.Dial("tcp", remoteAddr)
