@@ -302,10 +302,22 @@ func main() {
 		}
 
 		log.Println("version:", VERSION)
-		addr, err := net.ResolveTCPAddr("tcp", config.LocalAddr)
-		checkError(err)
-		listener, err := net.ListenTCP("tcp", addr)
-		checkError(err)
+		var listener net.Listener
+		var isUnix bool
+		if _, _, err := net.SplitHostPort(config.LocalAddr); err != nil {
+			isUnix = true
+		}
+		if isUnix {
+			addr, err := net.ResolveUnixAddr("unix", config.LocalAddr)
+			checkError(err)
+			listener, err = net.ListenUnix("unix", addr)
+			checkError(err)
+		} else {
+			addr, err := net.ResolveTCPAddr("tcp", config.LocalAddr)
+			checkError(err)
+			listener, err = net.ListenTCP("tcp", addr)
+			checkError(err)
+		}
 
 		log.Println("smux version:", config.SmuxVer)
 		log.Println("listening on:", listener.Addr())
@@ -440,7 +452,7 @@ func main() {
 		muxes := make([]timedSession, numconn)
 		rr := uint16(0)
 		for {
-			p1, err := listener.AcceptTCP()
+			p1, err := listener.Accept()
 			if err != nil {
 				log.Fatalf("%+v", err)
 			}
