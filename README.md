@@ -216,6 +216,21 @@ GLOBAL OPTIONS:
    --version, -v                    print the version
 ```
 
+#### Multiport Dialer
+
+kcptun supports multi-port dialer like below:
+
+```
+client: --remoteaddr IP:minport-maxport
+server: --listen IP:minport-maxport
+
+eg:
+client: --remoteaddr IP:3000-4000
+server: --listen 0.0.0.0:3000-4000
+```
+by specifying port-range, kcptun will automatically switch to next random port within port-range when establishing each new connection.
+
+
 #### Forward Error Correction
 
 In coding theory, the [Reed–Solomon code](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction) belongs to the class of non-binary cyclic error-correcting codes. The Reed–Solomon code is based on univariate polynomials over finite fields.
