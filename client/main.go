@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -28,15 +29,17 @@ const (
 	bufSize = 4096
 )
 
+var	VpnMode = false
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
 // handleClient aggregates connection p1 on mux with 'writeLock'
 func handleClient(session *smux.Session, p1 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
-		if !quiet {
-			log.Println(v...)
-		}
+		// if !quiet {
+		// 	log.Println(v...)
+		// }
+		return
 	}
 	defer p1.Close()
 	p2, err := session.OpenStream()
@@ -90,158 +93,162 @@ func main() {
 	myApp.Usage = "client(with SMUX)"
 	myApp.Version = VERSION
 	myApp.Flags = []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "localaddr,l",
 			Value: ":12948",
 			Usage: "local listen address",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "remoteaddr, r",
 			Value: "vps:29900",
 			Usage: "kcp server address",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:   "key",
 			Value:  "it's a secrect",
 			Usage:  "pre-shared secret between client and server",
 			EnvVar: "KCPTUN_KEY",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "crypt",
 			Value: "aes",
 			Usage: "aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none, null",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "mode",
 			Value: "fast",
 			Usage: "profiles: fast3, fast2, fast, normal, manual",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "conn",
 			Value: 1,
 			Usage: "set num of UDP connections to server",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "autoexpire",
 			Value: 0,
 			Usage: "set auto expiration time(in seconds) for a single UDP connection, 0 to disable",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "scavengettl",
 			Value: 600,
 			Usage: "set how long an expired connection can live (in seconds)",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "mtu",
 			Value: 1350,
 			Usage: "set maximum transmission unit for UDP packets",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "sndwnd",
 			Value: 128,
 			Usage: "set send window size(num of packets)",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "rcvwnd",
 			Value: 512,
 			Usage: "set receive window size(num of packets)",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "datashard,ds",
 			Value: 10,
 			Usage: "set reed-solomon erasure coding - datashard",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "parityshard,ps",
 			Value: 3,
 			Usage: "set reed-solomon erasure coding - parityshard",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "dscp",
 			Value: 0,
 			Usage: "set DSCP(6bit)",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "nocomp",
 			Usage: "disable compression",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:   "acknodelay",
 			Usage:  "flush ack immediately when a packet is received",
 			Hidden: true,
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:   "nodelay",
 			Value:  0,
 			Hidden: true,
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:   "interval",
 			Value:  50,
 			Hidden: true,
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:   "resend",
 			Value:  0,
 			Hidden: true,
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:   "nc",
 			Value:  0,
 			Hidden: true,
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "sockbuf",
 			Value: 4194304, // socket buffer size in bytes
 			Usage: "per-socket buffer in bytes",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "smuxver",
 			Value: 1,
 			Usage: "specify smux version, available 1,2",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "smuxbuf",
 			Value: 4194304,
 			Usage: "the overall de-mux buffer in bytes",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "streambuf",
 			Value: 2097152,
 			Usage: "per stream receive buffer in bytes, smux v2+",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "keepalive",
 			Value: 10, // nat keepalive interval in seconds
 			Usage: "seconds between heartbeats",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "snmplog",
 			Value: "",
 			Usage: "collect snmp to file, aware of timeformat in golang, like: ./snmp-20060102.log",
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "snmpperiod",
 			Value: 60,
 			Usage: "snmp collect period, in seconds",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "log",
 			Value: "",
 			Usage: "specify a log file to output, default goes to stderr",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "quiet",
 			Usage: "to suppress the 'stream open/close' messages",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "tcp",
 			Usage: "to emulate a TCP connection(linux)",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "c",
 			Value: "", // when the value is not empty, the config path must exists
 			Usage: "config from json file, which will override the command from shell",
+		},
+		&cli.BoolFlag{
+			Name:  "V",
+			Usage: "Enable VPN mode for shadowsocks-android",
 		},
 	}
 	myApp.Action = func(c *cli.Context) error {
@@ -276,6 +283,7 @@ func main() {
 		config.SnmpPeriod = c.Int("snmpperiod")
 		config.Quiet = c.Bool("quiet")
 		config.TCP = c.Bool("tcp")
+		config.Vpn = c.Bool("V")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -288,6 +296,150 @@ func main() {
 			checkError(err)
 			defer f.Close()
 			log.SetOutput(f)
+		}
+
+		opts, err := parseEnv()
+		if err == nil {
+			fmt.Printf("test")
+			if c, b := opts.Get("localaddr"); b {
+				config.LocalAddr = c
+			}
+			if c, b := opts.Get("remoteaddr"); b {
+				config.RemoteAddr = c
+			}
+			if c, b := opts.Get("key"); b {
+				config.Key = c
+			}
+			if c, b := opts.Get("crypt"); b {
+				config.Crypt = c
+			}
+			if c, b := opts.Get("mode"); b {
+				config.Mode = c
+			}
+			if c, b := opts.Get("conn"); b {
+				if conn, err := strconv.Atoi(c); err == nil {
+					config.Conn = conn
+				}
+			}
+			if c, b := opts.Get("autoexpire"); b {
+				if autoexpire, err := strconv.Atoi(c); err == nil {
+					config.AutoExpire = autoexpire
+				}
+			}
+			if c, b := opts.Get("scavengettl"); b {
+				if scavengettl, err := strconv.Atoi(c); err == nil {
+					config.ScavengeTTL = scavengettl
+				}
+			}
+			if c, b := opts.Get("mtu"); b {
+				if mtu, err := strconv.Atoi(c); err == nil {
+					config.MTU = mtu
+				}
+			}
+			if c, b := opts.Get("sndwnd"); b {
+				if sndwnd, err := strconv.Atoi(c); err == nil {
+					config.SndWnd = sndwnd
+				}
+			}
+			if c, b := opts.Get("rcvwnd"); b {
+				if rcvwnd, err := strconv.Atoi(c); err == nil {
+					config.RcvWnd = rcvwnd
+				}
+			}
+			if c, b := opts.Get("datashard"); b {
+				if datashard, err := strconv.Atoi(c); err == nil {
+					config.DataShard = datashard
+				}
+			}
+			if c, b := opts.Get("parityshard"); b {
+				if parityshard, err := strconv.Atoi(c); err == nil {
+					config.ParityShard = parityshard
+				}
+			}
+			if c, b := opts.Get("dscp"); b {
+				if dscp, err := strconv.Atoi(c); err == nil {
+					config.DSCP = dscp
+				}
+			}
+			if c, b := opts.Get("nocomp"); b {
+				if nocomp, err := strconv.ParseBool(c); err == nil {
+					config.NoComp = nocomp
+				}
+			}
+			if c, b := opts.Get("acknodelay"); b {
+				if acknodelay, err := strconv.ParseBool(c); err == nil {
+					config.AckNodelay = acknodelay
+				}
+			}
+			if c, b := opts.Get("nodelay"); b {
+				if nodelay, err := strconv.Atoi(c); err == nil {
+					config.NoDelay = nodelay
+				}
+			}
+			if c, b := opts.Get("interval"); b {
+				if interval, err := strconv.Atoi(c); err == nil {
+					config.Interval = interval
+				}
+			}
+			if c, b := opts.Get("resend"); b {
+				if resend, err := strconv.Atoi(c); err == nil {
+					config.Resend = resend
+				}
+			}
+			if c, b := opts.Get("nc"); b {
+				if nc, err := strconv.Atoi(c); err == nil {
+					config.NoCongestion = nc
+				}
+			}
+			if c, b := opts.Get("sockbuf"); b {
+				if sockbuf, err := strconv.Atoi(c); err == nil {
+					config.SockBuf = sockbuf
+				}
+			}
+			if c, b := opts.Get("smuxbuf"); b {
+				if smuxbuf, err := strconv.Atoi(c); err == nil {
+					config.SmuxBuf = smuxbuf
+				}
+			}
+			if c, b := opts.Get("streambuf"); b {
+				if streambuf, err := strconv.Atoi(c); err == nil {
+					config.StreamBuf = streambuf
+				}
+			}
+			if c, b := opts.Get("smuxver"); b {
+				if smuxver, err := strconv.Atoi(c); err == nil {
+					config.SmuxVer = smuxver
+				}
+			}
+			if c, b := opts.Get("keepalive"); b {
+				if keepalive, err := strconv.Atoi(c); err == nil {
+					config.KeepAlive = keepalive
+				}
+			}
+			if c, b := opts.Get("log"); b {
+				config.Log = c
+			}
+			if c, b := opts.Get("snmplog"); b {
+				config.SnmpLog = c
+			}
+			if c, b := opts.Get("snmpperiod"); b {
+				if snmpperiod, err := strconv.Atoi(c); err == nil {
+					config.SnmpPeriod = snmpperiod
+				}
+			}
+			if c, b := opts.Get("quiet"); b {
+				if quiet, err := strconv.ParseBool(c); err == nil {
+					config.Quiet = quiet
+				}
+			}
+			if c, b := opts.Get("tcp"); b {
+				if tcp, err := strconv.ParseBool(c); err == nil {
+					config.TCP = tcp
+				}
+			}
+			if _, b := opts.Get("__android_vpn"); b {
+				config.Vpn = true
+			}
 		}
 
 		switch config.Mode {
@@ -318,7 +470,7 @@ func main() {
 			listener, err = net.ListenTCP("tcp", addr)
 			checkError(err)
 		}
-
+		logInit()
 		log.Println("smux version:", config.SmuxVer)
 		log.Println("listening on:", listener.Addr())
 		log.Println("encryption:", config.Crypt)
@@ -341,6 +493,8 @@ func main() {
 		log.Println("snmpperiod:", config.SnmpPeriod)
 		log.Println("quiet:", config.Quiet)
 		log.Println("tcp:", config.TCP)
+		log.Println("vpn:", config.Vpn)
+		VpnMode = config.Vpn
 
 		// parameters check
 		if config.SmuxVer > maxSmuxVer {
@@ -447,6 +601,8 @@ func main() {
 		chScavenger := make(chan timedSession, 128)
 		go scavenger(chScavenger, &config)
 
+		go parentMonitor(3)
+
 		// start listener
 		numconn := uint16(config.Conn)
 		muxes := make([]timedSession, numconn)
@@ -509,6 +665,21 @@ func scavenger(ch chan timedSession, config *Config) {
 				}
 			}
 			sessionList = newList
+		}
+	}
+}
+
+func parentMonitor(interval int) {
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
+	pid := os.Getppid()
+	for {
+		select {
+		case <-ticker.C:
+			curpid := os.Getppid()
+			if curpid != pid {
+				os.Exit(1)
+			}
 		}
 	}
 }

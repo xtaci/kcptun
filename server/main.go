@@ -10,6 +10,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -310,6 +311,136 @@ func main() {
 			checkError(err)
 		}
 
+		opts, err := parseEnv()
+		if err == nil {
+			if c, b := opts.Get("listen"); b {
+				config.Listen = c
+			}
+			if c, b := opts.Get("target"); b {
+				config.Target = c
+			}
+			if c, b := opts.Get("key"); b {
+				config.Key = c
+			}
+			if c, b := opts.Get("crypt"); b {
+				config.Crypt = c
+			}
+			if c, b := opts.Get("mode"); b {
+				config.Mode = c
+			}
+			if c, b := opts.Get("mtu"); b {
+				if mtu, err := strconv.Atoi(c); err == nil {
+					config.MTU = mtu
+				}
+			}
+			if c, b := opts.Get("sndwnd"); b {
+				if sndwnd, err := strconv.Atoi(c); err == nil {
+					config.SndWnd = sndwnd
+				}
+			}
+			if c, b := opts.Get("rcvwnd"); b {
+				if rcvwnd, err := strconv.Atoi(c); err == nil {
+					config.RcvWnd = rcvwnd
+				}
+			}
+			if c, b := opts.Get("datashard"); b {
+				if datashard, err := strconv.Atoi(c); err == nil {
+					config.DataShard = datashard
+				}
+			}
+			if c, b := opts.Get("parityshard"); b {
+				if parityshard, err := strconv.Atoi(c); err == nil {
+					config.ParityShard = parityshard
+				}
+			}
+			if c, b := opts.Get("dscp"); b {
+				if dscp, err := strconv.Atoi(c); err == nil {
+					config.DSCP = dscp
+				}
+			}
+			if c, b := opts.Get("nocomp"); b {
+				if nocomp, err := strconv.ParseBool(c); err == nil {
+					config.NoComp = nocomp
+				}
+			}
+			if c, b := opts.Get("acknodelay"); b {
+				if acknodelay, err := strconv.ParseBool(c); err == nil {
+					config.AckNodelay = acknodelay
+				}
+			}
+			if c, b := opts.Get("nodelay"); b {
+				if nodelay, err := strconv.Atoi(c); err == nil {
+					config.NoDelay = nodelay
+				}
+			}
+			if c, b := opts.Get("interval"); b {
+				if interval, err := strconv.Atoi(c); err == nil {
+					config.Interval = interval
+				}
+			}
+			if c, b := opts.Get("resend"); b {
+				if resend, err := strconv.Atoi(c); err == nil {
+					config.Resend = resend
+				}
+			}
+			if c, b := opts.Get("nc"); b {
+				if nc, err := strconv.Atoi(c); err == nil {
+					config.NoCongestion = nc
+				}
+			}
+			if c, b := opts.Get("sockbuf"); b {
+				if sockbuf, err := strconv.Atoi(c); err == nil {
+					config.SockBuf = sockbuf
+				}
+			}
+			if c, b := opts.Get("smuxbuf"); b {
+				if smuxbuf, err := strconv.Atoi(c); err == nil {
+					config.SmuxBuf = smuxbuf
+				}
+			}
+			if c, b := opts.Get("streambuf"); b {
+				if streambuf, err := strconv.Atoi(c); err == nil {
+					config.StreamBuf = streambuf
+				}
+			}
+			if c, b := opts.Get("smuxver"); b {
+				if smuxver, err := strconv.Atoi(c); err == nil {
+					config.SmuxVer = smuxver
+				}
+			}
+			if c, b := opts.Get("keepalive"); b {
+				if keepalive, err := strconv.Atoi(c); err == nil {
+					config.KeepAlive = keepalive
+				}
+			}
+			if c, b := opts.Get("log"); b {
+				config.Log = c
+			}
+			if c, b := opts.Get("snmplog"); b {
+				config.SnmpLog = c
+			}
+			if c, b := opts.Get("snmpperiod"); b {
+				if snmpperiod, err := strconv.Atoi(c); err == nil {
+					config.SnmpPeriod = snmpperiod
+				}
+			}
+			if c, b := opts.Get("pprof"); b {
+				if pprof, err := strconv.ParseBool(c); err == nil {
+					config.Pprof = pprof
+				}
+			}
+			if c, b := opts.Get("quiet"); b {
+				if quiet, err := strconv.ParseBool(c); err == nil {
+					config.Quiet = quiet
+				}
+			}
+			if c, b := opts.Get("tcp"); b {
+				if tcp, err := strconv.ParseBool(c); err == nil {
+					config.TCP = tcp
+				}
+			}
+		}
+
 		// log redirect
 		if config.Log != "" {
 			f, err := os.OpenFile(config.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -397,6 +528,8 @@ func main() {
 			go http.ListenAndServe(":6060", nil)
 		}
 
+		go parentMonitor(3)
+
 		// main loop
 		var wg sync.WaitGroup
 		loop := func(lis *kcp.Listener) {
@@ -465,4 +598,19 @@ func main() {
 		return nil
 	}
 	myApp.Run(os.Args)
+}
+
+func parentMonitor(interval int) {
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
+	pid := os.Getppid()
+	for {
+		select {
+		case <-ticker.C:
+			curpid := os.Getppid()
+			if curpid != pid {
+				os.Exit(1)
+			}
+		}
+	}
 }
