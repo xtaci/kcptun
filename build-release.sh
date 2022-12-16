@@ -57,12 +57,6 @@ for os in ${OSES[@]}; do
 	$sum kcptun-${os}-386-$VERSION.tar.gz
 done
 
-#Apple M1 device
-env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_darwin_arm64 github.com/xtaci/kcptun/server
-env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_darwin_arm64 github.com/xtaci/kcptun/client
-tar -zcf kcptun-darwin-arm64-$VERSION.tar.gz client_darwin_arm64 server_darwin_arm64
-$sum kcptun-darwin-arm64-$VERSION.tar.gz
-
 # ARM
 ARMS=(5 6 7)
 for v in ${ARMS[@]}; do
@@ -74,11 +68,19 @@ $sum kcptun-linux-arm$v-$VERSION.tar.gz
 done
 
 # ARM64
-env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_linux_arm64  github.com/xtaci/kcptun/client
-env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_linux_arm64  github.com/xtaci/kcptun/server
-if $UPX; then upx -9 client_linux_arm64 server_linux_arm64*;fi
-tar -zcf kcptun-linux-arm64-$VERSION.tar.gz client_linux_arm64 server_linux_arm64
-$sum kcptun-linux-arm64-$VERSION.tar.gz
+OSES=(linux darwin windows)
+for os in ${OSES[@]}; do
+	suffix=""
+	if [ "$os" == "windows" ]
+	then
+		suffix=".exe"
+	fi
+	env CGO_ENABLED=0 GOOS=$os GOARCH=arm64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_${os}_arm64${suffix} github.com/xtaci/kcptun/client
+	env CGO_ENABLED=0 GOOS=$os GOARCH=arm64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_${os}_arm64${suffix} github.com/xtaci/kcptun/server
+	if $UPX; then upx -9 client_${os}_arm64${suffix} server_${os}_arm64${suffix};fi
+	tar -zcf kcptun-${os}-arm64-$VERSION.tar.gz client_${os}_arm64${suffix} server_${os}_arm64${suffix}
+	$sum kcptun-${os}-arm64-$VERSION.tar.gz
+done
 
 #MIPS32LE
 env CGO_ENABLED=0 GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_linux_mipsle github.com/xtaci/kcptun/client
