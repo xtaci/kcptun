@@ -26,6 +26,7 @@ var (
 type writeRequest struct {
 	prio   uint32
 	frame  Frame
+	seq    uint32
 	result chan writeResult
 }
 
@@ -76,8 +77,9 @@ type Session struct {
 
 	deadline atomic.Value
 
-	shaper chan writeRequest // a shaper for writing
-	writes chan writeRequest
+	requestID uint32            // write request monotonic increasing
+	shaper    chan writeRequest // a shaper for writing
+	writes    chan writeRequest
 }
 
 func newSession(config *Config, conn io.ReadWriteCloser, client bool) *Session {
@@ -506,6 +508,7 @@ func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, prio ui
 	req := writeRequest{
 		prio:   prio,
 		frame:  f,
+		seq:    atomic.AddUint32(&s.requestID, 1),
 		result: make(chan writeResult, 1),
 	}
 	select {

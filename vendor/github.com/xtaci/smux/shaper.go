@@ -6,8 +6,14 @@ func _itimediff(later, earlier uint32) int32 {
 
 type shaperHeap []writeRequest
 
-func (h shaperHeap) Len() int            { return len(h) }
-func (h shaperHeap) Less(i, j int) bool  { return _itimediff(h[j].prio, h[i].prio) > 0 }
+func (h shaperHeap) Len() int { return len(h) }
+func (h shaperHeap) Less(i, j int) bool {
+	if h[i].frame.sid == h[j].frame.sid {
+		return _itimediff(h[j].seq, h[i].seq) > 0
+	} else {
+		return _itimediff(h[j].prio, h[i].prio) > 0
+	}
+}
 func (h shaperHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
 func (h *shaperHeap) Push(x interface{}) { *h = append(*h, x.(writeRequest)) }
 
