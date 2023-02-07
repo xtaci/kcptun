@@ -27,6 +27,7 @@ const X86FalseSharingRange = 128
 // The struct is padded to avoid false sharing.
 type x86 struct {
 	_            [X86FalseSharingRange]byte
+	HasCMPXCHG16B bool
 	HasAES       bool
 	HasADX       bool
 	HasAVX       bool
@@ -58,14 +59,14 @@ type x86 struct {
 	// Unit: Hz.
 	//
 	// Warn:
-	// 1. If it's 0, means can't get it. Don't use it.
-	// 2. Don't use it if you want "100%" precise timestamp.
+	// 1. If it's 0, means failed to get it from frequency table provided by Intel manual.
 	TSCFrequency uint64
 
-	Name      string
-	Signature string // DisplayFamily_DisplayModel.
-	Family    uint32 // CPU family number.
-	Model     uint32 // CPU model number.
+	Name       string
+	Signature  string // DisplayFamily_DisplayModel.
+	Family     uint32 // CPU family number.
+	Model      uint32 // CPU model number.
+	SteppingID uint32
 
 	_ [X86FalseSharingRange]byte
 }

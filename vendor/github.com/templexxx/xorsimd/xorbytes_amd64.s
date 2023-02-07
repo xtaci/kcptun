@@ -1,7 +1,6 @@
-#include "textflag.h"
 
 // func bytesN(dst, a, b *byte, n int)
-TEXT ·bytesN(SB), NOSPLIT, $0
+TEXT ·bytesN(SB), 4, $0
 	MOVQ  d+0(FP), BX
 	MOVQ  a+8(FP), SI
 	MOVQ  b+16(FP), CX
@@ -50,7 +49,7 @@ ret:
 	RET
 
 // func bytes8(dst, a, b *byte)
-TEXT ·bytes8(SB), NOSPLIT, $0
+TEXT ·bytes8(SB), 4, $0
 	MOVQ  d+0(FP), BX
 	MOVQ  a+8(FP), SI
 	MOVQ  b+16(FP), CX
@@ -61,7 +60,7 @@ TEXT ·bytes8(SB), NOSPLIT, $0
     RET
 
 // func bytes16(dst, a, b *byte)
-TEXT ·bytes16(SB), NOSPLIT, $0
+TEXT ·bytes16(SB), 4, $0
 	MOVQ  d+0(FP), BX
 	MOVQ  a+8(FP), SI
 	MOVQ  b+16(FP), CX

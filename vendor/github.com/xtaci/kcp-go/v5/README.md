@@ -277,9 +277,3 @@ A: Yes, for the safety of protocol, even if the upper layer has encrypted.
 1. https://github.com/xtaci/libkcp -- FEC enhanced KCP session library for iOS/Android in C++
 1. https://github.com/skywind3000/kcp -- A Fast and Reliable ARQ Protocol
 1. https://github.com/klauspost/reedsolomon -- Reed-Solomon Erasure Coding in Go
-
-## Consulting 
-
-WeChat(付费技术咨询)
-
-<img src="wechat_donate.jpg" alt="kcptun" height="120px" /> 

@@ -3,7 +3,6 @@
 // Use of this source code is governed by the MIT License
 // that can be found in the LICENSE file.
  
-#include "textflag.h"
 
 #define dst BX // parity's address
 #define d2src SI // two-dimension src_slice's address
@@ -19,7 +18,7 @@
 #define src_val1 R14
 
 // func encodeSSE2(dst []byte, src [][]byte)
-TEXT ·encodeSSE2(SB), NOSPLIT, $0
+TEXT ·encodeSSE2(SB), 4, $0
 	MOVQ  d+0(FP), dst
 	MOVQ  src+24(FP), d2src
 	MOVQ  c+32(FP), csrc

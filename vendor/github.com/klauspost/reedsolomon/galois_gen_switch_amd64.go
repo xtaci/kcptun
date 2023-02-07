@@ -692,3 +692,679 @@ func galMulSlicesAvx2Xor(matrix []byte, in, out [][]byte, start, stop int) int {
 	}
 	panic(fmt.Sprintf("unhandled size: %dx%d", len(in), len(out)))
 }
+
+func galMulSlicesGFNI(matrix []uint64, in, out [][]byte, start, stop int) int {
+	n := (stop - start) & avxSizeMask
+
+	switch len(in) {
+	case 1:
+		switch len(out) {
+		case 1:
+			mulGFNI_1x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_1x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_1x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_1x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_1x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_1x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_1x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_1x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_1x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_1x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 2:
+		switch len(out) {
+		case 1:
+			mulGFNI_2x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_2x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_2x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_2x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_2x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_2x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_2x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_2x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_2x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_2x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 3:
+		switch len(out) {
+		case 1:
+			mulGFNI_3x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_3x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_3x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_3x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_3x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_3x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_3x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_3x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_3x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_3x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 4:
+		switch len(out) {
+		case 1:
+			mulGFNI_4x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_4x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_4x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_4x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_4x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_4x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_4x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_4x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_4x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_4x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 5:
+		switch len(out) {
+		case 1:
+			mulGFNI_5x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_5x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_5x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_5x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_5x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_5x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_5x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_5x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_5x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_5x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 6:
+		switch len(out) {
+		case 1:
+			mulGFNI_6x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_6x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_6x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_6x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_6x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_6x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_6x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_6x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_6x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_6x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 7:
+		switch len(out) {
+		case 1:
+			mulGFNI_7x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_7x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_7x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_7x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_7x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_7x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_7x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_7x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_7x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_7x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 8:
+		switch len(out) {
+		case 1:
+			mulGFNI_8x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_8x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_8x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_8x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_8x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_8x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_8x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_8x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_8x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_8x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 9:
+		switch len(out) {
+		case 1:
+			mulGFNI_9x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_9x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_9x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_9x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_9x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_9x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_9x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_9x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_9x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_9x10_64(matrix, in, out, start, n)
+			return n
+		}
+	case 10:
+		switch len(out) {
+		case 1:
+			mulGFNI_10x1_64(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_10x2_64(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_10x3_64(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_10x4_64(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_10x5_64(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_10x6_64(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_10x7_64(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_10x8_64(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_10x9_64(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_10x10_64(matrix, in, out, start, n)
+			return n
+		}
+	}
+	panic(fmt.Sprintf("unhandled size: %dx%d", len(in), len(out)))
+}
+
+func galMulSlicesGFNIXor(matrix []uint64, in, out [][]byte, start, stop int) int {
+	n := (stop - start) & avxSizeMask
+
+	switch len(in) {
+	case 1:
+		switch len(out) {
+		case 1:
+			mulGFNI_1x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_1x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_1x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_1x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_1x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_1x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_1x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_1x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_1x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_1x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 2:
+		switch len(out) {
+		case 1:
+			mulGFNI_2x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_2x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_2x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_2x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_2x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_2x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_2x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_2x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_2x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_2x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 3:
+		switch len(out) {
+		case 1:
+			mulGFNI_3x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_3x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_3x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_3x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_3x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_3x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_3x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_3x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_3x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_3x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 4:
+		switch len(out) {
+		case 1:
+			mulGFNI_4x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_4x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_4x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_4x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_4x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_4x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_4x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_4x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_4x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_4x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 5:
+		switch len(out) {
+		case 1:
+			mulGFNI_5x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_5x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_5x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_5x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_5x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_5x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_5x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_5x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_5x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_5x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 6:
+		switch len(out) {
+		case 1:
+			mulGFNI_6x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_6x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_6x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_6x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_6x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_6x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_6x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_6x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_6x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_6x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 7:
+		switch len(out) {
+		case 1:
+			mulGFNI_7x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_7x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_7x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_7x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_7x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_7x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_7x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_7x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_7x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_7x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 8:
+		switch len(out) {
+		case 1:
+			mulGFNI_8x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_8x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_8x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_8x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_8x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_8x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_8x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_8x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_8x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_8x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 9:
+		switch len(out) {
+		case 1:
+			mulGFNI_9x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_9x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_9x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_9x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_9x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_9x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_9x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_9x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_9x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_9x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 10:
+		switch len(out) {
+		case 1:
+			mulGFNI_10x1_64Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulGFNI_10x2_64Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulGFNI_10x3_64Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulGFNI_10x4_64Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulGFNI_10x5_64Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulGFNI_10x6_64Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulGFNI_10x7_64Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulGFNI_10x8_64Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulGFNI_10x9_64Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulGFNI_10x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	}
+	panic(fmt.Sprintf("unhandled size: %dx%d", len(in), len(out)))
+}

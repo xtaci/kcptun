@@ -207,6 +207,12 @@ func (s *Session) Close() error {
 	}
 }
 
+// CloseChan can be used by someone who wants to be notified immediately when this
+// session is closed
+func (s *Session) CloseChan() <-chan struct{} {
+	return s.die
+}
+
 // notifyBucket notifies recvLoop that bucket is available
 func (s *Session) notifyBucket() {
 	select {

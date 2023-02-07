@@ -4,10 +4,8 @@
 
 // +build 386 amd64 amd64p32
 
-#include "textflag.h"
-
 // func cpuid(eaxArg, ecxArg uint32) (eax, ebx, ecx, edx uint32)
-TEXT ·cpuid(SB), NOSPLIT, $0-24
+TEXT ·cpuid(SB), 4, $0-24
 	MOVL eaxArg+0(FP), AX
 	MOVL ecxArg+4(FP), CX
 	CPUID
@@ -18,7 +16,7 @@ TEXT ·cpuid(SB), NOSPLIT, $0-24
 	RET
 
 // func xgetbv() (eax, edx uint32)
-TEXT ·xgetbv(SB),NOSPLIT,$0-8
+TEXT ·xgetbv(SB),4,$0-8
 #ifdef GOOS_nacl
 	// nacl does not support XGETBV.
 	MOVL $0, eax+0(FP)

@@ -34,6 +34,7 @@ const (
 	cpuid_AES       = 1 << 25
 	cpuid_OSXSAVE   = 1 << 27
 	cpuid_AVX       = 1 << 28
+	cpuid_CMPXCHG16B = 1 << 13
 
 	// ebx bits
 	cpuid_BMI1     = 1 << 3
@@ -98,6 +99,7 @@ func doinit() {
 	X86.HasSSE42 = isSet(ecx1, cpuid_SSE42)
 	X86.HasPOPCNT = isSet(ecx1, cpuid_POPCNT)
 	X86.HasAES = isSet(ecx1, cpuid_AES)
+	X86.HasCMPXCHG16B = isSet(ecx1, cpuid_CMPXCHG16B)
 	X86.HasOSXSAVE = isSet(ecx1, cpuid_OSXSAVE)
 
 	osSupportsAVX := false
@@ -132,13 +134,13 @@ func doinit() {
 
 	X86.HasInvariantTSC = hasInvariantTSC()
 
-	X86.Family, X86.Model = getFamilyModel()
+	X86.Family, X86.Model, X86.SteppingID = getVersionInfo()
 
 	X86.Signature = makeSignature(X86.Family, X86.Model)
 
 	X86.Name = getName()
 
-	X86.TSCFrequency = getNativeTSCFrequency(X86.Name, X86.Signature)
+	X86.TSCFrequency = getNativeTSCFrequency(X86.Name, X86.Signature, X86.SteppingID)
 }
 
 func isSet(hwc uint32, value uint32) bool {
@@ -168,7 +170,7 @@ func getName() string {
 // getNativeTSCFrequency gets TSC frequency from CPUID,
 // only supports Intel (Skylake or later microarchitecture) & key information is from Intel manual & kernel codes
 // (especially this commit: https://github.com/torvalds/linux/commit/604dc9170f2435d27da5039a3efd757dceadc684).
-func getNativeTSCFrequency(name, sign string) uint64 {
+func getNativeTSCFrequency(name, sign string, steppingID uint32) uint64 {
 
 	if vendorID() != Intel {
 		return 0
@@ -192,7 +194,7 @@ func getNativeTSCFrequency(name, sign string) uint64 {
 	// Skylake, Kabylake and all variants of those two chipsets report a
 	// crystal frequency of zero.
 	if ecx == 0 { // Crystal clock frequency is not enumerated.
-		ecx = getCrystalClockFrequency(sign)
+		ecx = getCrystalClockFrequency(sign, steppingID)
 	}
 
 	// TSC frequency = “core crystal clock frequency” * EBX/EAX.
@@ -204,11 +206,11 @@ func getNativeTSCFrequency(name, sign string) uint64 {
 // Volume 4: Model-Specific Registers
 // & https://github.com/torvalds/linux/blob/master/arch/x86/include/asm/intel-family.h
 const (
-	IntelFam6SkylakeL  = "06_4EH"
-	IntelFam6Skylake   = "06_5EH"
-	IntelFam6SkylakeX  = "06_55H"
-	IntelFam6KabylakeL = "06_8EH"
-	IntelFam6Kabylake  = "06_9EH"
+	IntelFam6SkylakeL     = "06_4EH"
+	IntelFam6Skylake      = "06_5EH"
+	IntelFam6XeonScalable = "06_55H"
+	IntelFam6KabylakeL    = "06_8EH"
+	IntelFam6Kabylake     = "06_9EH"
 )
 
 // getCrystalClockFrequency gets crystal clock frequency
@@ -223,10 +225,11 @@ const (
 // With this report, I set a coefficient (0.9975) for IntelFam6SkyLakeX.
 //
 // Unlike the kernel way (mentioned in https://github.com/torvalds/linux/commit/604dc9170f2435d27da5039a3efd757dceadc684),
-// I prefer the Intel hardcoded tables,
+// I prefer the Intel hardcoded tables, (in <Intel® 64 and IA-32 Architectures Software Developer’s Manual, Volume 3>
+// 18.7.3 Determining the Processor Base Frequency, Table 18-85. Nominal Core Crystal Clock Frequency)
 // because after some testing (comparing with wall clock, see https://github.com/templexxx/tsc/tsc_test.go for more details),
 // I found hardcoded tables are more accurate.
-func getCrystalClockFrequency(sign string) uint32 {
+func getCrystalClockFrequency(sign string, steppingID uint32) uint32 {
 
 	if maxFunctionID() < 0x16 {
 		return 0
@@ -237,8 +240,13 @@ func getCrystalClockFrequency(sign string) uint32 {
 		return 24 * 1000 * 1000
 	case IntelFam6Skylake:
 		return 24 * 1000 * 1000
-	case IntelFam6SkylakeX:
-		return 25 * 1000 * 1000 * 0.9975
+	case IntelFam6XeonScalable:
+		// SKL-SP.
+		// see: https://community.intel.com/t5/Software-Tuning-Performance/How-to-detect-microarchitecture-on-Xeon-Scalable/m-p/1205162#M7633.
+		if steppingID == 0x2 || steppingID == 0x3 || steppingID == 0x4 {
+			return 25 * 1000 * 1000 * 0.9975
+		}
+		return 25 * 1000 * 1000 // TODO check other Xeon Scalable has no slow down issue.
 	case IntelFam6KabylakeL:
 		return 24 * 1000 * 1000
 	case IntelFam6Kabylake:
@@ -248,9 +256,9 @@ func getCrystalClockFrequency(sign string) uint32 {
 	return 0
 }
 
-func getFamilyModel() (uint32, uint32) {
+func getVersionInfo() (uint32, uint32, uint32) {
 	if maxFunctionID() < 0x1 {
-		return 0, 0
+		return 0, 0, 0
 	}
 	eax, _, _, _ := cpuid(1, 0)
 	family := (eax >> 8) & 0xf
@@ -263,7 +271,7 @@ func getFamilyModel() (uint32, uint32) {
 	if family == 0x6 || family == 0xf {
 		displayModel = ((eax >> 12) & 0xf0) + model
 	}
-	return displayFamily, displayModel
+	return displayFamily, displayModel, eax & 0x7
 }
 
 // signature format: XX_XXH

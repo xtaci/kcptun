@@ -18,7 +18,10 @@ package twofish // import "golang.org/x/crypto/twofish"
 // LibTomCrypt is free for all purposes under the public domain.
 // It was heavily inspired by the go blowfish package.
 
-import "strconv"
+import (
+	"math/bits"
+	"strconv"
+)
 
 // BlockSize is the constant block size of Twofish.
 const BlockSize = 16
@@ -76,12 +79,12 @@ func NewCipher(key []byte) (*Cipher, error) {
 			tmp[j] = 2*i + 1
 		}
 		B := h(tmp[:], key, 1)
-		B = rol(B, 8)
+		B = bits.RotateLeft32(B, 8)
 
 		c.k[2*i] = A + B
 
 		// K[2i+1] = (A + 2B) <<< 9
-		c.k[2*i+1] = rol(2*B+A, 9)
+		c.k[2*i+1] = bits.RotateLeft32(2*B+A, 9)
 	}
 
 	// Calculate sboxes
@@ -127,16 +130,6 @@ func store32l(dst []byte, src uint32) {
 // load32l reads a little-endian uint32 from src.
 func load32l(src []byte) uint32 {
 	return uint32(src[0]) | uint32(src[1])<<8 | uint32(src[2])<<16 | uint32(src[3])<<24
-}
-
-// rol returns x after a left circular rotation of y bits.
-func rol(x, y uint32) uint32 {
-	return (x << (y & 31)) | (x >> (32 - (y & 31)))
-}
-
-// ror returns x after a right circular rotation of y bits.
-func ror(x, y uint32) uint32 {
-	return (x >> (y & 31)) | (x << (32 - (y & 31)))
 }
 
 // The RS matrix. See [TWOFISH] 4.3
@@ -282,13 +275,13 @@ func (c *Cipher) Encrypt(dst, src []byte) {
 		k := c.k[8+i*4 : 12+i*4]
 		t2 := S2[byte(ib)] ^ S3[byte(ib>>8)] ^ S4[byte(ib>>16)] ^ S1[byte(ib>>24)]
 		t1 := S1[byte(ia)] ^ S2[byte(ia>>8)] ^ S3[byte(ia>>16)] ^ S4[byte(ia>>24)] + t2
-		ic = ror(ic^(t1+k[0]), 1)
-		id = rol(id, 1) ^ (t2 + t1 + k[1])
+		ic = bits.RotateLeft32(ic^(t1+k[0]), -1)
+		id = bits.RotateLeft32(id, 1) ^ (t2 + t1 + k[1])
 
 		t2 = S2[byte(id)] ^ S3[byte(id>>8)] ^ S4[byte(id>>16)] ^ S1[byte(id>>24)]
 		t1 = S1[byte(ic)] ^ S2[byte(ic>>8)] ^ S3[byte(ic>>16)] ^ S4[byte(ic>>24)] + t2
-		ia = ror(ia^(t1+k[2]), 1)
-		ib = rol(ib, 1) ^ (t2 + t1 + k[3])
+		ia = bits.RotateLeft32(ia^(t1+k[2]), -1)
+		ib = bits.RotateLeft32(ib, 1) ^ (t2 + t1 + k[3])
 	}
 
 	// Output with "undo last swap"
@@ -326,13 +319,13 @@ func (c *Cipher) Decrypt(dst, src []byte) {
 		k := c.k[4+i*4 : 8+i*4]
 		t2 := S2[byte(id)] ^ S3[byte(id>>8)] ^ S4[byte(id>>16)] ^ S1[byte(id>>24)]
 		t1 := S1[byte(ic)] ^ S2[byte(ic>>8)] ^ S3[byte(ic>>16)] ^ S4[byte(ic>>24)] + t2
-		ia = rol(ia, 1) ^ (t1 + k[2])
-		ib = ror(ib^(t2+t1+k[3]), 1)
+		ia = bits.RotateLeft32(ia, 1) ^ (t1 + k[2])
+		ib = bits.RotateLeft32(ib^(t2+t1+k[3]), -1)
 
 		t2 = S2[byte(ib)] ^ S3[byte(ib>>8)] ^ S4[byte(ib>>16)] ^ S1[byte(ib>>24)]
 		t1 = S1[byte(ia)] ^ S2[byte(ia>>8)] ^ S3[byte(ia>>16)] ^ S4[byte(ia>>24)] + t2
-		ic = rol(ic, 1) ^ (t1 + k[0])
-		id = ror(id^(t2+t1+k[1]), 1)
+		ic = bits.RotateLeft32(ic, 1) ^ (t1 + k[0])
+		id = bits.RotateLeft32(id^(t2+t1+k[1]), -1)
 	}
 
 	// Undo pre-whitening

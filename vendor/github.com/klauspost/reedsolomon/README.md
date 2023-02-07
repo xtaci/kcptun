@@ -1,8 +1,5 @@
 # Reed-Solomon
-[![Go Reference](https://pkg.go.dev/badge/github.com/klauspost/reedsolomon.svg)](https://pkg.go.dev/github.com/klauspost/reedsolomon) [![Build Status][3]][4]
-
-[3]: https://travis-ci.org/klauspost/reedsolomon.svg?branch=master
-[4]: https://travis-ci.org/klauspost/reedsolomon
+[![Go Reference](https://pkg.go.dev/badge/github.com/klauspost/reedsolomon.svg)](https://pkg.go.dev/github.com/klauspost/reedsolomon) [![Go](https://github.com/klauspost/reedsolomon/actions/workflows/go.yml/badge.svg)](https://github.com/klauspost/reedsolomon/actions/workflows/go.yml)
 
 Reed-Solomon Erasure Coding in Go, with speeds exceeding 1GB/s/cpu core implemented in pure Go.
 
@@ -11,9 +8,12 @@ This is a Go port of the [JavaReedSolomon](https://github.com/Backblaze/JavaReed
 
 For an introduction on erasure coding, see the post on the [Backblaze blog](https://www.backblaze.com/blog/reed-solomon/).
 
+For encoding high shard counts (>256) a Leopard implementation is used.
+For most platforms this performs close to the original Leopard implementation in terms of speed. 
+
 Package home: https://github.com/klauspost/reedsolomon
 
-Godoc: https://pkg.go.dev/github.com/klauspost/reedsolomon?tab=doc
+Godoc: https://pkg.go.dev/github.com/klauspost/reedsolomon
 
 # Installation
 To get the package use the standard:
@@ -21,9 +21,17 @@ To get the package use the standard:
 go get -u github.com/klauspost/reedsolomon
 ```
 
-Using Go modules recommended.
+Using Go modules is recommended.
 
 # Changes
+
+## 2022
+
+* [GFNI](https://github.com/klauspost/reedsolomon/pull/224) support for amd64, for up to 3x faster processing.
+* [Leopard GF8](https://github.com/klauspost/reedsolomon#leopard-gf8) mode added, for faster processing of medium shard counts.
+* [Leopard GF16](https://github.com/klauspost/reedsolomon#leopard-compatible-gf16) mode added, for up to 65536 shards. 
+* [WithJerasureMatrix](https://pkg.go.dev/github.com/klauspost/reedsolomon?tab=doc#WithJerasureMatrix) allows constructing a [Jerasure](https://github.com/tsuraan/Jerasure) compatible matrix.
+
 ## 2021
 
 * Use `GOAMD64=v4` to enable faster AVX2.
@@ -34,6 +42,8 @@ Using Go modules recommended.
 * Allow disabling inversion cache.
 * Faster AVX2 encoding.
 
+<details>
+	<summary>See older changes</summary>
 
 ## May 2020
 
@@ -97,6 +107,8 @@ The [`StreamEncoder`](https://godoc.org/github.com/klauspost/reedsolomon#StreamE
 handles this without modifying the interface. 
 This is a good lesson on why returning interfaces is not a good design.
 
+</details>
+
 # Usage
 
 This section assumes you know the basics of Reed-Solomon encoding. 
@@ -106,23 +118,19 @@ This package performs the calculation of the parity sets. The usage is therefore
 
 First of all, you need to choose your distribution of data and parity shards. 
 A 'good' distribution is very subjective, and will depend a lot on your usage scenario. 
-A good starting point is above 5 and below 257 data shards (the maximum supported number), 
-and the number of parity shards to be 2 or above, and below the number of data shards.
 
 To create an encoder with 10 data shards (where your data goes) and 3 parity shards (calculated):
 ```Go
     enc, err := reedsolomon.New(10, 3)
 ```
 This encoder will work for all parity sets with this distribution of data and parity shards. 
-The error will only be set if you specify 0 or negative values in any of the parameters, 
-or if you specify more than 256 data shards.
 
 If you will primarily be using it with one shard size it is recommended to use 
 [`WithAutoGoroutines(shardSize)`](https://pkg.go.dev/github.com/klauspost/reedsolomon?tab=doc#WithAutoGoroutines)
 as an additional parameter. This will attempt to calculate the optimal number of goroutines to use for the best speed.
 It is not required that all shards are this size. 
 
-The you send and receive data  is a simple slice of byte slices; `[][]byte`. 
+Then you send and receive data that is a simple slice of byte slices; `[][]byte`. 
 In the example above, the top slice must have a length of 13.
 
 ```Go
@@ -138,8 +146,10 @@ but you could for instance also use [mmap](https://github.com/edsrzf/mmap-go) to
       data[i] := make([]byte, 50000)
     }
     
+    // The above allocations can also be done by the encoder:
+    // data := enc.(reedsolomon.Extended).AllocAligned(50000)
     
-  // Fill some data into the data shards
+    // Fill some data into the data shards
     for i, in := range data[:10] {
       for j:= range in {
          in[j] = byte((i+j)&0xff)
@@ -229,6 +239,29 @@ To join a data set, use the `Join()` function, which will join the shards and wr
    // Join a data set and write it to io.Discard.
    err = enc.Join(io.Discard, data, len(bigfile))
 ```
+
+## Aligned Allocations
+
+For AMD64 aligned inputs can make a big speed difference.
+
+This is an example of the speed difference when inputs are unaligned/aligned:
+
+```
+BenchmarkEncode100x20x10000-32    	    7058	    172648 ns/op	6950.57 MB/s
+BenchmarkEncode100x20x10000-32    	    8406	    137911 ns/op	8701.24 MB/s
+```
+
+This is mostly the case when dealing with odd-sized shards. 
+
+To facilitate this the package provides an `AllocAligned(shards, each int) [][]byte`. 
+This will allocate a number of shards, each with the size `each`.
+Each shard will then be aligned to a 64 byte boundary.
+
+Each encoder also has a `AllocAligned(each int) [][]byte` as an extended interface which will return the same, 
+but with the shard count configured in the encoder.   
+
+It is not possible to re-aligned already allocated slices, for example when using `Split`.
+When it is not possible to write to aligned shards, you should not copy to them.
 
 # Progressive encoding
 
@@ -345,6 +378,8 @@ There is no buffering or timeouts/retry specified. If you want to add that, you 
 For complete examples of a streaming encoder and decoder see the 
 [examples folder](https://github.com/klauspost/reedsolomon/tree/master/examples).
 
+GF16 (more than 256 shards) is not supported by the streaming interface. 
+
 # Advanced Options
 
 You can modify internal options which affects how jobs are split between and processed by goroutines.
@@ -358,8 +393,88 @@ Example of how to supply options:
      enc, err := reedsolomon.New(10, 3, WithMaxGoroutines(25))
  ```
 
+# Leopard Compatible GF16
+
+When you encode more than 256 shards the library will switch to a [Leopard-RS](https://github.com/catid/leopard) implementation.
+
+This allows encoding up to 65536 shards (data+parity) with the following limitations, similar to leopard:
+
+* The original and recovery data must not exceed 65536 pieces.
+* The shard size *must*  each be a multiple of 64 bytes.
+* Each buffer should have the same number of bytes.
+* Even the last shard must be rounded up to the block size.
+
+|                 | Regular | Leopard |
+|-----------------|---------|---------|
+| Encode          | ✓       | ✓       |
+| EncodeIdx       | ✓       | -       |
+| Verify          | ✓       | ✓       |
+| Reconstruct     | ✓       | ✓       |
+| ReconstructData | ✓       | ✓       |
+| ReconstructSome | ✓       | ✓ (+)   |
+| Update          | ✓       | -       |
+| Split           | ✓       | ✓       |
+| Join            | ✓       | ✓       |
+
+* (+) Same as calling `ReconstructData`.
+
+The Split/Join functions will help to split an input to the proper sizes.
+
+Speed can be expected to be `O(N*log(N))`, compared to the `O(N*N)`. 
+Reconstruction matrix calculation is more time-consuming, 
+so be sure to include that as part of any benchmark you run.  
+
+For now SSSE3, AVX2 and AVX512 assembly are available on AMD64 platforms.
+
+Leopard mode currently always runs as a single goroutine, since multiple 
+goroutines doesn't provide any worthwhile speedup.
+
+## Leopard GF8
+
+It is possible to replace the default reed-solomon encoder with a leopard compatible one.
+This will typically be faster when dealing with more than 20-30 shards.
+Note that the limitations listed above also applies to this mode. 
+See table below for speed with different number of shards.
+
+To enable Leopard GF8 mode use `WithLeopardGF(true)`.
+
+Benchmark Encoding and Reconstructing *1KB* shards with variable number of shards.
+All implementation use inversion cache when available.
+Speed is total shard size for each operation. Data shard throughput is speed/2.
+AVX2 is used.
+
+| Encoder      | Shards      | Encode         | Recover All  | Recover One    |
+|--------------|-------------|----------------|--------------|----------------|
+| Cauchy       | 4+4         | 23076.83 MB/s  | 5444.02 MB/s | 10834.67 MB/s  |
+| Cauchy       | 8+8         | 15206.87 MB/s  | 4223.42 MB/s | 16181.62  MB/s |
+| Cauchy       | 16+16       | 7427.47 MB/s   | 3305.84 MB/s | 22480.41  MB/s |
+| Cauchy       | 32+32       | 3785.64 MB/s   | 2300.07 MB/s | 26181.31  MB/s |
+| Cauchy       | 64+64       | 1911.93 MB/s   | 1368.51 MB/s | 27992.93 MB/s  |
+| Cauchy       | 128+128     | 963.83 MB/s    | 1327.56 MB/s | 32866.86 MB/s  |
+| Leopard GF8  | 4+4         | 17061.28 MB/s  | 3099.06 MB/s | 4096.78 MB/s   |
+| Leopard GF8  | 8+8         | 10546.67 MB/s  | 2925.92 MB/s | 3964.00 MB/s   |
+| Leopard GF8  | 16+16       | 10961.37  MB/s | 2328.40 MB/s | 3110.22 MB/s   |
+| Leopard GF8  | 32+32       | 7111.47 MB/s   | 2374.61 MB/s | 3220.75 MB/s   |
+| Leopard GF8  | 64+64       | 7468.57 MB/s   | 2055.41 MB/s | 3061.81 MB/s   |
+| Leopard GF8  | 128+128     | 5479.99 MB/s   | 1953.21 MB/s | 2815.15 MB/s   |
+| Leopard GF16 | 256+256     | 6158.66 MB/s   | 454.14 MB/s  | 506.70 MB/s    |
+| Leopard GF16 | 512+512     | 4418.58 MB/s   | 685.75 MB/s  | 801.63 MB/s    |
+| Leopard GF16 | 1024+1024   | 4778.05 MB/s   | 814.51 MB/s  | 1080.19 MB/s   |
+| Leopard GF16 | 2048+2048   | 3417.05 MB/s   | 911.64 MB/s  | 1179.48 MB/s   |
+| Leopard GF16 | 4096+4096   | 3209.41 MB/s   | 729.13 MB/s  | 1135.06 MB/s   |
+| Leopard GF16 | 8192+8192   | 2034.11 MB/s   | 604.52 MB/s  | 842.13 MB/s    |
+| Leopard GF16 | 16384+16384 | 1525.88 MB/s   | 486.74 MB/s  | 750.01 MB/s    |
+| Leopard GF16 | 32768+32768 | 1138.67 MB/s   | 482.81 MB/s  | 712.73 MB/s    |
+
+"Traditional" encoding is faster until somewhere between 16 and 32 shards.
+Leopard provides fast encoding in all cases, but shows a significant overhead for reconstruction.
+
+Calculating the reconstruction matrix takes a significant amount of computation. 
+With bigger shards that will be smaller. Arguably, fewer shards typically also means bigger shards.
+Due to the high shard count caching reconstruction matrices generally isn't feasible for Leopard. 
 
 # Performance
+
 Performance depends mainly on the number of parity shards. 
 In rough terms, doubling the number of parity shards will double the encoding time.
 
@@ -368,26 +483,15 @@ For reference each shard is 1MB random data, and 16 CPU cores are used for encod
 
 | Data | Parity | Go MB/s | SSSE3 MB/s | AVX2 MB/s |
 |------|--------|---------|------------|-----------|
-| 5    | 2      | 14287   | 66355      | 108755    |
-| 8    | 8      | 5569    | 34298      | 70516     |
-| 10   | 4      | 6766    | 48237      | 93875     |
-| 50   | 20     | 1540    | 12130      | 22090     |
+| 5    | 2      | 20,772  | 66,355     | 108,755   |
+| 8    | 8      | 6,815   | 38,338     | 70,516    |
+| 10   | 4      | 9,245   | 48,237     | 93,875    |
+| 50   | 20     | 2,063   | 12,130     | 22,828    |
 
 The throughput numbers here is the size of the encoded data and parity shards.
 
 If `runtime.GOMAXPROCS()` is set to a value higher than 1, 
 the encoder will use multiple goroutines to perform the calculations in `Verify`, `Encode` and `Reconstruct`.
-
-Example of performance scaling on AMD Ryzen 3950X - 16 physical cores, 32 logical cores, AVX 2.
-The example uses 10 blocks with 1MB data each and 4 parity blocks.
-
-| Threads | Speed      |
-|---------|------------|
-| 1       | 9979 MB/s  |
-| 2       | 18870 MB/s |
-| 4       | 33697 MB/s |
-| 8       | 51531 MB/s |
-| 16      | 59204 MB/s |
 
 
 Benchmarking `Reconstruct()` followed by a `Verify()` (=`all`) versus just calling `ReconstructData()` (=`data`) gives the following result:
@@ -402,22 +506,10 @@ BenchmarkReconstruct50x20x1M-8       1364.35      4189.79      3.07x
 BenchmarkReconstruct10x4x16M-8       1484.35      5779.53      3.89x
 ```
 
-# Performance on AVX512
+The package will use [GFNI](https://en.wikipedia.org/wiki/AVX-512#GFNI) instructions combined with AVX512 when these are available.
+This further improves speed by up to 3x over AVX2 code paths.
 
-The performance on AVX512 has been accelerated for Intel CPUs. 
-This gives speedups on a per-core basis typically up to 2x compared to 
-AVX2 as can be seen in the following table:
-
-```
-[...]
-```
-
-This speedup has been achieved by computing multiple parity blocks in parallel as opposed to one after the other. 
-In doing so it is possible to minimize the memory bandwidth required for loading all data shards. 
-At the same time the calculations are performed in the 512-bit wide ZMM registers and the surplus of ZMM 
-registers (32 in total) is used to keep more data around (most notably the matrix coefficients).
-
-# Performance on ARM64 NEON
+## ARM64 NEON
 
 By exploiting NEON instructions the performance for ARM has been accelerated. 
 Below are the performance numbers for a single core on an EC2 m6g.16xlarge (Graviton2) instance (Amazon Linux 2):
@@ -432,7 +524,7 @@ BenchmarkGaloisXor1M-64        10000    100322 ns/op        10452.13 MB/s
 # Performance on ppc64le
 
 The performance for ppc64le has been accelerated. 
-This gives roughly a 10x performance improvement on this architecture as can been seen below:
+This gives roughly a 10x performance improvement on this architecture as can be seen below:
 
 ```
 benchmark                      old MB/s     new MB/s     speedup
@@ -442,9 +534,6 @@ BenchmarkGaloisXor128K-160     862.02       7905.00      9.17x
 BenchmarkGaloisXor1M-160       784.60       6296.65      8.03x
 ```
 
-# asm2plan9s
-
-[asm2plan9s](https://github.com/fwessels/asm2plan9s) is used for assembling the AVX2 instructions into their BYTE/WORD/LONG equivalents.
 
 # Links
 * [Backblaze Open Sources Reed-Solomon Erasure Coding Source Code](https://www.backblaze.com/blog/reed-solomon/).
@@ -455,6 +544,7 @@ BenchmarkGaloisXor1M-160       784.60       6296.65      8.03x
 * [reed-solomon-erasure](https://github.com/darrenldl/reed-solomon-erasure). Compatible Rust implementation.
 * [go-erasure](https://github.com/somethingnew2-0/go-erasure). A similar library using cgo, slower in my tests.
 * [Screaming Fast Galois Field Arithmetic](http://www.snia.org/sites/default/files2/SDC2013/presentations/NewThinking/EthanMiller_Screaming_Fast_Galois_Field%20Arithmetic_SIMD%20Instructions.pdf). Basis for SSE3 optimizations.
+* [Leopard-RS](https://github.com/catid/leopard) C library used as basis for GF16 implementation.
 
 # License
 
