@@ -98,7 +98,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "remoteaddr, r",
 			Value: "vps:29900",
-			Usage: "kcp server address",
+			Usage: `kcp server address, eg: "IP:29900" a for single port, "IP:minport-maxport" for port range`,
 		},
 		cli.StringFlag{
 			Name:   "key",
