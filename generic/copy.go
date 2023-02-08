@@ -2,9 +2,22 @@ package generic
 
 import (
 	"io"
+	"sync"
 )
 
 const bufSize = 4096
+
+type bufCache struct {
+	data []byte
+}
+
+var (
+	bufPool = sync.Pool{
+		New: func() interface{} {
+			return &bufCache{data: make([]byte, bufSize)}
+		},
+	}
+)
 
 // Memory optimized io.Copy function specified for this library
 func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
@@ -19,6 +32,7 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 	}
 
 	// fallback to standard io.CopyBuffer
-	buf := make([]byte, bufSize)
-	return io.CopyBuffer(dst, src, buf)
+	buf := bufPool.Get().(*bufCache)
+	defer bufPool.Put(buf)
+	return io.CopyBuffer(dst, src, buf.data)
 }
