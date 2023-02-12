@@ -13,6 +13,7 @@ import (
 
 const (
 	defaultAcceptBacklog = 1024
+	maxShaperSize        = 1024
 )
 
 var (
@@ -420,8 +421,10 @@ func (s *Session) shaperLoop() {
 	var reqs shaperHeap
 	var next writeRequest
 	var chWrite chan writeRequest
+	var chShaper chan writeRequest
 
 	for {
+		// chWrite is not available until it has packet to send
 		if len(reqs) > 0 {
 			chWrite = s.writes
 			next = heap.Pop(&reqs).(writeRequest)
@@ -429,10 +432,22 @@ func (s *Session) shaperLoop() {
 			chWrite = nil
 		}
 
+		// control heap size, chShaper is not available until packets are less than maximum allowed
+		if len(reqs) >= maxShaperSize {
+			chShaper = nil
+		} else {
+			chShaper = s.shaper
+		}
+
+		// assertion on non nil
+		if chShaper == nil && chWrite == nil {
+			panic("both channel are nil")
+		}
+
 		select {
 		case <-s.die:
 			return
-		case r := <-s.shaper:
+		case r := <-chShaper:
 			if chWrite != nil { // next is valid, reshape
 				heap.Push(&reqs, next)
 			}
