@@ -14,6 +14,15 @@ import (
 const (
 	defaultAcceptBacklog = 1024
 	maxShaperSize        = 1024
+	openCloseTimeout     = 30 * time.Second // stream open/close timeout
+)
+
+// define frame class
+type CLASSID int
+
+const (
+	CLSCTRL CLASSID = iota
+	CLSDATA
 )
 
 var (
@@ -25,7 +34,7 @@ var (
 )
 
 type writeRequest struct {
-	prio   uint32
+	class  CLASSID
 	frame  Frame
 	seq    uint32
 	result chan writeResult
@@ -395,7 +404,7 @@ func (s *Session) keepalive() {
 	for {
 		select {
 		case <-tickerPing.C:
-			s.writeFrameInternal(newFrame(byte(s.config.Version), cmdNOP, 0), tickerPing.C, 0)
+			s.writeFrameInternal(newFrame(byte(s.config.Version), cmdNOP, 0), tickerPing.C, CLSCTRL)
 			s.notifyBucket() // force a signal to the recvLoop
 		case <-tickerTimeout.C:
 			if !atomic.CompareAndSwapInt32(&s.dataReady, 1, 0) {
@@ -480,11 +489,6 @@ func (s *Session) sendLoop() {
 			binary.LittleEndian.PutUint16(buf[2:], uint16(len(request.frame.data)))
 			binary.LittleEndian.PutUint32(buf[4:], request.frame.sid)
 
-			// set timeout conn
-			if tconn, ok := s.conn.(interface{ SetWriteDeadline(t time.Time) error }); ok {
-				tconn.SetWriteDeadline(time.Now().Add(s.config.KeepAliveTimeout))
-			}
-
 			if len(vec) > 0 {
 				vec[0] = buf[:headerSize]
 				vec[1] = request.frame.data
@@ -519,13 +523,13 @@ func (s *Session) sendLoop() {
 // writeFrame writes the frame to the underlying connection
 // and returns the number of bytes written if successful
 func (s *Session) writeFrame(f Frame) (n int, err error) {
-	return s.writeFrameInternal(f, time.After(s.config.KeepAliveTimeout), 0)
+	return s.writeFrameInternal(f, time.After(openCloseTimeout), CLSCTRL)
 }
 
 // internal writeFrame version to support deadline used in keepalive
-func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, prio uint32) (int, error) {
+func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, class CLASSID) (int, error) {
 	req := writeRequest{
-		prio:   prio,
+		class:  class,
 		frame:  f,
 		seq:    atomic.AddUint32(&s.requestID, 1),
 		result: make(chan writeResult, 1),
