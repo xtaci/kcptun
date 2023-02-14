@@ -36,10 +36,6 @@ type writeResult struct {
 	err error
 }
 
-type buffersWriter interface {
-	WriteBuffers(v [][]byte) (n int, err error)
-}
-
 // Session defines a multiplexed connection for streams
 type Session struct {
 	conn io.ReadWriteCloser
@@ -325,6 +321,11 @@ func (s *Session) recvLoop() {
 			}
 		}
 
+		// set timeout conn
+		if tconn, ok := s.conn.(interface{ SetReadDeadline(t time.Time) error }); ok {
+			tconn.SetReadDeadline(time.Now().Add(s.config.KeepAliveTimeout))
+		}
+
 		// read header first
 		if _, err := io.ReadFull(s.conn, hdr[:]); err == nil {
 			atomic.StoreInt32(&s.dataReady, 1)
@@ -463,7 +464,10 @@ func (s *Session) sendLoop() {
 	var err error
 	var vec [][]byte // vector for writeBuffers
 
-	bw, ok := s.conn.(buffersWriter)
+	bw, ok := s.conn.(interface {
+		WriteBuffers(v [][]byte) (n int, err error)
+	})
+
 	if ok {
 		buf = make([]byte, headerSize)
 		vec = make([][]byte, 2)
@@ -480,6 +484,11 @@ func (s *Session) sendLoop() {
 			buf[1] = request.frame.cmd
 			binary.LittleEndian.PutUint16(buf[2:], uint16(len(request.frame.data)))
 			binary.LittleEndian.PutUint32(buf[4:], request.frame.sid)
+
+			// set timeout conn
+			if tconn, ok := s.conn.(interface{ SetWriteDeadline(t time.Time) error }); ok {
+				tconn.SetWriteDeadline(time.Now().Add(s.config.KeepAliveTimeout))
+			}
 
 			if len(vec) > 0 {
 				vec[0] = buf[:headerSize]
