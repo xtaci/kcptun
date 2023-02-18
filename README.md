@@ -1,20 +1,18 @@
 # <img src="logo.png" alt="kcptun" height="54px" /> 
 
-[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2]
+[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2] 
 
-[1]: https://images.microbadger.com/badges/image/xtaci/kcptun.svg
-[2]: https://microbadger.com/images/xtaci/kcptun
+[1]: https://img.shields.io/docker/pulls/xtaci/kcptun
+[2]: https://hub.docker.com/r/xtaci/kcptun
 [3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
 [4]: https://travis-ci.org/xtaci/kcptun
 [5]: https://goreportcard.com/badge/github.com/xtaci/kcptun
 [6]: https://goreportcard.com/report/github.com/xtaci/kcptun
-[7]: https://img.shields.io/badge/license-MIT-blue.svg
-[8]: https://raw.githubusercontent.com/xtaci/kcptun/master/LICENSE.md
-[11]: https://img.shields.io/badge/license-MIT-blue.svg
+[11]: https://img.shields.io/github/license/xtaci/kcptun
 [12]: LICENSE.md
-[13]: https://img.shields.io/github/release/xtaci/kcptun.svg
+[13]: https://img.shields.io/github/v/release/xtaci/kcptun?color=orange
 [14]: https://github.com/xtaci/kcptun/releases/latest
-[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800
+[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800&color=orange
 [16]: https://github.com/xtaci/kcptun/releases
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
@@ -23,7 +21,14 @@
 
 > *Disclaimer: kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
 
-> *KCP discussion QQ group: 364933586, KCP integration, tuning, network transmission and related technical discussions.*
+### Requirements
+
+| Target | Minimum | Recommended |
+| --- | --- | --- |
+| System | aix darwin dragonfly freebsd linux netbsd openbsd solaris windows | linux |
+| Memory | >20MB | >32MB |
+| CPU | ANY | amd64 with AES-NI & AVX2 |
+
 
 ### QuickStart
 
@@ -34,25 +39,24 @@ Increase the number of open files on your server, as:
 Suggested `sysctl.conf` parameters for better handling of UDP packets:
 
 ```
-net.core.rmem_max=26214400
+net.core.rmem_max=26214400 // BDP - bandwidth delay product
 net.core.rmem_default=26214400
 net.core.wmem_max=26214400
 net.core.wmem_default=26214400
-net.core.netdev_max_backlog=2048
+net.core.netdev_max_backlog=2048 // proportional to -rcvwnd
 ```
 
 You can also increase the per-socket buffer by adding parameter(default 4MB):
 ```
 -sockbuf 16777217
 ```
-increasing this would work for most of the old model CPUs.
-
+for **slow processors**, increasing this buffer is **CRITICAL** to receive packets properly.
 
 Download a corresponding one from precompiled [Releases](https://github.com/xtaci/kcptun/releases).
 
 ```
-KCP Client: ./client_darwin_amd64 -r "KCP_SERVER_IP:4000" -l ":8388" -mode fast2
-KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast2
+KCP Client: ./client_darwin_amd64 -r "KCP_SERVER_IP:4000" -l ":8388" -mode fast3 -nocomp -autoexpire 900 -sockbuf 16777217 -dscp 46
+KCP Server: ./server_linux_amd64 -t "TARGET_IP:8388" -l ":4000" -mode fast3 -nocomp -sockbuf 16777217 -dscp 46
 ```
 The above commands will establish port forwarding channel for 8388/tcp as:
 
@@ -62,17 +66,28 @@ which tunnels the original connection:
 
 > Application -> Target Server(8388/tcp) 
 
-### Install from source
+### Build from source
 
 ```
-$go get -u github.com/xtaci/kcptun/...
+$ git clone https://github.com/xtaci/kcptun.git
+$ cd kcptun
+$ ./build-release.sh
+$ cd build
 ```
 
 All precompiled releases are genereated from `build-release.sh` script.
 
 ### Performance
 
-<img src="fast.png" alt="fast.com" height="256px" />       
+<img src="fast.png" alt="fast.com" height="256px" />  
+
+![bandwidth](bw.png)
+
+![flame](flame.png)
+
+> Practical bandwidth graph with parameters:  -mode fast3 -ds 10 -ps 3
+
+
 
 ### Basic Tuning Guide
 
@@ -91,11 +106,21 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 > eg: `-mode fast3`    
 
-> Aggresiveness/Responsiveness on retransmission for embeded modes are:
+> Aggresiveness/Responsiveness on retransmission for embedded modes are:
 
 > *fast3 > fast2 > fast > normal > default*
 
+#### HOLB
 
+Since streams are multiplexed into a single physical channel, head of line blocking may appear under certain circumstances, by
+increasing `-smuxbuf` to a larger value (default 4MB) may mitigate this problem, obviously this will costs more memory.
+
+For versions >= v20190924, you can switch to smux version 2, smux v2 has options to limit per-stream memory usage, now set `-smuxver 2` to enable smux v2, and adjust `-streambuf` to limit per-stream memory usage, eg: `-streambuf 2097152` can limit per-stream memory usage to 2MB. By limiting stream buffer on the receiver side, a back-pressure will be conducted to the sender and limits reading, and finally prevent source from sending too much data to occupy every bits of buffer along the link. (Setting -smuxver **MUST** be **IDENTICAL** on both side, default is 1. )
+
+#### Slow Devices
+
+kcptun made use of **ReedSolomon-Codes** to recover lost packets, which requires massive amount of computation, a low-end ARM device cannot satisfy kcptun well. To unleash the full potential of kcptun, a multi-core x86 homeserver CPU like AMD Opteron is recommended.
+If you insist on running under some ARM routers, you'd better turn off `FEC` and use `salsa20` as the encryption method.
 
 ### Expert Tuning Guide
 
@@ -106,18 +131,18 @@ All precompiled releases are genereated from `build-release.sh` script.
 #### Usage
 
 ```
-$ ./client_darwin_amd64 -h
+➜  ~ ./client_linux_amd64 -h
 NAME:
    kcptun - client(with SMUX)
 
 USAGE:
-   client_darwin_amd64 [global options] command [command options] [arguments...]
+   client_linux_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20180922
+   20190924
 
 COMMANDS:
-     help, h  Shows a list of commands or help for one command
+   help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
    --localaddr value, -l value      local listen address (default: ":12948")
@@ -127,7 +152,7 @@ GLOBAL OPTIONS:
    --mode value                     profiles: fast3, fast2, fast, normal, manual (default: "fast")
    --conn value                     set num of UDP connections to server (default: 1)
    --autoexpire value               set auto expiration time(in seconds) for a single UDP connection, 0 to disable (default: 0)
-   --scavengettl value              set how long an expired connection can live(in sec), -1 to disable (default: 600)
+   --scavengettl value              set how long an expired connection can live (in seconds) (default: 600)
    --mtu value                      set maximum transmission unit for UDP packets (default: 1350)
    --sndwnd value                   set send window size(num of packets) (default: 128)
    --rcvwnd value                   set receive window size(num of packets) (default: 512)
@@ -135,32 +160,36 @@ GLOBAL OPTIONS:
    --parityshard value, --ps value  set reed-solomon erasure coding - parityshard (default: 3)
    --dscp value                     set DSCP(6bit) (default: 0)
    --nocomp                         disable compression
-   --sockbuf value                  (default: 4194304)
-   --keepalive value                (default: 10)
+   --sockbuf value                  per-socket buffer in bytes (default: 4194304)
+   --smuxver value                  specify smux version, available 1,2 (default: 1)
+   --smuxbuf value                  the overall de-mux buffer in bytes (default: 4194304)
+   --streambuf value                per stream receive buffer in bytes, smux v2+ (default: 2097152)
+   --keepalive value                seconds between heartbeats (default: 10)
    --snmplog value                  collect snmp to file, aware of timeformat in golang, like: ./snmp-20060102.log
    --snmpperiod value               snmp collect period, in seconds (default: 60)
    --log value                      specify a log file to output, default goes to stderr
    --quiet                          to suppress the 'stream open/close' messages
+   --tcp                            to emulate a TCP connection(linux)
    -c value                         config from json file, which will override the command from shell
    --help, -h                       show help
    --version, -v                    print the version
-
-$ ./server_darwin_amd64 -h
+   
+➜  ~ ./server_linux_amd64 -h
 NAME:
    kcptun - server(with SMUX)
 
 USAGE:
-   server_darwin_amd64 [global options] command [command options] [arguments...]
+   server_linux_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20180922
+   20190924
 
 COMMANDS:
-     help, h  Shows a list of commands or help for one command
+   help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
    --listen value, -l value         kcp server listen address (default: ":29900")
-   --target value, -t value         target server address (default: "127.0.0.1:12948")
+   --target value, -t value         target server address, or path/to/unix_socket (default: "127.0.0.1:12948")
    --key value                      pre-shared secret between client and server (default: "it's a secrect") [$KCPTUN_KEY]
    --crypt value                    aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none (default: "aes")
    --mode value                     profiles: fast3, fast2, fast, normal, manual (default: "fast")
@@ -171,17 +200,36 @@ GLOBAL OPTIONS:
    --parityshard value, --ps value  set reed-solomon erasure coding - parityshard (default: 3)
    --dscp value                     set DSCP(6bit) (default: 0)
    --nocomp                         disable compression
-   --sockbuf value                  (default: 4194304)
-   --keepalive value                (default: 10)
+   --sockbuf value                  per-socket buffer in bytes (default: 4194304)
+   --smuxver value                  specify smux version, available 1,2 (default: 1)
+   --smuxbuf value                  the overall de-mux buffer in bytes (default: 4194304)
+   --streambuf value                per stream receive buffer in bytes, smux v2+ (default: 2097152)
+   --keepalive value                seconds between heartbeats (default: 10)
    --snmplog value                  collect snmp to file, aware of timeformat in golang, like: ./snmp-20060102.log
    --snmpperiod value               snmp collect period, in seconds (default: 60)
    --pprof                          start profiling server on :6060
    --log value                      specify a log file to output, default goes to stderr
    --quiet                          to suppress the 'stream open/close' messages
+   --tcp                            to emulate a TCP connection(linux)
    -c value                         config from json file, which will override the command from shell
    --help, -h                       show help
    --version, -v                    print the version
 ```
+
+#### Multiport Dialer
+
+kcptun supports multi-port dialer like below:
+
+```
+client: --remoteaddr IP:minport-maxport
+server: --listen IP:minport-maxport
+
+eg:
+client: --remoteaddr IP:3000-4000
+server: --listen 0.0.0.0:3000-4000
+```
+by specifying port-range, kcptun will automatically switch to next random port within port-range when establishing each new connection.
+
 
 #### Forward Error Correction
 
@@ -190,8 +238,6 @@ In coding theory, the [Reed–Solomon code](https://en.wikipedia.org/wiki/Reed%E
 It is able to detect and correct multiple symbol errors. By adding t check symbols to the data, a Reed–Solomon code can detect any combination of up to t erroneous symbols, or correct up to ⌊t/2⌋ symbols. As an erasure code, it can correct up to t known erasures, or it can detect and correct combinations of errors and erasures. Furthermore, Reed–Solomon codes are suitable as multiple-burst bit-error correcting codes, since a sequence of b + 1 consecutive bit errors can affect at most two symbols of size b. The choice of t is up to the designer of the code, and may be selected within wide limits.
 
 ![FED](FEC.png)
-
-Setting parameters of RS-Code with ```-datashard m -parityshard n``` on **BOTH** KCP Client & KCP Server **MUST** be **IDENTICAL**.
 
 #### DSCP
 
@@ -252,10 +298,16 @@ aes-128-cfb     847216.79k   850770.86k   853712.05k   859912.39k   854565.80k
 The encrytion performance in kcptun is as fast as in openssl library(if not faster).
 
 
-#### Memory Usage Control
+#### Memory Control
 
 Routers, mobile devices are susceptible to memory consumption; by setting GOGC environment(eg: GOGC=20) will make the garbage collector to recycle faster.
 Reference: https://blog.golang.org/go15gc
+
+Primary memory allocation are done from a global buffer pool *xmit.Buf*, in kcp-go, when we need to allocate some bytes, we can get from that pool, and a *fixed-capacity* 1500 bytes(mtuLimit) will be returned, the *rx queue*, *tx queue* and *fec queue* all receive bytes from there, and they will return the bytes to the pool after using to prevent *unnecessary zer0ing* of bytes. 
+The pool mechanism maintained a *high watermark* for slice objects, these *in-flight* objects from the pool will survive from the perodical garbage collection, meanwhile the pool kept the ability to return the memory to runtime if in idle, `-sndwnd`,`-rcvwnd`,`-ds`, `-ps`, these parameters affect this *high watermark*, the larger the value, the bigger the memory consumption will be.
+
+`-smuxbuf` also affects the maximum memory consumption, this parameter maintains a subtle balance between *concurrency* and *resource*, you can increase this value(default 4MB) to boost concurrency if you have many clients to serve and you get a powerful server at the same time, and also you can decrease this value to serve only 1 or 2 clients and hope this program can run under some embedded SoC system with limited memory and only you can access. (Notice that the `-smuxbuf` value is not proprotional to concurrency, you need to test.)
+
 
 #### Compression
 
@@ -277,29 +329,30 @@ Compression is enabled by default, you can disable it by setting ```-nocomp``` o
 #### SNMP
 
 ```go
-// Snmp defines network statistics indicator
 type Snmp struct {
-    BytesSent        uint64 // raw bytes sent
-    BytesReceived    uint64
-    MaxConn          uint64
-    ActiveOpens      uint64
-    PassiveOpens     uint64
-    CurrEstab        uint64 // count of connections for now
-    InErrs           uint64 // udp read errors
+    BytesSent        uint64 // bytes sent from upper level
+    BytesReceived    uint64 // bytes received to upper level
+    MaxConn          uint64 // max number of connections ever reached
+    ActiveOpens      uint64 // accumulated active open connections
+    PassiveOpens     uint64 // accumulated passive open connections
+    CurrEstab        uint64 // current number of established connections
+    InErrs           uint64 // UDP read errors reported from net.PacketConn
     InCsumErrors     uint64 // checksum errors from CRC32
-    KCPInErrors      uint64 // packet iput errors from kcp
-    InSegs           uint64
-    OutSegs          uint64
-    InBytes          uint64 // udp bytes received
-    OutBytes         uint64 // udp bytes sent
-    RetransSegs      uint64
-    FastRetransSegs  uint64
-    EarlyRetransSegs uint64
+    KCPInErrors      uint64 // packet iput errors reported from KCP
+    InPkts           uint64 // incoming packets count
+    OutPkts          uint64 // outgoing packets count
+    InSegs           uint64 // incoming KCP segments
+    OutSegs          uint64 // outgoing KCP segments
+    InBytes          uint64 // UDP bytes received
+    OutBytes         uint64 // UDP bytes sent
+    RetransSegs      uint64 // accmulated retransmited segments
+    FastRetransSegs  uint64 // accmulated fast retransmitted segments
+    EarlyRetransSegs uint64 // accmulated early retransmitted segments
     LostSegs         uint64 // number of segs infered as lost
     RepeatSegs       uint64 // number of segs duplicated
     FECRecovered     uint64 // correct packets recovered from FEC
     FECErrs          uint64 // incorrect packets recovered from FEC
-    FECSegs          uint64 // FEC segments received
+    FECParityShards  uint64 // FEC segments received
     FECShortShards   uint64 // number of data shards that's not enough for recovery
 }
 ```
@@ -317,13 +370,12 @@ Low-level KCP configuration can be altered by using manual mode like above, make
 
 ### Identical Parmeters
 
-The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
+These parameters **MUST** be **IDENTICAL** on **BOTH** side:
 
 1. -key
 1. -crypt
 1. -nocomp
-1. -datashard
-1. -parityshard
+1. -smuxver
 
 ### References
 
@@ -342,14 +394,7 @@ The parameters below **MUST** be **IDENTICAL** on **BOTH** side:
 1. http://http2.github.io/ -- What is HTTP/2?
 1. http://www.lartc.org/ -- Linux Advanced Routing & Traffic Control
 1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
-1. https://play.google.com/store/apps/details?id=com.k17game.k3 -- Battle Zone - Earth 2048, an online strategy game using kcp.
+1. https://zhuanlan.zhihu.com/p/53849089 -- kcptun开发小记
 
-### Donate 
 
-via Ethereum(ETH): Address: 0x2e4b43ab3d0983da282592571eef61ae5e60f726 , Or scan here:
-
-<img src="0x2e4b43ab3d0983da282592571eef61ae5e60f726.png" alt="kcptun" height="120px" /> 
-
-via WeChat
-
-<img src="wechat_donate.jpg" alt="kcptun" height="120px" /> 
+（注意：我没有任何社交网站的账号，请小心骗子。）

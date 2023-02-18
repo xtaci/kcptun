@@ -28,7 +28,7 @@ func (args Args) Get(key string) (value string, ok bool) {
 	return vals[0], true
 }
 
-// Append value to the list of values for key.
+// Add Append value to the list of values for key.
 func (args Args) Add(key, value string) {
 	args[key] = append(args[key], value)
 }
@@ -60,31 +60,31 @@ func indexUnescaped(s string, term []byte) (int, string, error) {
 // Parse SS_PLUGIN options from environment variables
 func parseEnv() (opts Args, err error) {
 	opts = make(Args)
-	ss_remote_host := os.Getenv("SS_REMOTE_HOST")
-	ss_remote_port := os.Getenv("SS_REMOTE_PORT")
-	ss_local_host := os.Getenv("SS_LOCAL_HOST")
-	ss_local_port := os.Getenv("SS_LOCAL_PORT")
-	if len(ss_remote_host) == 0 {
+	ssRemoteHost := os.Getenv("SS_REMOTE_HOST")
+	ssRemotePort := os.Getenv("SS_REMOTE_PORT")
+	ssLocalHost := os.Getenv("SS_LOCAL_HOST")
+	ssLocalPort := os.Getenv("SS_LOCAL_PORT")
+	if len(ssRemoteHost) == 0 {
 		return
 	}
-	if len(ss_remote_port) == 0 {
+	if len(ssRemotePort) == 0 {
 		return
 	}
-	if len(ss_local_host) == 0 {
+	if len(ssLocalHost) == 0 {
 		return
 	}
-	if len(ss_local_host) == 0 {
+	if len(ssLocalHost) == 0 {
 		return
 	}
-	opts.Add("listen", ss_remote_host+":"+ss_remote_port)
-	opts.Add("target", ss_local_host+":"+ss_local_port)
-	ss_plugin_options := os.Getenv("SS_PLUGIN_OPTIONS")
-	if len(ss_plugin_options) > 0 {
-		other_opts, err := parsePluginOptions(ss_plugin_options)
+	opts.Add("listen", ssRemoteHost+":"+ssRemotePort)
+	opts.Add("target", ssLocalHost+":"+ssLocalPort)
+	ssPluginOptions := os.Getenv("SS_PLUGIN_OPTIONS")
+	if len(ssPluginOptions) > 0 {
+		otherOpts, err := parsePluginOptions(ssPluginOptions)
 		if err != nil {
 			return nil, err
 		}
-		for k, v := range other_opts {
+		for k, v := range otherOpts {
 			opts[k] = v
 		}
 	}

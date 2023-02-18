@@ -34,7 +34,7 @@ func (args Args) Get(key string) (value string, ok bool) {
 	return vals[0], true
 }
 
-// Append value to the list of values for key.
+// Add Append value to the list of values for key.
 func (args Args) Add(key, value string) {
 	args[key] = append(args[key], value)
 }
@@ -66,31 +66,31 @@ func indexUnescaped(s string, term []byte) (int, string, error) {
 // Parse SS_PLUGIN options from environment variables
 func parseEnv() (opts Args, err error) {
 	opts = make(Args)
-	ss_remote_host := os.Getenv("SS_REMOTE_HOST")
-	ss_remote_port := os.Getenv("SS_REMOTE_PORT")
-	ss_local_host := os.Getenv("SS_LOCAL_HOST")
-	ss_local_port := os.Getenv("SS_LOCAL_PORT")
-	if len(ss_remote_host) == 0 {
+	ssRemoteHost := os.Getenv("SS_REMOTE_HOST")
+	ssRemotePort := os.Getenv("SS_REMOTE_PORT")
+	ssLocalHost := os.Getenv("SS_LOCAL_HOST")
+	ssLocalPort := os.Getenv("SS_LOCAL_PORT")
+	if len(ssRemoteHost) == 0 {
 		return
 	}
-	if len(ss_remote_port) == 0 {
+	if len(ssRemotePort) == 0 {
 		return
 	}
-	if len(ss_local_host) == 0 {
+	if len(ssLocalHost) == 0 {
 		return
 	}
-	if len(ss_local_host) == 0 {
+	if len(ssLocalHost) == 0 {
 		return
 	}
-	if isIPv6(ss_remote_host) {
-		opts.Add("remoteaddr", "["+ss_remote_host+"]:"+ss_remote_port)
+	if isIPv6(ssRemoteHost) {
+		opts.Add("remoteaddr", "["+ssRemoteHost+"]:"+ssRemotePort)
 	} else {
-		opts.Add("remoteaddr", ss_remote_host+":"+ss_remote_port)
+		opts.Add("remoteaddr", ssRemoteHost+":"+ssRemotePort)
 	}
-	if isIPv6(ss_local_host) {
-		opts.Add("localaddr", "["+ss_local_host+"]:"+ss_local_port)
+	if isIPv6(ssLocalHost) {
+		opts.Add("localaddr", "["+ssLocalHost+"]:"+ssLocalPort)
 	} else {
-		opts.Add("localaddr", ss_local_host+":"+ss_local_port)
+		opts.Add("localaddr", ssLocalHost+":"+ssLocalPort)
 	}
 	ss_plugin_options := os.Getenv("SS_PLUGIN_OPTIONS")
 	if len(ss_plugin_options) > 0 {

@@ -1,27 +1,29 @@
 问问题前先搜索ISSUE，并搞清楚下面的问题:
 
 1. 检查 ```-key xxx``` 至少三遍, ***保证***两边一致。
-2. 保证```-nocomp, -datashard, -parityshard,  -key, -crypt```两边一致。
+2. 保证```-nocomp, -datashard, -parityshard,  -key, -crypt, -smuxver```两边一致。
 3. 是否在服务器端，正确设定了转发的目标服务器地址 ***--target***。
-4. 如果第3条不确定，尝试在服务器上telnet target port试试。
-5. 防火墙是否关闭了UDP通信。
-6. 两端的版本是否一致？
-7. 是不是最新版本？
-8. 两端分别是什么操作系统？
-9. 两端的输出日志是什么？
+4. 是否在客户端，正确的连接到了 client的监听端口。
+5. 如果第3条不确定，尝试在服务器上telnet target port试试。
+6. 防火墙是否关闭了UDP通信，或者设置了UDP的最大发包速率？
+7. 两端的版本是否一致？
+8. 是不是最新版本？
+9. 两端分别是什么操作系统？
+10. 两端的输出日志是什么？
 
 Before firing issue, make sure you figured out the following common questions.
 
 PLEASE DO SEARCH FIRST.
 
 1. Check your ```-key xxx``` for at least 3 times, ***MAKE SURE*** both sides share the same secret.
-2. ```-nocomp, -datashard, -parityshard,  -key, -crypt``` ***must be the same*** on both side.
+2. ```-nocomp, -datashard, -parityshard,  -key, -crypt, -smuxver``` ***must be the same*** on both side.
 3. Did you correctly set the ***-target*** on the server side?
-4. ***MAKE SURE*** ```telnet target port``` on your server successful(don't ask me why couldn't).
-5. Does your ***firewall allows UDP*** communications? (including your ISP Cable-Modem)
-6. Are you using the **same version** for both client & server
-7. Are you using the **latest release**?
-8. Which **OS** do you use?
-9. Which end for this issue related to, **client or server**?
+4. Did you correctly connected to the listening port on client side?
+5. ***MAKE SURE*** ```telnet target port``` on your server successful(don't ask me why couldn't).
+6. Does your ***firewall allows UDP*** communications? (including your ISP Cable-Modem)
+7. Are you using the **same version** for both client & server
+8. Are you using the **latest release**?
+9. Which **OS** do you use?
+10. Which end for this issue related to, **client or server**?
 
 

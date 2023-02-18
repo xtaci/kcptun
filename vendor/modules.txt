@@ -1,0 +1,60 @@
+# github.com/coreos/go-iptables v0.4.2
+## explicit
+github.com/coreos/go-iptables/iptables
+# github.com/golang/snappy v0.0.1
+## explicit
+github.com/golang/snappy
+# github.com/google/gopacket v1.1.17
+## explicit
+github.com/google/gopacket
+github.com/google/gopacket/layers
+# github.com/klauspost/cpuid/v2 v2.0.14
+github.com/klauspost/cpuid/v2
+# github.com/klauspost/reedsolomon v1.10.0
+## explicit
+github.com/klauspost/reedsolomon
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# github.com/templexxx/cpu v0.0.7
+github.com/templexxx/cpu
+# github.com/templexxx/xorsimd v0.4.1
+github.com/templexxx/xorsimd
+# github.com/tjfoc/gmsm v1.4.1
+## explicit
+github.com/tjfoc/gmsm/sm4
+# github.com/urfave/cli v1.21.0
+## explicit
+github.com/urfave/cli
+# github.com/xtaci/kcp-go/v5 v5.6.1
+## explicit
+github.com/xtaci/kcp-go/v5
+# github.com/xtaci/smux v1.5.16
+## explicit
+github.com/xtaci/smux
+# github.com/xtaci/tcpraw v1.2.25
+## explicit
+github.com/xtaci/tcpraw
+# golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+## explicit
+golang.org/x/crypto/blowfish
+golang.org/x/crypto/cast5
+golang.org/x/crypto/internal/subtle
+golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/salsa20
+golang.org/x/crypto/salsa20/salsa
+golang.org/x/crypto/tea
+golang.org/x/crypto/twofish
+golang.org/x/crypto/xtea
+# golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
+## explicit
+golang.org/x/net/bpf
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
+# golang.org/x/sys v0.0.0-20220624220833-87e55d714810
+## explicit
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+golang.org/x/sys/windows

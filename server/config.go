@@ -25,12 +25,16 @@ type Config struct {
 	Resend       int    `json:"resend"`
 	NoCongestion int    `json:"nc"`
 	SockBuf      int    `json:"sockbuf"`
+	SmuxBuf      int    `json:"smuxbuf"`
+	StreamBuf    int    `json:"streambuf"`
+	SmuxVer      int    `json:"smuxver"`
 	KeepAlive    int    `json:"keepalive"`
 	Log          string `json:"log"`
 	SnmpLog      string `json:"snmplog"`
 	SnmpPeriod   int    `json:"snmpperiod"`
 	Pprof        bool   `json:"pprof"`
 	Quiet        bool   `json:"quiet"`
+	TCP          bool   `json:"tcp"`
 }
 
 func parseJSONConfig(config *Config, path string) error {

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build android
 // +build android
 
 package main
@@ -64,7 +65,7 @@ func lineLog(f *os.File, priority C.int) {
 	}
 }
 
-func log_init() {
+func logInit() {
 	log.SetOutput(infoWriter{})
 	// android logcat includes all of log.LstdFlags
 	log.SetFlags(log.Flags() &^ log.LstdFlags)
