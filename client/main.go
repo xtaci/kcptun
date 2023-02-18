@@ -29,7 +29,8 @@ const (
 	bufSize = 4096
 )
 
-var	VpnMode = false
+var VpnMode = false
+
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
@@ -104,10 +105,10 @@ func main() {
 			Usage: "kcp server address",
 		},
 		&cli.StringFlag{
-			Name:   "key",
-			Value:  "it's a secrect",
-			Usage:  "pre-shared secret between client and server",
-			EnvVar: "KCPTUN_KEY",
+			Name:    "key",
+			Value:   "it's a secrect",
+			Usage:   "pre-shared secret between client and server",
+			EnvVars: []string{"KCPTUN_KEY"},
 		},
 		&cli.StringFlag{
 			Name:  "crypt",
@@ -126,7 +127,7 @@ func main() {
 		},
 		&cli.IntFlag{
 			Name:  "autoexpire",
-			Value: 0,
+			Value: 10,
 			Usage: "set auto expiration time(in seconds) for a single UDP connection, 0 to disable",
 		},
 		&cli.IntFlag{
@@ -253,6 +254,7 @@ func main() {
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
+
 		config.LocalAddr = c.String("localaddr")
 		config.RemoteAddr = c.String("remoteaddr")
 		config.Key = c.String("key")

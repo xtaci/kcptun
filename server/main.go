@@ -276,6 +276,7 @@ func main() {
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
+
 		config.Listen = c.String("listen")
 		config.Target = c.String("target")
 		config.Key = c.String("key")
@@ -570,6 +571,7 @@ func main() {
 			log.Println(err)
 			return err
 		}
+		go parentMonitor(3)
 
 		// create multiple listener
 		for port := mp.MinPort; port <= mp.MaxPort; port++ {
