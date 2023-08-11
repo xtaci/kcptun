@@ -122,7 +122,7 @@ func (r *leopardFF16) Encode(shards [][]byte) error {
 func (r *leopardFF16) encode(shards [][]byte) error {
 	shardSize := shardSize(shards)
 	if shardSize%64 != 0 {
-		return ErrShardSize
+		return ErrInvalidShardSize
 	}
 
 	m := ceilPow2(r.parityShards)
@@ -409,7 +409,7 @@ func (r *leopardFF16) reconstruct(shards [][]byte, recoverAll bool) error {
 
 	shardSize := shardSize(shards)
 	if shardSize%64 != 0 {
-		return ErrShardSize
+		return ErrInvalidShardSize
 	}
 
 	m := ceilPow2(r.parityShards)

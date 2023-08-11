@@ -6,7 +6,9 @@
 
 package reedsolomon
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 const (
 	// The number of elements in the field.

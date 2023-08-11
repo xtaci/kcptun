@@ -147,6 +147,14 @@ func (m *mmapper) Munmap(data []byte) (err error) {
 	return nil
 }
 
+func Mmap(fd int, offset int64, length int, prot int, flags int) (data []byte, err error) {
+	return mapper.Mmap(fd, offset, length, prot, flags)
+}
+
+func Munmap(b []byte) (err error) {
+	return mapper.Munmap(b)
+}
+
 func Read(fd int, p []byte) (n int, err error) {
 	n, err = read(fd, p)
 	if raceenabled {
@@ -586,4 +594,11 @@ func emptyIovecs(iov []Iovec) bool {
 		}
 	}
 	return true
+}
+
+// Setrlimit sets a resource limit.
+func Setrlimit(resource int, rlim *Rlimit) error {
+	// Just call the syscall version, because as of Go 1.21
+	// it will affect starting a new process.
+	return syscall.Setrlimit(resource, (*syscall.Rlimit)(rlim))
 }

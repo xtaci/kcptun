@@ -41,9 +41,6 @@ type fecDecoder struct {
 	decodeCache [][]byte
 	flagCache   []bool
 
-	// zeros
-	zeros []byte
-
 	// RS decoder
 	codec reedsolomon.Encoder
 
@@ -68,7 +65,6 @@ func newFECDecoder(dataShards, parityShards int) *fecDecoder {
 	dec.codec = codec
 	dec.decodeCache = make([][]byte, dec.shardSize)
 	dec.flagCache = make([]bool, dec.shardSize)
-	dec.zeros = make([]byte, mtuLimit)
 	return dec
 }
 
@@ -199,7 +195,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				if shards[k] != nil {
 					dlen := len(shards[k])
 					shards[k] = shards[k][:maxlen]
-					copy(shards[k][dlen:], dec.zeros)
+					clear(shards[k][dlen:])
 				} else if k < dec.dataShards {
 					shards[k] = xmitBuf.Get().([]byte)[:0]
 				}
@@ -279,9 +275,6 @@ type (
 		shardCache  [][]byte
 		encodeCache [][]byte
 
-		// zeros
-		zeros []byte
-
 		// RS encoder
 		codec reedsolomon.Encoder
 	}
@@ -311,7 +304,6 @@ func newFECEncoder(dataShards, parityShards, offset int) *fecEncoder {
 	for k := range enc.shardCache {
 		enc.shardCache[k] = make([]byte, mtuLimit)
 	}
-	enc.zeros = make([]byte, mtuLimit)
 	return enc
 }
 
@@ -341,7 +333,7 @@ func (enc *fecEncoder) encode(b []byte) (ps [][]byte) {
 		for i := 0; i < enc.dataShards; i++ {
 			shard := enc.shardCache[i]
 			slen := len(shard)
-			copy(shard[slen:enc.maxSize], enc.zeros)
+			clear(shard[slen:enc.maxSize])
 		}
 
 		// construct equal-sized slice with stripped header

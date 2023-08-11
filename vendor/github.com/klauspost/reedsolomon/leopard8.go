@@ -134,7 +134,7 @@ func (r *leopardFF8) Encode(shards [][]byte) error {
 func (r *leopardFF8) encode(shards [][]byte) error {
 	shardSize := shardSize(shards)
 	if shardSize%64 != 0 {
-		return ErrShardSize
+		return ErrInvalidShardSize
 	}
 
 	m := ceilPow2(r.parityShards)
@@ -442,7 +442,7 @@ func (r *leopardFF8) reconstruct(shards [][]byte, recoverAll bool) error {
 
 	shardSize := shardSize(shards)
 	if shardSize%64 != 0 {
-		return ErrShardSize
+		return ErrInvalidShardSize
 	}
 
 	// Use only if we are missing less than 1/4 parity,

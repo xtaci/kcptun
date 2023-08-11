@@ -19,6 +19,12 @@ Package home: https://github.com/klauspost/cpuid
 `go get -u github.com/klauspost/cpuid/v2` using modules.
 Drop `v2` for others.
 
+Installing binary:
+
+`go install github.com/klauspost/cpuid/v2/cmd/cpuid@latest`
+
+Or download binaries from release page: https://github.com/klauspost/cpuid/releases
+
 ### Homebrew
 
 For macOS/Linux users, you can install via [brew](https://brew.sh/)
@@ -302,6 +308,7 @@ Exit Code 1
 | AVXSLOW            | Indicates the CPU performs 2 128 bit operations instead of one                                                                                                                     |
 | AVXVNNI            | AVX (VEX encoded) VNNI neural network instructions                                                                                                                                 |
 | AVXVNNIINT8        | AVX-VNNI-INT8 instructions                                                                                                                                                         |
+| BHI_CTRL           | Branch History Injection and Intra-mode Branch Target Injection / CVE-2022-0001, CVE-2022-0002 / INTEL-SA-00598                                                                    |
 | BMI1               | Bit Manipulation Instruction Set 1                                                                                                                                                 |
 | BMI2               | Bit Manipulation Instruction Set 2                                                                                                                                                 |
 | CETIBT             | Intel CET Indirect Branch Tracking                                                                                                                                                 |
@@ -355,6 +362,7 @@ Exit Code 1
 | IBS_OPFUSE         | AMD: Indicates support for IbsOpFuse                                                                                                                                               |
 | IBS_PREVENTHOST    | Disallowing IBS use by the host supported                                                                                                                                          |
 | IBS_ZEN4           | Fetch and Op IBS support IBS extensions added with Zen4                                                                                                                            |
+| IDPRED_CTRL        | IPRED_DIS                                                                                                                                                                          |
 | INT_WBINVD         | WBINVD/WBNOINVD are interruptible.                                                                                                                                                 |
 | INVLPGB            | NVLPGB and TLBSYNC instruction supported                                                                                                                                           |
 | LAHF               | LAHF/SAHF in long mode                                                                                                                                                             |
@@ -372,8 +380,9 @@ Exit Code 1
 | MOVDIRI            | Move Doubleword as Direct Store                                                                                                                                                    |
 | MOVSB_ZL           | Fast Zero-Length MOVSB                                                                                                                                                             |
 | MPX                | Intel MPX (Memory Protection Extensions)                                                                                                                                           |
-| MOVU               | MOVU SSE instructions are more efficient and should be preferred to SSE	MOVL/MOVH. MOVUPS is more efficient than MOVLPS/MOVHPS. MOVUPD is more efficient than MOVLPD/MOVHPD        |
+| MOVU               | MOVU SSE instructions are more efficient and should be preferred to SSE	MOVL/MOVH. MOVUPS is more efficient than MOVLPS/MOVHPS. MOVUPD is more efficient than MOVLPD/MOVHPD       |
 | MSRIRC             | Instruction Retired Counter MSR available                                                                                                                                          |
+| MSRLIST            | Read/Write List of Model Specific Registers                                                                                                                                        |
 | MSR_PAGEFLUSH      | Page Flush MSR available                                                                                                                                                           |
 | NRIPS              | Indicates support for NRIP save on VMEXIT                                                                                                                                          |
 | NX                 | NX (No-Execute) bit                                                                                                                                                                |
@@ -381,12 +390,13 @@ Exit Code 1
 | PCONFIG            | PCONFIG for Intel Multi-Key Total Memory Encryption                                                                                                                                |
 | POPCNT             | POPCNT instruction                                                                                                                                                                 |
 | PPIN               | AMD: Protected Processor Inventory Number support. Indicates that Protected Processor Inventory Number (PPIN) capability can be enabled                                            |
-| PREFETCHI          | PREFETCHIT0/1 instructions                                            |
-| PSFD               | AMD: Predictive Store Forward Disable                                                                                                                                              |
+| PREFETCHI          | PREFETCHIT0/1 instructions                                                                                                                                                         |
+| PSFD               | Predictive Store Forward Disable                                                                                                                                                   |
 | RDPRU              | RDPRU instruction supported                                                                                                                                                        |
 | RDRAND             | RDRAND instruction is available                                                                                                                                                    |
 | RDSEED             | RDSEED instruction is available                                                                                                                                                    |
 | RDTSCP             | RDTSCP Instruction                                                                                                                                                                 |
+| RRSBA_CTRL         | Restricted RSB Alternate                                                                                                                                                           |
 | RTM                | Restricted Transactional Memory                                                                                                                                                    |
 | RTM_ALWAYS_ABORT   | Indicates that the loaded microcode is forcing RTM abort.                                                                                                                          |
 | SERIALIZE          | Serialize Instruction Execution                                                                                                                                                    |
@@ -425,6 +435,7 @@ Exit Code 1
 | SYSCALL            | System-Call Extension (SCE): SYSCALL and SYSRET instructions.                                                                                                                      |
 | SYSEE              | SYSENTER and SYSEXIT instructions                                                                                                                                                  |
 | TBM                | AMD Trailing Bit Manipulation                                                                                                                                                      |
+| TDX_GUEST          | Intel Trust Domain Extensions Guest                                                                                                                                                |
 | TLB_FLUSH_NESTED   | AMD: Flushing includes all the nested translations for guest translations                                                                                                          |
 | TME                | Intel Total Memory Encryption. The following MSRs are supported: IA32_TME_CAPABILITY, IA32_TME_ACTIVATE, IA32_TME_EXCLUDE_MASK, and IA32_TME_EXCLUDE_BASE.                         |
 | TOPEXT             | TopologyExtensions: topology extensions support. Indicates support for CPUID Fn8000_001D_EAX_x[N:0]-CPUID Fn8000_001E_EDX.                                                         |
@@ -439,6 +450,7 @@ Exit Code 1
 | VTE                | AMD Virtual Transparent Encryption supported                                                                                                                                       |
 | WAITPKG            | TPAUSE, UMONITOR, UMWAIT                                                                                                                                                           |
 | WBNOINVD           | Write Back and Do Not Invalidate Cache                                                                                                                                             |
+| WRMSRNS            | Non-Serializing Write to Model Specific Register                                                                                                                                   |
 | X87                | FPU                                                                                                                                                                                |
 | XGETBV1            | Supports XGETBV with ECX = 1                                                                                                                                                       |
 | XOP                | Bulldozer XOP functions                                                                                                                                                            |

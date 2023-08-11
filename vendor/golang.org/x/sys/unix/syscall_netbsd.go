@@ -13,7 +13,6 @@
 package unix
 
 import (
-	"runtime"
 	"syscall"
 	"unsafe"
 )
@@ -178,13 +177,13 @@ func sendfile(outfd int, infd int, offset *int64, count int) (written int, err e
 }
 
 //sys	ioctl(fd int, req uint, arg uintptr) (err error)
+//sys	ioctlPtr(fd int, req uint, arg unsafe.Pointer) (err error) = SYS_IOCTL
 
 //sys	sysctl(mib []_C_int, old *byte, oldlen *uintptr, new *byte, newlen uintptr) (err error) = SYS___SYSCTL
 
 func IoctlGetPtmget(fd int, req uint) (*Ptmget, error) {
 	var value Ptmget
-	err := ioctl(fd, req, uintptr(unsafe.Pointer(&value)))
-	runtime.KeepAlive(value)
+	err := ioctlPtr(fd, req, unsafe.Pointer(&value))
 	return &value, err
 }
 
@@ -341,7 +340,6 @@ func Statvfs(path string, buf *Statvfs_t) (err error) {
 //sys	Setpriority(which int, who int, prio int) (err error)
 //sysnb	Setregid(rgid int, egid int) (err error)
 //sysnb	Setreuid(ruid int, euid int) (err error)
-//sysnb	Setrlimit(which int, lim *Rlimit) (err error)
 //sysnb	Setsid() (pid int, err error)
 //sysnb	Settimeofday(tp *Timeval) (err error)
 //sysnb	Setuid(uid int) (err error)
@@ -361,6 +359,18 @@ func Statvfs(path string, buf *Statvfs_t) (err error) {
 //sys	readlen(fd int, buf *byte, nbuf int) (n int, err error) = SYS_READ
 //sys	writelen(fd int, buf *byte, nbuf int) (n int, err error) = SYS_WRITE
 //sys	utimensat(dirfd int, path string, times *[2]Timespec, flags int) (err error)
+
+const (
+	mremapFixed     = MAP_FIXED
+	mremapDontunmap = 0
+	mremapMaymove   = 0
+)
+
+//sys	mremapNetBSD(oldp uintptr, oldsize uintptr, newp uintptr, newsize uintptr, flags int) (xaddr uintptr, err error) = SYS_MREMAP
+
+func mremap(oldaddr uintptr, oldlength uintptr, newlength uintptr, flags int, newaddr uintptr) (uintptr, error) {
+	return mremapNetBSD(oldaddr, oldlength, newaddr, newlength, flags)
+}
 
 /*
  * Unimplemented
@@ -502,7 +512,6 @@ func Statvfs(path string, buf *Statvfs_t) (err error) {
 // compat_43_osendmsg
 // compat_43_osethostid
 // compat_43_osethostname
-// compat_43_osetrlimit
 // compat_43_osigblock
 // compat_43_osigsetmask
 // compat_43_osigstack
@@ -567,7 +576,6 @@ func Statvfs(path string, buf *Statvfs_t) (err error) {
 // mq_timedreceive
 // mq_timedsend
 // mq_unlink
-// mremap
 // msgget
 // msgrcv
 // msgsnd
