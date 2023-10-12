@@ -45,7 +45,8 @@ type fecDecoder struct {
 	codec reedsolomon.Encoder
 
 	// auto tune fec parameter
-	autoTune autoTune
+	autoTune   autoTune
+	shouldTune bool
 }
 
 func newFECDecoder(dataShards, parityShards int) *fecDecoder {
@@ -78,18 +79,17 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 	}
 
 	// check if FEC parameters is out of sync
-	var shouldTune bool
 	if int(in.seqid())%dec.shardSize < dec.dataShards {
 		if in.flag() != typeData { // expect typeData
-			shouldTune = true
+			dec.shouldTune = true
 		}
 	} else {
 		if in.flag() != typeParity {
-			shouldTune = true
+			dec.shouldTune = true
 		}
 	}
 
-	if shouldTune {
+	if dec.shouldTune {
 		autoDS := dec.autoTune.FindPeriod(true)
 		autoPS := dec.autoTune.FindPeriod(false)
 
@@ -108,9 +108,15 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				dec.codec = codec
 				dec.decodeCache = make([][]byte, dec.shardSize)
 				dec.flagCache = make([]bool, dec.shardSize)
+				dec.shouldTune = false
 				//log.Println("autotune to :", dec.dataShards, dec.parityShards)
 			}
 		}
+	}
+
+	// parameters in tuning
+	if dec.shouldTune {
+		return nil
 	}
 
 	// insertion
