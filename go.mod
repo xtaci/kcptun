@@ -7,7 +7,7 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.5
 	github.com/xtaci/smux v1.5.24
 	github.com/xtaci/tcpraw v1.2.25
-	golang.org/x/crypto v0.14.0
+	golang.org/x/crypto v0.17.0
 )
 
 require (
@@ -21,7 +21,7 @@ require (
 	github.com/templexxx/xorsimd v0.4.2 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 )
 
 go 1.21
