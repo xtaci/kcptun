@@ -3,6 +3,7 @@ package kcp
 import (
 	"encoding/binary"
 	"sync/atomic"
+	"time"
 
 	"github.com/klauspost/reedsolomon"
 )
@@ -278,15 +279,16 @@ type (
 		payloadOffset int // FEC payload offset
 
 		// caches
-		shardCache  [][]byte
-		encodeCache [][]byte
+		shardCache     [][]byte
+		encodeCache    [][]byte
+		tsLatestPacket int64
 
 		// RS encoder
 		codec reedsolomon.Encoder
 	}
 )
 
-func newFECEncoder(dataShards, parityShards, offset int) *fecEncoder {
+func newFECEncoder(dataShards, parityShards, offset, minRTO int) *fecEncoder {
 	if dataShards <= 0 || parityShards <= 0 {
 		return nil
 	}
@@ -315,7 +317,7 @@ func newFECEncoder(dataShards, parityShards, offset int) *fecEncoder {
 
 // encodes the packet, outputs parity shards if we have collected quorum datashards
 // notice: the contents of 'ps' will be re-written in successive calling
-func (enc *fecEncoder) encode(b []byte) (ps [][]byte) {
+func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 	// The header format:
 	// | FEC SEQID(4B) | FEC TYPE(2B) | SIZE (2B) | PAYLOAD(SIZE-2) |
 	// |<-headerOffset                |<-payloadOffset
@@ -334,26 +336,30 @@ func (enc *fecEncoder) encode(b []byte) (ps [][]byte) {
 	}
 
 	//  Generation of Reed-Solomon Erasure Code
+	now := time.Now().UnixMilli()
 	if enc.shardCount == enc.dataShards {
-		// fill '0' into the tail of each datashard
-		for i := 0; i < enc.dataShards; i++ {
-			shard := enc.shardCache[i]
-			slen := len(shard)
-			clear(shard[slen:enc.maxSize])
-		}
+		// generate the rs-code only if the data is continuous.
+		if now-enc.tsLatestPacket < int64(rto) {
+			// fill '0' into the tail of each datashard
+			for i := 0; i < enc.dataShards; i++ {
+				shard := enc.shardCache[i]
+				slen := len(shard)
+				clear(shard[slen:enc.maxSize])
+			}
 
-		// construct equal-sized slice with stripped header
-		cache := enc.encodeCache
-		for k := range cache {
-			cache[k] = enc.shardCache[k][enc.payloadOffset:enc.maxSize]
-		}
+			// construct equal-sized slice with stripped header
+			cache := enc.encodeCache
+			for k := range cache {
+				cache[k] = enc.shardCache[k][enc.payloadOffset:enc.maxSize]
+			}
 
-		// encoding
-		if err := enc.codec.Encode(cache); err == nil {
-			ps = enc.shardCache[enc.dataShards:]
-			for k := range ps {
-				enc.markParity(ps[k][enc.headerOffset:])
-				ps[k] = ps[k][:enc.maxSize]
+			// encoding
+			if err := enc.codec.Encode(cache); err == nil {
+				ps = enc.shardCache[enc.dataShards:]
+				for k := range ps {
+					enc.markParity(ps[k][enc.headerOffset:])
+					ps[k] = ps[k][:enc.maxSize]
+				}
 			}
 		}
 
@@ -361,6 +367,8 @@ func (enc *fecEncoder) encode(b []byte) (ps [][]byte) {
 		enc.shardCount = 0
 		enc.maxSize = 0
 	}
+
+	enc.tsLatestPacket = now
 
 	return
 }

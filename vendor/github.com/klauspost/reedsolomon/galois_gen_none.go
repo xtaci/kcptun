@@ -1,5 +1,4 @@
 //go:build !amd64 || noasm || appengine || gccgo || nogen
-// +build !amd64 noasm appengine gccgo nogen
 
 package reedsolomon
 

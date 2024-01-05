@@ -534,6 +534,21 @@ BenchmarkGaloisXor128K-160     862.02       7905.00      9.17x
 BenchmarkGaloisXor1M-160       784.60       6296.65      8.03x
 ```
 
+# Legal
+
+> None of section below is legal advice. Seek your own legal counsel.
+> As stated by the [LICENSE](LICENSE) the authors will not be held reliable for any use of this library.
+> Users are encouraged to independently verify they comply with all legal requirements. 
+
+As can be seen in [recent news](https://www.datanami.com/2023/10/16/cloudera-hit-with-240-million-judgement-over-erasure-coding/)
+there has been lawsuits related to possible patents of aspects of erasure coding functionality.
+
+As a possible mitigation it is possible to use the tag `nopshufb` when compiling any code which includes this package.
+This will remove all inclusion and use of `PSHUFB` and equivalent on other platforms.
+
+This is done by adding `-tags=nopshufb` to `go build` and similar commands that produce binary output.
+
+The removed code may not be infringing and even after `-tags=nopshufb` there may still be infringing code left. 
 
 # Links
 * [Backblaze Open Sources Reed-Solomon Erasure Coding Source Code](https://www.backblaze.com/blog/reed-solomon/).

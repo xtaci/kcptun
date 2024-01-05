@@ -1,10 +1,11 @@
-//go:build !noasm && !appengine && !gccgo
-// +build !noasm,!appengine,!gccgo
+//go:build !noasm && !appengine && !gccgo && !nopshufb
 
 // Copyright 2015, Klaus Post, see LICENSE for details.
 // Copyright 2018, Minio, Inc.
 
 package reedsolomon
+
+const pshufb = true
 
 //go:noescape
 func galMulPpc(low, high, in, out []byte)
@@ -64,11 +65,6 @@ func galMulSliceXor(c byte, in, out []byte, o *options) {
 			out[i] ^= mt[in[i]]
 		}
 	}
-}
-
-// slice galois add
-func sliceXor(in, out []byte, o *options) {
-	sliceXorGo(in, out, o)
 }
 
 // 4-way butterfly

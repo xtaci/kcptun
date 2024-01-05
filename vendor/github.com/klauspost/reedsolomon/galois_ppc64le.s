@@ -1,6 +1,7 @@
 //+build !noasm
 //+build !appengine
 //+build !gccgo
+//+build !pshufb
 
 // Copyright 2015, Klaus Post, see LICENSE for details.
 // Copyright 2018, Minio, Inc.

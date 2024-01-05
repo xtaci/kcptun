@@ -1,11 +1,10 @@
-//go:build (!amd64 || noasm || appengine || gccgo) && (!arm64 || noasm || appengine || gccgo) && (!ppc64le || noasm || appengine || gccgo)
-// +build !amd64 noasm appengine gccgo
-// +build !arm64 noasm appengine gccgo
-// +build !ppc64le noasm appengine gccgo
+//go:build (!amd64 || noasm || appengine || gccgo) && (!arm64 || noasm || appengine || gccgo || nopshufb) && (!ppc64le || noasm || appengine || gccgo || nopshufb)
 
 // Copyright 2015, Klaus Post, see LICENSE for details.
 
 package reedsolomon
+
+const pshufb = false
 
 func galMulSlice(c byte, in, out []byte, o *options) {
 	out = out[:len(in)]
@@ -29,11 +28,6 @@ func galMulSliceXor(c byte, in, out []byte, o *options) {
 	for n, input := range in {
 		out[n] ^= mt[input]
 	}
-}
-
-// simple slice xor
-func sliceXor(in, out []byte, o *options) {
-	sliceXorGo(in, out, o)
 }
 
 func init() {
