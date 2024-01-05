@@ -288,7 +288,7 @@ type (
 	}
 )
 
-func newFECEncoder(dataShards, parityShards, offset, minRTO int) *fecEncoder {
+func newFECEncoder(dataShards, parityShards, offset int) *fecEncoder {
 	if dataShards <= 0 || parityShards <= 0 {
 		return nil
 	}

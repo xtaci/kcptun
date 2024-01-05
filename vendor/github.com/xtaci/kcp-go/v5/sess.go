@@ -154,9 +154,9 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 	// FEC codec initialization
 	sess.fecDecoder = newFECDecoder(dataShards, parityShards)
 	if sess.block != nil {
-		sess.fecEncoder = newFECEncoder(dataShards, parityShards, cryptHeaderSize, IKCP_RTO_DEF)
+		sess.fecEncoder = newFECEncoder(dataShards, parityShards, cryptHeaderSize)
 	} else {
-		sess.fecEncoder = newFECEncoder(dataShards, parityShards, 0, IKCP_RTO_DEF)
+		sess.fecEncoder = newFECEncoder(dataShards, parityShards, 0)
 	}
 
 	// calculate additional header size introduced by FEC and encryption
