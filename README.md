@@ -29,6 +29,8 @@
 | Memory | >20MB | >32MB |
 | CPU | ANY | amd64 with AES-NI & AVX2 |
 
+*NOTE: if you are using kvm, make sure the guest os can do AES instructions*
+<img src="https://github.com/xtaci/kcptun/assets/2346725/9358e8e5-2a4a-4be9-9859-62f1aaa553b0" alt="cpuinfo" height="400px"/>
 
 ### QuickStart
 
