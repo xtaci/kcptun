@@ -1,14 +1,12 @@
 package smux
 
 import (
-	"errors"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
-var (
-	defaultAllocator *Allocator
-	debruijinPos     = [...]byte{0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30, 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31}
-)
+var defaultAllocator *Allocator
 
 func init() {
 	defaultAllocator = NewAllocator()
@@ -60,13 +58,12 @@ func (alloc *Allocator) Put(buf []byte) error {
 }
 
 // msb return the pos of most significiant bit
-// http://supertech.csail.mit.edu/papers/debruijn.pdf
-func msb(size int) byte {
-	v := uint32(size)
-	v |= v >> 1
-	v |= v >> 2
-	v |= v >> 4
-	v |= v >> 8
-	v |= v >> 16
-	return debruijinPos[(v*0x07C4ACDD)>>27]
+func msb(size int) uint16 {
+	var pos uint16
+	size >>= 1
+	for size > 0 {
+		size >>= 1
+		pos++
+	}
+	return pos
 }
