@@ -5,7 +5,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli v1.22.14
 	github.com/xtaci/kcp-go/v5 v5.6.8
-	github.com/xtaci/smux v1.5.24
+	github.com/xtaci/smux v2.0.1+incompatible
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.21.0
 )

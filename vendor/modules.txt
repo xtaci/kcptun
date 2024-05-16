@@ -38,8 +38,8 @@ github.com/urfave/cli
 # github.com/xtaci/kcp-go/v5 v5.6.8
 ## explicit; go 1.21
 github.com/xtaci/kcp-go/v5
-# github.com/xtaci/smux v1.5.24
-## explicit; go 1.13
+# github.com/xtaci/smux v2.0.1+incompatible
+## explicit
 github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.25
 ## explicit
