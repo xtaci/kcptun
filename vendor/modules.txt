@@ -44,7 +44,7 @@ github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.25
 ## explicit
 github.com/xtaci/tcpraw
-# golang.org/x/crypto v0.21.0
+# golang.org/x/crypto v0.23.0
 ## explicit; go 1.18
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
@@ -62,7 +62,7 @@ golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
-# golang.org/x/sys v0.18.0
+# golang.org/x/sys v0.20.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
