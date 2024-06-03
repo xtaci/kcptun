@@ -1,5 +1,6 @@
 FROM golang:1.21.0-alpine3.18 as builder
 MAINTAINER xtaci <daniel820313@gmail.com>
+LABEL org.opencontainers.image.source=https://github.com/xtaci/kcptun
 ENV GO111MODULE=on
 RUN apk add git
 RUN git clone https://github.com/xtaci/kcptun.git
