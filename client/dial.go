@@ -11,8 +11,8 @@ import (
 	"github.com/xtaci/tcpraw"
 )
 
-func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
-	mp, err := generic.ParseMultiPort(config.RemoteAddr)
+func dial(config *Config, block kcp.BlockCrypt, idx uint16) (*kcp.UDPSession, error) {
+	mp, err := generic.ParseMultiPort(config.RemoteAddr[idx])
 	if err != nil {
 		return nil, err
 	}
