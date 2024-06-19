@@ -462,10 +462,10 @@ func main() {
 		go scavenger(chScavenger, &config)
 
 		// start listener
-		numconn := uint16(config.Conn)
+		rlen := (uint16)(len(config.RemoteAddr))
+		numconn := uint16(config.Conn * int(rlen))
 		muxes := make([]timedSession, numconn)
 		rr := uint16(0)
-		rlen := (uint16)(len(config.RemoteAddr))
 		for {
 			p1, err := listener.Accept()
 			if err != nil {
