@@ -3,6 +3,8 @@
         "target": "127.0.0.1:9999",
         "key": "PASSWORD",
         "crypt": "aes-128",
+        "qpp":true,
+        "qpp-count":64,
         "mode": "fast3",
         "mtu": 1400,
         "sndwnd": 2048,

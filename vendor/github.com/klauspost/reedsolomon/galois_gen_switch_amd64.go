@@ -14,687 +14,686 @@ const (
 	maxAvx2Inputs  = 10
 	maxAvx2Outputs = 10
 	minAvx2Size    = 64
-	avxSizeMask    = maxInt - (minAvx2Size - 1)
 )
 
 func galMulSlicesAvx2(matrix []byte, in, out [][]byte, start, stop int) int {
-	n := (stop - start) & avxSizeMask
+	n := stop - start
 
 	switch len(in) {
 	case 1:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_1x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_1x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_1x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_1x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_1x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_1x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_1x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_1x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_1x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_1x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 2:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_2x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_2x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_2x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_2x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_2x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_2x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_2x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_2x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_2x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_2x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 3:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_3x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_3x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_3x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_3x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_3x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_3x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_3x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_3x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_3x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_3x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 4:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_4x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_4x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_4x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_4x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_4x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_4x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_4x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_4x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_4x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_4x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 5:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_5x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_5x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_5x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_5x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_5x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_5x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_5x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_5x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_5x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_5x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 6:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_6x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_6x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_6x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_6x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_6x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_6x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_6x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_6x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_6x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_6x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 7:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_7x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_7x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_7x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_7x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_7x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_7x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_7x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_7x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_7x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_7x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 8:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_8x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_8x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_8x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_8x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_8x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_8x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_8x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_8x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_8x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_8x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 9:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_9x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_9x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_9x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_9x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_9x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_9x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_9x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_9x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_9x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_9x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 10:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_10x1_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_10x2_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_10x3_64(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_10x4(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_10x5(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_10x6(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_10x7(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_10x8(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_10x9(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_10x10(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	}
 	panic(fmt.Sprintf("unhandled size: %dx%d", len(in), len(out)))
 }
 
 func galMulSlicesAvx2Xor(matrix []byte, in, out [][]byte, start, stop int) int {
-	n := (stop - start) & avxSizeMask
+	n := (stop - start)
 
 	switch len(in) {
 	case 1:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_1x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_1x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_1x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_1x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_1x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_1x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_1x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_1x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_1x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_1x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 2:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_2x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_2x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_2x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_2x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_2x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_2x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_2x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_2x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_2x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_2x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 3:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_3x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_3x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_3x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_3x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_3x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_3x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_3x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_3x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_3x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_3x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 4:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_4x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_4x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_4x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_4x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_4x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_4x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_4x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_4x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_4x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_4x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 5:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_5x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_5x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_5x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_5x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_5x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_5x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_5x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_5x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_5x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_5x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 6:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_6x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_6x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_6x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_6x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_6x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_6x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_6x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_6x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_6x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_6x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 7:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_7x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_7x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_7x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_7x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_7x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_7x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_7x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_7x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_7x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_7x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 8:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_8x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_8x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_8x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_8x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_8x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_8x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_8x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_8x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_8x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_8x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 9:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_9x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_9x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_9x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_9x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_9x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_9x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_9x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_9x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_9x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_9x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	case 10:
 		switch len(out) {
 		case 1:
 			mulAvxTwo_10x1_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 2:
 			mulAvxTwo_10x2_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 3:
 			mulAvxTwo_10x3_64Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 63)
 		case 4:
 			mulAvxTwo_10x4Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 5:
 			mulAvxTwo_10x5Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 6:
 			mulAvxTwo_10x6Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 7:
 			mulAvxTwo_10x7Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 8:
 			mulAvxTwo_10x8Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 9:
 			mulAvxTwo_10x9Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		case 10:
 			mulAvxTwo_10x10Xor(matrix, in, out, start, n)
-			return n
+			return n & (maxInt - 31)
 		}
 	}
 	panic(fmt.Sprintf("unhandled size: %dx%d", len(in), len(out)))
 }
 
 func galMulSlicesGFNI(matrix []uint64, in, out [][]byte, start, stop int) int {
-	n := (stop - start) & avxSizeMask
+	n := (stop - start) & (maxInt - (64 - 1))
 
 	switch len(in) {
 	case 1:
@@ -1032,7 +1031,7 @@ func galMulSlicesGFNI(matrix []uint64, in, out [][]byte, start, stop int) int {
 }
 
 func galMulSlicesGFNIXor(matrix []uint64, in, out [][]byte, start, stop int) int {
-	n := (stop - start) & avxSizeMask
+	n := (stop - start) & (maxInt - (64 - 1))
 
 	switch len(in) {
 	case 1:
@@ -1363,6 +1362,682 @@ func galMulSlicesGFNIXor(matrix []uint64, in, out [][]byte, start, stop int) int
 			return n
 		case 10:
 			mulGFNI_10x10_64Xor(matrix, in, out, start, n)
+			return n
+		}
+	}
+	panic(fmt.Sprintf("unhandled size: %dx%d", len(in), len(out)))
+}
+
+func galMulSlicesAvxGFNI(matrix []uint64, in, out [][]byte, start, stop int) int {
+	n := (stop - start) & (maxInt - (32 - 1))
+
+	switch len(in) {
+	case 1:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_1x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_1x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_1x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_1x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_1x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_1x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_1x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_1x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_1x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_1x10(matrix, in, out, start, n)
+			return n
+		}
+	case 2:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_2x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_2x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_2x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_2x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_2x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_2x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_2x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_2x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_2x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_2x10(matrix, in, out, start, n)
+			return n
+		}
+	case 3:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_3x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_3x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_3x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_3x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_3x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_3x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_3x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_3x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_3x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_3x10(matrix, in, out, start, n)
+			return n
+		}
+	case 4:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_4x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_4x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_4x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_4x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_4x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_4x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_4x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_4x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_4x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_4x10(matrix, in, out, start, n)
+			return n
+		}
+	case 5:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_5x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_5x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_5x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_5x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_5x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_5x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_5x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_5x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_5x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_5x10(matrix, in, out, start, n)
+			return n
+		}
+	case 6:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_6x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_6x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_6x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_6x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_6x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_6x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_6x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_6x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_6x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_6x10(matrix, in, out, start, n)
+			return n
+		}
+	case 7:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_7x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_7x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_7x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_7x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_7x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_7x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_7x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_7x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_7x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_7x10(matrix, in, out, start, n)
+			return n
+		}
+	case 8:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_8x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_8x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_8x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_8x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_8x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_8x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_8x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_8x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_8x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_8x10(matrix, in, out, start, n)
+			return n
+		}
+	case 9:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_9x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_9x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_9x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_9x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_9x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_9x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_9x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_9x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_9x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_9x10(matrix, in, out, start, n)
+			return n
+		}
+	case 10:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_10x1(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_10x2(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_10x3(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_10x4(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_10x5(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_10x6(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_10x7(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_10x8(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_10x9(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_10x10(matrix, in, out, start, n)
+			return n
+		}
+	}
+	panic(fmt.Sprintf("unhandled size: %dx%d", len(in), len(out)))
+}
+
+func galMulSlicesAvxGFNIXor(matrix []uint64, in, out [][]byte, start, stop int) int {
+	n := (stop - start) & (maxInt - (32 - 1))
+
+	switch len(in) {
+	case 1:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_1x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_1x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_1x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_1x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_1x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_1x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_1x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_1x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_1x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_1x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 2:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_2x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_2x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_2x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_2x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_2x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_2x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_2x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_2x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_2x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_2x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 3:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_3x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_3x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_3x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_3x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_3x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_3x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_3x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_3x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_3x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_3x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 4:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_4x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_4x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_4x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_4x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_4x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_4x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_4x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_4x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_4x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_4x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 5:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_5x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_5x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_5x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_5x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_5x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_5x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_5x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_5x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_5x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_5x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 6:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_6x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_6x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_6x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_6x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_6x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_6x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_6x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_6x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_6x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_6x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 7:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_7x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_7x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_7x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_7x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_7x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_7x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_7x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_7x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_7x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_7x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 8:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_8x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_8x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_8x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_8x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_8x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_8x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_8x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_8x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_8x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_8x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 9:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_9x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_9x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_9x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_9x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_9x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_9x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_9x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_9x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_9x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_9x10Xor(matrix, in, out, start, n)
+			return n
+		}
+	case 10:
+		switch len(out) {
+		case 1:
+			mulAvxGFNI_10x1Xor(matrix, in, out, start, n)
+			return n
+		case 2:
+			mulAvxGFNI_10x2Xor(matrix, in, out, start, n)
+			return n
+		case 3:
+			mulAvxGFNI_10x3Xor(matrix, in, out, start, n)
+			return n
+		case 4:
+			mulAvxGFNI_10x4Xor(matrix, in, out, start, n)
+			return n
+		case 5:
+			mulAvxGFNI_10x5Xor(matrix, in, out, start, n)
+			return n
+		case 6:
+			mulAvxGFNI_10x6Xor(matrix, in, out, start, n)
+			return n
+		case 7:
+			mulAvxGFNI_10x7Xor(matrix, in, out, start, n)
+			return n
+		case 8:
+			mulAvxGFNI_10x8Xor(matrix, in, out, start, n)
+			return n
+		case 9:
+			mulAvxGFNI_10x9Xor(matrix, in, out, start, n)
+			return n
+		case 10:
+			mulAvxGFNI_10x10Xor(matrix, in, out, start, n)
 			return n
 		}
 	}

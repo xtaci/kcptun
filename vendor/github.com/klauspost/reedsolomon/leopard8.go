@@ -369,7 +369,10 @@ func (r *leopardFF8) Split(data []byte) ([][]byte, error) {
 }
 
 func (r *leopardFF8) ReconstructSome(shards [][]byte, required []bool) error {
-	return r.ReconstructData(shards)
+	if len(required) == r.totalShards {
+		return r.reconstruct(shards, true)
+	}
+	return r.reconstruct(shards, false)
 }
 
 func (r *leopardFF8) Reconstruct(shards [][]byte) error {
