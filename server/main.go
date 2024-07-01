@@ -38,7 +38,7 @@ const (
 var VERSION = "SELFBUILD"
 
 // handle multiplex-ed connection
-func handleMux(conn net.Conn, config *Config, seed []byte) {
+func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config, seed []byte) {
 	// check if target is unix domain socket
 	var isUnix bool
 	if _, _, err := net.SplitHostPort(config.Target); err != nil {
@@ -59,12 +59,6 @@ func handleMux(conn net.Conn, config *Config, seed []byte) {
 		return
 	}
 	defer mux.Close()
-
-	// create shared QPP
-	var _Q_ *qpp.QuantumPermutationPad
-	if config.QPP {
-		_Q_ = qpp.NewQPP(seed, uint16(config.QPPCount), QUBIT)
-	}
 
 	for {
 		stream, err := mux.AcceptStream()
@@ -475,6 +469,12 @@ func main() {
 			go http.ListenAndServe(":6060", nil)
 		}
 
+		// create shared QPP
+		var _Q_ *qpp.QuantumPermutationPad
+		if config.QPP {
+			_Q_ = qpp.NewQPP(pass, uint16(config.QPPCount), QUBIT)
+		}
+
 		// main loop
 		var wg sync.WaitGroup
 		loop := func(lis *kcp.Listener) {
@@ -500,9 +500,9 @@ func main() {
 					conn.SetACKNoDelay(config.AckNodelay)
 
 					if config.NoComp {
-						go handleMux(conn, &config, pass)
+						go handleMux(_Q_, conn, &config, pass)
 					} else {
-						go handleMux(generic.NewCompStream(conn), &config, pass)
+						go handleMux(_Q_, generic.NewCompStream(conn), &config, pass)
 					}
 				} else {
 					log.Printf("%+v", err)
