@@ -16,6 +16,7 @@ const PM_SELECTOR_IDENTIFIER = "PERMUTATION_MATRIX_SELECTOR"
 const SHUFFLE_SALT = "___QUANTUM_PERMUTATION_PAD_SHUFFLE_SALT___"
 const PRNG_SALT = "___QUANTUM_PERMUTATION_PAD_PRNG_SALT___"
 const NATIVE_BYTE_LENGTH = 8 // bit
+const PBKDF2_LOOPS = 128
 
 type QuantumPermutationPad struct {
 	pads  [][]byte // encryption
@@ -48,7 +49,7 @@ func NewQPP(seed []byte, numPads uint16, qubits uint8) *QuantumPermutationPad {
 	mac := hmac.New(sha256.New, seed)
 	mac.Write([]byte(PM_SELECTOR_IDENTIFIER))
 	sum := mac.Sum(nil)
-	dk := pbkdf2.Key(sum, []byte(PRNG_SALT), 4096, 8, sha1.New)
+	dk := pbkdf2.Key(sum, []byte(PRNG_SALT), PBKDF2_LOOPS, 8, sha1.New)
 
 	encSource := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))
 	qpp.encRand = rand.New(encSource)
@@ -102,7 +103,7 @@ func shuffle(seed []byte, pad []byte, padID uint16) {
 	sum := mac.Sum(nil)
 
 	// condense entropy to 8 bytes
-	dk := pbkdf2.Key(sum, []byte(SHUFFLE_SALT), 4096, 8, sha1.New)
+	dk := pbkdf2.Key(sum, []byte(SHUFFLE_SALT), PBKDF2_LOOPS, 8, sha1.New)
 	source := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))
 	rand.New(source).Shuffle(len(pad), func(i, j int) {
 		pad[i], pad[j] = pad[j], pad[i]
