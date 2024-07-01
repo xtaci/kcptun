@@ -301,7 +301,7 @@ The encrytion performance in kcptun is as fast as in openssl library(if not fast
 
 #### Quantum Resistance
 Quantum Resistance, also known as quantum-secure, post-quantum, or quantum-safe cryptography, refers to cryptographic algorithms that can withstand potential code-breaking attempts by quantum computer.
-In kcptun, after v20240701, it adapts [QPP](https://github.com/xtaci/qpp) based on [Kuangs's Quantum Permutation Pad](https://epjquantumtechnology.springeropen.com/articles/10.1140/epjqt/s40507-022-00145-y) for quantum-resistent communication.
+In kcptun, after v20240701, it adapts [QPP](https://github.com/xtaci/qpp) based on [Kuang's Quantum Permutation Pad](https://epjquantumtechnology.springeropen.com/articles/10.1140/epjqt/s40507-022-00145-y) for quantum-resistent communication.
 ![da824f7919f70dd1dfa3be9d2302e4e0](https://github.com/xtaci/kcptun/assets/2346725/7894f5e3-6134-4582-a9fe-e78494d2e417)
 
 To enable QPP in kcptun, you need to set: 
