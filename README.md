@@ -249,7 +249,7 @@ DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit dif
 
 setting each side with ```-dscp value```, Here are some [Commonly used DSCP values](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values).
 
-#### Cryptanalysis
+#### Cryptoanalysis
 
 kcptun is shipped with builtin packet encryption powered by various block encryption algorithms and works in [Cipher Feedback Mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)), for each packet to be sent, the encryption process will start from encrypting a [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) from the [system entropy](https://en.wikipedia.org/wiki//dev/random), so encryption to same plaintexts never leads to a same ciphertexts thereafter.
 
@@ -299,6 +299,22 @@ aes-128-cfb     847216.79k   850770.86k   853712.05k   859912.39k   854565.80k
 
 The encrytion performance in kcptun is as fast as in openssl library(if not faster).
 
+#### Quantum Resistance
+Quantum Resistance, also known as quantum-secure, post-quantum, or quantum-safe cryptography, refers to cryptographic algorithms that can withstand potential code-breaking attempts by quantum computer.
+In kcptun, after v20240701, it adapts [QPP](https://github.com/xtaci/qpp) based on [Kuangs's Quantum Permutation Pad](https://epjquantumtechnology.springeropen.com/articles/10.1140/epjqt/s40507-022-00145-y) for quantum-resistent communication.
+![da824f7919f70dd1dfa3be9d2302e4e0](https://github.com/xtaci/kcptun/assets/2346725/7894f5e3-6134-4582-a9fe-e78494d2e417)
+
+To enable QPP in kcptun, you need to set: 
+```
+   --QPP                Enable Quantum Permutation Pad for universal quantum-safe cryptography, based on classic cryptography
+   --QPPCount value     Number of pads to use for QPP, the more the pads, the more secure, one pad costs 256 bytes (default: 64)
+```
+Your could also specify
+```json
+     "qpp":true,
+     "qpp-count":64,
+```
+in your client and server side json file. These 2 parameters must be identical on both sides.
 
 #### Memory Control
 
