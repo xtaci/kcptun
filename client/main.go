@@ -72,7 +72,7 @@ func handleClient(session *smux.Session, p1 net.Conn, quiet bool) {
 }
 
 // same as above, but handles quantum permutation pads
-func handleQPPClient(seed []byte, numPads uint16, session *smux.Session, p1 net.Conn, quiet bool) {
+func handleQPPClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -91,9 +91,9 @@ func handleQPPClient(seed []byte, numPads uint16, session *smux.Session, p1 net.
 	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
 
 	// copy from net.Conn, QPP-encrypt and send to session
-	_Q_ := qpp.NewQPP(seed, numPads, QUBIT)
 	go func() {
 		buf := make([]byte, bufSize)
+		prng := _Q_.CreatePRNG(seed)
 		for {
 			n, err := p1.Read(buf)
 			if err != nil {
@@ -102,7 +102,7 @@ func handleQPPClient(seed []byte, numPads uint16, session *smux.Session, p1 net.
 			}
 
 			// QPP-encrypt
-			_Q_.Encrypt(buf[:n])
+			_Q_.EncryptWithPRNG(buf[:n], prng)
 			if _, err = p2.Write(buf[:n]); err != nil {
 				p2.Close()
 				return
@@ -112,6 +112,7 @@ func handleQPPClient(seed []byte, numPads uint16, session *smux.Session, p1 net.
 
 	// copy from stream, QPP-decrypt and send to net.Conn
 	buf := make([]byte, bufSize)
+	prng := _Q_.CreatePRNG(seed)
 	for {
 		n, err := p2.Read(buf)
 		if err != nil {
@@ -120,7 +121,7 @@ func handleQPPClient(seed []byte, numPads uint16, session *smux.Session, p1 net.
 		}
 
 		// QPP-encrypt
-		_Q_.Decrypt(buf[:n])
+		_Q_.DecryptWithPRNG(buf[:n], prng)
 		if _, err = p1.Write(buf[:n]); err != nil {
 			p1.Close()
 			return
@@ -537,6 +538,13 @@ func main() {
 		numconn := uint16(config.Conn)
 		muxes := make([]timedSession, numconn)
 		rr := uint16(0)
+
+		// create shared QPP
+		var _Q_ *qpp.QuantumPermutationPad
+		if config.QPP {
+			_Q_ = qpp.NewQPP(pass, uint16(config.QPPCount), QUBIT)
+		}
+
 		for {
 			p1, err := listener.Accept()
 			if err != nil {
@@ -557,7 +565,7 @@ func main() {
 			if !config.QPP {
 				go handleClient(muxes[idx].session, p1, config.Quiet)
 			} else {
-				go handleQPPClient(pass, uint16(config.QPPCount), muxes[idx].session, p1, config.Quiet)
+				go handleQPPClient(_Q_, pass, muxes[idx].session, p1, config.Quiet)
 			}
 			rr++
 		}

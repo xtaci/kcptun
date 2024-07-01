@@ -60,6 +60,12 @@ func handleMux(conn net.Conn, config *Config, seed []byte) {
 	}
 	defer mux.Close()
 
+	// create shared QPP
+	var _Q_ *qpp.QuantumPermutationPad
+	if config.QPP {
+		_Q_ = qpp.NewQPP(seed, uint16(config.QPPCount), QUBIT)
+	}
+
 	for {
 		stream, err := mux.AcceptStream()
 		if err != nil {
@@ -84,7 +90,7 @@ func handleMux(conn net.Conn, config *Config, seed []byte) {
 			if !config.QPP {
 				handleClient(p1, p2, config.Quiet)
 			} else {
-				handleQPPClient(seed, uint16(config.QPPCount), p1, p2, config.Quiet)
+				handleQPPClient(_Q_, seed, p1, p2, config.Quiet)
 			}
 		}(stream)
 	}
@@ -119,7 +125,7 @@ func handleClient(p1 *smux.Stream, p2 net.Conn, quiet bool) {
 }
 
 // same as above, but handles quantum permutation pads
-func handleQPPClient(seed []byte, numPads uint16, p1 *smux.Stream, p2 net.Conn, quiet bool) {
+func handleQPPClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -133,9 +139,9 @@ func handleQPPClient(seed []byte, numPads uint16, p1 *smux.Stream, p2 net.Conn, 
 	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
 
 	// copy from net.Conn, QPP-encrypt and send to session
-	_Q_ := qpp.NewQPP(seed, numPads, QUBIT)
 	go func() {
 		buf := make([]byte, bufSize)
+		prng := _Q_.CreatePRNG(seed)
 		for {
 			n, err := p2.Read(buf)
 			if err != nil {
@@ -144,7 +150,7 @@ func handleQPPClient(seed []byte, numPads uint16, p1 *smux.Stream, p2 net.Conn, 
 			}
 
 			// QPP-encrypt
-			_Q_.Encrypt(buf[:n])
+			_Q_.EncryptWithPRNG(buf[:n], prng)
 			if _, err = p1.Write(buf[:n]); err != nil {
 				p1.Close()
 				return
@@ -154,6 +160,7 @@ func handleQPPClient(seed []byte, numPads uint16, p1 *smux.Stream, p2 net.Conn, 
 
 	// copy from stream, QPP-decrypt and send to net.Conn
 	buf := make([]byte, bufSize)
+	prng := _Q_.CreatePRNG(seed)
 	for {
 		n, err := p1.Read(buf)
 		if err != nil {
@@ -162,7 +169,7 @@ func handleQPPClient(seed []byte, numPads uint16, p1 *smux.Stream, p2 net.Conn, 
 		}
 
 		// QPP-encrypt
-		_Q_.Decrypt(buf[:n])
+		_Q_.DecryptWithPRNG(buf[:n], prng)
 		if _, err = p2.Write(buf[:n]); err != nil {
 			p2.Close()
 			return

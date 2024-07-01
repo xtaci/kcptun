@@ -45,21 +45,13 @@ func NewQPP(seed []byte, numPads uint16, qubits uint8) *QuantumPermutationPad {
 		reverse(qpp.pads[i], qpp.rpads[i])
 	}
 
-	// condense entropy from seed to 8 bytes
-	mac := hmac.New(sha256.New, seed)
-	mac.Write([]byte(PM_SELECTOR_IDENTIFIER))
-	sum := mac.Sum(nil)
-	dk := pbkdf2.Key(sum, []byte(PRNG_SALT), PBKDF2_LOOPS, 8, sha1.New)
-
-	encSource := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))
-	qpp.encRand = rand.New(encSource)
-	decSource := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))
-	qpp.decRand = rand.New(decSource)
+	qpp.encRand = qpp.CreatePRNG(seed)
+	qpp.decRand = qpp.CreatePRNG(seed)
 
 	return qpp
 }
 
-// Encrypt encrypts data using the Quantum Permutation Pad
+// Encrypt encrypts data using the Quantum Permutation Pad with default PRNG
 func (qpp *QuantumPermutationPad) Encrypt(data []byte) {
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
@@ -72,6 +64,7 @@ func (qpp *QuantumPermutationPad) Encrypt(data []byte) {
 	}
 }
 
+// Decrypt decrypts data using the Quantum Permutation Pad with default PRNG
 func (qpp *QuantumPermutationPad) Decrypt(data []byte) {
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
@@ -84,14 +77,55 @@ func (qpp *QuantumPermutationPad) Decrypt(data []byte) {
 	}
 }
 
+// CreatePRNG creates a deterministic pseudo-random number generator based on seed provided
+func (qpp *QuantumPermutationPad) CreatePRNG(seed []byte) *rand.Rand {
+	// condense entropy from seed to 8 bytes
+	mac := hmac.New(sha256.New, seed)
+	mac.Write([]byte(PM_SELECTOR_IDENTIFIER))
+	sum := mac.Sum(nil)
+	dk := pbkdf2.Key(sum, []byte(PRNG_SALT), PBKDF2_LOOPS, 8, sha1.New)
+	source := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))
+	return rand.New(source)
+}
+
+// EncryptWithPRNG encrypts data using the Quantum Permutation Pad with PRNG
+//
+//	this function shares the same P-matrices
+func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *rand.Rand) {
+	switch qpp.qubits {
+	case NATIVE_BYTE_LENGTH:
+		for i := 0; i < len(data); i++ {
+			index := rand.Uint32() % uint32(qpp.numPads)
+			pad := qpp.pads[index]
+			data[i] = pad[data[i]]
+		}
+	default:
+	}
+}
+
+// DecryptWithPRNG decrypts data using the Quantum Permutation Pad with PRNG
+//
+//	this function shares the same P-matrices
+func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *rand.Rand) {
+	switch qpp.qubits {
+	case NATIVE_BYTE_LENGTH:
+		for i := 0; i < len(data); i++ {
+			index := rand.Uint32() % uint32(qpp.numPads)
+			rpad := qpp.rpads[index]
+			data[i] = rpad[data[i]]
+		}
+	default:
+	}
+}
+
 func fill(pad []byte) {
-	for i := 0; i < 256; i++ {
+	for i := 0; i < len(pad); i++ {
 		pad[i] = byte(i)
 	}
 }
 
 func reverse(pad []byte, rpad []byte) {
-	for i := 0; i < 256; i++ {
+	for i := 0; i < len(pad); i++ {
 		rpad[pad[i]] = byte(i)
 	}
 }
