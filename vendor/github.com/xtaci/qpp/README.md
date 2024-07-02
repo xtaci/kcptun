@@ -36,6 +36,49 @@ The [Quantum Permutation Pad](https://link.springer.com/content/pdf/10.1140/epjq
 - **Future-Proof**: As quantum computers become more powerful, classical cryptographic schemes (like RSA and ECC) are at risk. QPP provides a quantum-resistant alternative.
 - **Secure Communication**: Useful for secure communications in quantum networks and for safeguarding highly sensitive data.
 
+## Examples
+The count of Permutation Matrics in 8-qubit, it's been randomly selected from based on the seed provided.
+<img width="1191" alt="图片" src="https://github.com/xtaci/qpp/assets/2346725/c6112ef6-9f09-4214-bf5c-e8820e39e527">
+
+
+## Usage
+```golang
+Internal PRNG:
+
+func main() {
+    seed := make([]byte, 32)
+    io.ReadFull(rand.Reader, seed)
+
+    qpp := NewQPP(seed, 1024, 8)
+
+    msg := make([]byte, 65536)
+    io.ReadFull(rand.Reader, msg)
+
+    qpp.Encrypt(msg)
+    qpp.Decrypt(msg)
+}
+```
+
+```golang
+External PRNG:
+
+func main() {
+    seed := make([]byte, 32)
+    io.ReadFull(rand.Reader, seed)
+
+    qpp := NewQPP(seed, 1024, 8)
+
+    msg := make([]byte, 65536)
+    io.ReadFull(rand.Reader, msg)
+
+    rand_enc := qpp.CreatePRNG(seed)
+    rand_dec := qpp.CreatePRNG(seed)
+
+    qpp.EncryptWithPRNG(msg, rand_enc)
+    qpp.DecryptWithPRNG(msg, rand_dec)
+}
+```
+
 ## Conclusion
 
 The Quantum Permutation Pad is a promising approach in the field of quantum cryptography, utilizing quantum mechanical properties to achieve secure communication. By applying quantum permutations to encrypt and decrypt data, QPP ensures high security and leverages the unique capabilities of quantum technology. As research and technology in quantum computing and quantum communication advance, protocols like QPP will play a crucial role in the next generation of secure communication systems.
