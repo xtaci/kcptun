@@ -56,9 +56,10 @@ func (qpp *QuantumPermutationPad) Encrypt(data []byte) {
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
 		for i := 0; i < len(data); i++ {
-			index := qpp.encRand.Uint32() % uint32(qpp.numPads)
+			rand := qpp.encRand.Uint32()
+			index := rand % uint32(qpp.numPads)
 			pad := qpp.pads[index]
-			data[i] = pad[data[i]]
+			data[i] = pad[data[i]^byte(rand&0xFF)]
 		}
 	default:
 	}
@@ -69,9 +70,10 @@ func (qpp *QuantumPermutationPad) Decrypt(data []byte) {
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
 		for i := 0; i < len(data); i++ {
-			index := qpp.decRand.Uint32() % uint32(qpp.numPads)
+			rand := qpp.encRand.Uint32()
+			index := rand % uint32(qpp.numPads)
 			rpad := qpp.rpads[index]
-			data[i] = rpad[data[i]]
+			data[i] = rpad[data[i]] ^ byte(rand&0xFF)
 		}
 	default:
 	}
@@ -95,9 +97,10 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *rand.Rand) 
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
 		for i := 0; i < len(data); i++ {
-			index := rand.Uint32() % uint32(qpp.numPads)
+			rand := rand.Uint32()
+			index := rand % uint32(qpp.numPads)
 			pad := qpp.pads[index]
-			data[i] = pad[data[i]]
+			data[i] = pad[data[i]^byte(rand&0xFF)]
 		}
 	default:
 	}
@@ -110,9 +113,10 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *rand.Rand) 
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
 		for i := 0; i < len(data); i++ {
-			index := rand.Uint32() % uint32(qpp.numPads)
+			rand := rand.Uint32()
+			index := rand % uint32(qpp.numPads)
 			rpad := qpp.rpads[index]
-			data[i] = rpad[data[i]]
+			data[i] = rpad[data[i]] ^ byte(rand&0xFF)
 		}
 	default:
 	}
