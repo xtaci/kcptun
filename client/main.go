@@ -424,6 +424,18 @@ func main() {
 		log.Println("tcp:", config.TCP)
 		log.Println("pprof:", config.Pprof)
 
+		if config.QPP {
+			minSeedLength := qpp.QPPMinimumSeedLength(8)
+			if len(config.Key) < minSeedLength {
+				log.Println("QPP Warning: key size %d, required %d bytes at least", len(config.Key), minSeedLength)
+			}
+
+			minPads := qpp.QPPMinimumPads(8)
+			if config.QPPCount < minPads {
+				log.Println("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
+			}
+		}
+
 		// parameters check
 		if config.SmuxVer > maxSmuxVer {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
@@ -542,7 +554,7 @@ func main() {
 		// create shared QPP
 		var _Q_ *qpp.QuantumPermutationPad
 		if config.QPP {
-			_Q_ = qpp.NewQPP(pass, uint16(config.QPPCount), QUBIT)
+			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount), QUBIT)
 		}
 
 		for {
@@ -565,7 +577,7 @@ func main() {
 			if !config.QPP {
 				go handleClient(muxes[idx].session, p1, config.Quiet)
 			} else {
-				go handleQPPClient(_Q_, pass, muxes[idx].session, p1, config.Quiet)
+				go handleQPPClient(_Q_, []byte(config.Key), muxes[idx].session, p1, config.Quiet)
 			}
 			rr++
 		}

@@ -38,7 +38,7 @@ const (
 var VERSION = "SELFBUILD"
 
 // handle multiplex-ed connection
-func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config, seed []byte) {
+func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	// check if target is unix domain socket
 	var isUnix bool
 	if _, _, err := net.SplitHostPort(config.Target); err != nil {
@@ -84,7 +84,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config, se
 			if !config.QPP {
 				handleClient(p1, p2, config.Quiet)
 			} else {
-				handleQPPClient(_Q_, seed, p1, p2, config.Quiet)
+				handleQPPClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
 			}
 		}(stream)
 	}
@@ -423,6 +423,17 @@ func main() {
 		log.Println("quiet:", config.Quiet)
 		log.Println("tcp:", config.TCP)
 
+		if config.QPP {
+			minSeedLength := qpp.QPPMinimumSeedLength(8)
+			if len(config.Key) < minSeedLength {
+				log.Println("QPP Warning: key size %d, required %d bytes at least", len(config.Key), minSeedLength)
+			}
+
+			minPads := qpp.QPPMinimumPads(8)
+			if config.QPPCount < minPads {
+				log.Println("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
+			}
+		}
 		// parameters check
 		if config.SmuxVer > maxSmuxVer {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
@@ -472,7 +483,7 @@ func main() {
 		// create shared QPP
 		var _Q_ *qpp.QuantumPermutationPad
 		if config.QPP {
-			_Q_ = qpp.NewQPP(pass, uint16(config.QPPCount), QUBIT)
+			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount), QUBIT)
 		}
 
 		// main loop
@@ -500,9 +511,9 @@ func main() {
 					conn.SetACKNoDelay(config.AckNodelay)
 
 					if config.NoComp {
-						go handleMux(_Q_, conn, &config, pass)
+						go handleMux(_Q_, conn, &config)
 					} else {
-						go handleMux(_Q_, generic.NewCompStream(conn), &config, pass)
+						go handleMux(_Q_, generic.NewCompStream(conn), &config)
 					}
 				} else {
 					log.Printf("%+v", err)
