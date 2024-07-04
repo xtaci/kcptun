@@ -8,7 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
-	"math/rand"
+	"math/rand/v2"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -24,6 +24,12 @@ const (
 	CHUNK_DERIVE_SALT      = "___QUANTUM_PERMUTATION_PAD_SEED_DERIVE___"
 	CHUNK_DERIVE_LOOPS     = 1024
 )
+
+type Source uint64
+
+func (s Source) Uint64() uint64 {
+	return uint64(s)
+}
 
 // QuantumPermutationPad represents the encryption/decryption structure using quantum permutation pads
 // QPP is a cryptographic technique that leverages quantum-inspired permutation matrices to provide secure encryption.
@@ -106,8 +112,9 @@ func (qpp *QuantumPermutationPad) CreatePRNG(seed []byte) *rand.Rand {
 	mac.Write([]byte(PM_SELECTOR_IDENTIFIER))
 	sum := mac.Sum(nil)
 	dk := pbkdf2.Key(sum, []byte(PRNG_SALT), PBKDF2_LOOPS, 8, sha1.New) // Derive a key for PRNG
-	source := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))     // Create random source
-	return rand.New(source)                                             // Create and return PRNG
+	//source := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))     // Create random source
+	//return rand.New(source) // Create and return PRNG
+	return rand.New(Source(binary.LittleEndian.Uint64(dk)))
 }
 
 // EncryptWithPRNG encrypts the data using the Quantum Permutation Pad with a custom PRNG

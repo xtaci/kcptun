@@ -36,10 +36,13 @@ The [Quantum Permutation Pad](https://link.springer.com/content/pdf/10.1140/epjq
 - **Future-Proof**: As quantum computers become more powerful, classical cryptographic schemes (like RSA and ECC) are at risk. QPP provides a quantum-resistant alternative.
 - **Secure Communication**: Useful for secure communications in quantum networks and for safeguarding highly sensitive data.
 
-## Examples
-The count of Permutation Matrics in 8-qubit, it's been randomly selected from based on the seed provided.
-<img width="1191" alt="图片" src="https://github.com/xtaci/qpp/assets/2346725/c6112ef6-9f09-4214-bf5c-e8820e39e527">
+## Security design in this implementatoin
+The overall security is equivalent to **1680-bit** symmetric encryption, with each **BYTE** possessing a cryptographic strength of 256 bits.
 
+The number of permutation matrices in an 8-qubit system is determined based on the provided seed and is selected randomly.
+<img width="1108" alt="image" src="https://github.com/xtaci/qpp/assets/2346725/21686542-2e94-44e0-8607-557986b4ac7b">
+
+Try directly from https://github.com/xtaci/kcptun/releases with the ```-QPP``` option enabled.
 
 ## Usage
 ```golang
