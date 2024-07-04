@@ -1,7 +1,7 @@
 问问题前先搜索ISSUE，并搞清楚下面的问题:
 
 1. 检查 ```-key xxx``` 至少三遍, ***保证***两边一致。
-2. 保证```-nocomp, -datashard, -parityshard,  -key, -crypt, -smuxver```两边一致。
+2. 保证```-nocomp, -datashard, -parityshard,  -key, -crypt, -smuxver, -QPP -QPPCount```两边一致。
 3. 是否在服务器端，正确设定了转发的目标服务器地址 ***--target***。
 4. 是否在客户端，正确的连接到了 client的监听端口。
 5. 如果第3条不确定，尝试在服务器上telnet target port试试。
@@ -16,7 +16,7 @@ Before firing issue, make sure you figured out the following common questions.
 PLEASE DO SEARCH FIRST.
 
 1. Check your ```-key xxx``` for at least 3 times, ***MAKE SURE*** both sides share the same secret.
-2. ```-nocomp, -datashard, -parityshard,  -key, -crypt, -smuxver``` ***must be the same*** on both side.
+2. ```-nocomp, -datashard, -parityshard,  -key, -crypt, -smuxver, -QPP -QPPCount``` ***must be the same*** on both side.
 3. Did you correctly set the ***-target*** on the server side?
 4. Did you correctly connected to the listening port on client side?
 5. ***MAKE SURE*** ```telnet target port``` on your server successful(don't ask me why couldn't).

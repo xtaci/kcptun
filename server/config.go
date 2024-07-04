@@ -35,6 +35,8 @@ type Config struct {
 	Pprof        bool   `json:"pprof"`
 	Quiet        bool   `json:"quiet"`
 	TCP          bool   `json:"tcp"`
+	QPP          bool   `json:"qpp"`
+	QPPCount     int    `json:"qpp-count"`
 }
 
 func parseJSONConfig(config *Config, path string) error {

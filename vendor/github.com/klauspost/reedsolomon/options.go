@@ -2,6 +2,7 @@ package reedsolomon
 
 import (
 	"runtime"
+	"strings"
 
 	"github.com/klauspost/cpuid/v2"
 )
@@ -15,15 +16,21 @@ type options struct {
 	shardSize     int
 	perRound      int
 
-	useGFNI, useAVX512, useAVX2, useSSSE3, useSSE2 bool
-	useJerasureMatrix                              bool
-	usePAR1Matrix                                  bool
-	useCauchy                                      bool
-	fastOneParity                                  bool
-	inversionCache                                 bool
-	forcedInversionCache                           bool
-	customMatrix                                   [][]byte
-	withLeopard                                    leopardMode
+	useAvxGNFI,
+	useAvx512GFNI,
+	useAVX512,
+	useAVX2,
+	useSSSE3,
+	useSSE2 bool
+
+	useJerasureMatrix    bool
+	usePAR1Matrix        bool
+	useCauchy            bool
+	fastOneParity        bool
+	inversionCache       bool
+	forcedInversionCache bool
+	customMatrix         [][]byte
+	withLeopard          leopardMode
 
 	// stream options
 	concReads  bool
@@ -38,11 +45,12 @@ var defaultOptions = options{
 	inversionCache: true,
 
 	// Detect CPU capabilities.
-	useSSSE3:  cpuid.CPU.Supports(cpuid.SSSE3),
-	useSSE2:   cpuid.CPU.Supports(cpuid.SSE2),
-	useAVX2:   cpuid.CPU.Supports(cpuid.AVX2),
-	useAVX512: cpuid.CPU.Supports(cpuid.AVX512F, cpuid.AVX512BW, cpuid.AVX512VL),
-	useGFNI:   cpuid.CPU.Supports(cpuid.AVX512F, cpuid.GFNI, cpuid.AVX512DQ),
+	useSSSE3:      cpuid.CPU.Supports(cpuid.SSSE3),
+	useSSE2:       cpuid.CPU.Supports(cpuid.SSE2),
+	useAVX2:       cpuid.CPU.Supports(cpuid.AVX2),
+	useAVX512:     cpuid.CPU.Supports(cpuid.AVX512F, cpuid.AVX512BW, cpuid.AVX512VL),
+	useAvx512GFNI: cpuid.CPU.Supports(cpuid.AVX512F, cpuid.GFNI, cpuid.AVX512DQ),
+	useAvxGNFI:    cpuid.CPU.Supports(cpuid.AVX, cpuid.GFNI),
 }
 
 // leopardMode controls the use of leopard GF in encoding and decoding.
@@ -159,10 +167,14 @@ func WithSSSE3(enabled bool) Option {
 }
 
 // WithAVX2 allows to enable/disable AVX2 instructions.
-// If not set, AVX2 will be turned on or off automatically based on CPU ID information.
+// If not set, AVX will be turned on or off automatically based on CPU ID information.
+// This will also disable AVX GFNI instructions.
 func WithAVX2(enabled bool) Option {
 	return func(o *options) {
 		o.useAVX2 = enabled
+		if o.useAvxGNFI {
+			o.useAvxGNFI = enabled
+		}
 	}
 }
 
@@ -178,7 +190,7 @@ func WithSSE2(enabled bool) Option {
 func WithAVX512(enabled bool) Option {
 	return func(o *options) {
 		o.useAVX512 = enabled
-		o.useGFNI = enabled
+		o.useAvx512GFNI = enabled
 	}
 }
 
@@ -186,7 +198,15 @@ func WithAVX512(enabled bool) Option {
 // If not set, GFNI will be turned on or off automatically based on CPU ID information.
 func WithGFNI(enabled bool) Option {
 	return func(o *options) {
-		o.useGFNI = enabled
+		o.useAvx512GFNI = enabled
+	}
+}
+
+// WithAVXGFNI allows to enable/disable GFNI with AVX instructions.
+// If not set, GFNI will be turned on or off automatically based on CPU ID information.
+func WithAVXGFNI(enabled bool) Option {
+	return func(o *options) {
+		o.useAvxGNFI = enabled
 	}
 }
 
@@ -274,4 +294,30 @@ func WithLeopardGF(enabled bool) Option {
 			o.withLeopard = leopardAsNeeded
 		}
 	}
+}
+
+func (o *options) cpuOptions() string {
+	var res []string
+	if o.useSSE2 {
+		res = append(res, "SSE2")
+	}
+	if o.useAVX2 {
+		res = append(res, "AVX2")
+	}
+	if o.useSSSE3 {
+		res = append(res, "SSSE3")
+	}
+	if o.useAVX512 {
+		res = append(res, "AVX512")
+	}
+	if o.useAvx512GFNI {
+		res = append(res, "AVX512+GFNI")
+	}
+	if o.useAvxGNFI {
+		res = append(res, "AVX+GFNI")
+	}
+	if len(res) == 0 {
+		return "pure Go"
+	}
+	return strings.Join(res, ",")
 }

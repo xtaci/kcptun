@@ -18,6 +18,7 @@ import (
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/kcptun/generic"
+	"github.com/xtaci/qpp"
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
 )
@@ -29,13 +30,15 @@ const (
 	maxSmuxVer = 2
 	// stream copy buffer size
 	bufSize = 4096
+	// quantum bits
+	QUBIT = 8
 )
 
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
 // handle multiplex-ed connection
-func handleMux(conn net.Conn, config *Config) {
+func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	// check if target is unix domain socket
 	var isUnix bool
 	if _, _, err := net.SplitHostPort(config.Target); err != nil {
@@ -78,7 +81,11 @@ func handleMux(conn net.Conn, config *Config) {
 				p1.Close()
 				return
 			}
-			handleClient(p1, p2, config.Quiet)
+			if !config.QPP {
+				handleClient(p1, p2, config.Quiet)
+			} else {
+				handleQPPClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
+			}
 		}(stream)
 	}
 }
@@ -109,6 +116,59 @@ func handleClient(p1 *smux.Stream, p2 net.Conn, quiet bool) {
 
 	go streamCopy(p2, p1)
 	streamCopy(p1, p2)
+}
+
+// same as above, but handles quantum permutation pads
+func handleQPPClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool) {
+	logln := func(v ...interface{}) {
+		if !quiet {
+			log.Println(v...)
+		}
+	}
+
+	defer p1.Close()
+	defer p2.Close()
+
+	logln("stream opened", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
+	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
+
+	// copy from net.Conn, QPP-encrypt and send to session
+	go func() {
+		buf := make([]byte, bufSize)
+		prng := _Q_.CreatePRNG(seed)
+		for {
+			n, err := p2.Read(buf)
+			if err != nil {
+				p2.Close()
+				return
+			}
+
+			// QPP-encrypt
+			_Q_.EncryptWithPRNG(buf[:n], prng)
+			if _, err = p1.Write(buf[:n]); err != nil {
+				p1.Close()
+				return
+			}
+		}
+	}()
+
+	// copy from stream, QPP-decrypt and send to net.Conn
+	buf := make([]byte, bufSize)
+	prng := _Q_.CreatePRNG(seed)
+	for {
+		n, err := p1.Read(buf)
+		if err != nil {
+			p1.Close()
+			return
+		}
+
+		// QPP-encrypt
+		_Q_.DecryptWithPRNG(buf[:n], prng)
+		if _, err = p2.Write(buf[:n]); err != nil {
+			p2.Close()
+			return
+		}
+	}
 }
 
 func checkError(err error) {
@@ -151,6 +211,16 @@ func main() {
 			Value: "aes",
 			Usage: "aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none, null",
 		},
+		cli.BoolFlag{
+			Name:  "QPP",
+			Usage: "Enable Quantum Permutation Pad for universal quantum-safe cryptography, based on classic cryptography",
+		},
+		cli.IntFlag{
+			Name:  "QPPCount",
+			Value: 64,
+			Usage: "Number of pads to use for QPP, the more the pads, the more secure, one pad costs 256 bytes",
+		},
+
 		cli.StringFlag{
 			Name:  "mode",
 			Value: "fast",
@@ -303,6 +373,8 @@ func main() {
 		config.Pprof = c.Bool("pprof")
 		config.Quiet = c.Bool("quiet")
 		config.TCP = c.Bool("tcp")
+		config.QPP = c.Bool("QPP")
+		config.QPPCount = c.Int("QPPCount")
 
 		if c.String("c") != "" {
 			//Now only support json config file
@@ -351,6 +423,17 @@ func main() {
 		log.Println("quiet:", config.Quiet)
 		log.Println("tcp:", config.TCP)
 
+		if config.QPP {
+			minSeedLength := qpp.QPPMinimumSeedLength(8)
+			if len(config.Key) < minSeedLength {
+				log.Printf("QPP Warning: 'key' has size of %d bytes, required %d bytes at least", len(config.Key), minSeedLength)
+			}
+
+			minPads := qpp.QPPMinimumPads(8)
+			if config.QPPCount < minPads {
+				log.Printf("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
+			}
+		}
 		// parameters check
 		if config.SmuxVer > maxSmuxVer {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
@@ -397,6 +480,12 @@ func main() {
 			go http.ListenAndServe(":6060", nil)
 		}
 
+		// create shared QPP
+		var _Q_ *qpp.QuantumPermutationPad
+		if config.QPP {
+			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount), QUBIT)
+		}
+
 		// main loop
 		var wg sync.WaitGroup
 		loop := func(lis *kcp.Listener) {
@@ -422,9 +511,9 @@ func main() {
 					conn.SetACKNoDelay(config.AckNodelay)
 
 					if config.NoComp {
-						go handleMux(conn, &config)
+						go handleMux(_Q_, conn, &config)
 					} else {
-						go handleMux(generic.NewCompStream(conn), &config)
+						go handleMux(_Q_, generic.NewCompStream(conn), &config)
 					}
 				} else {
 					log.Printf("%+v", err)

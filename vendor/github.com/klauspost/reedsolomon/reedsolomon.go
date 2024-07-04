@@ -77,11 +77,12 @@ type Encoder interface {
 	// calling the Verify function is likely to fail.
 	ReconstructData(shards [][]byte) error
 
-	// ReconstructSome will recreate only requested data shards, if possible.
+	// ReconstructSome will recreate only requested shards, if possible.
 	//
 	// Given a list of shards, some of which contain data, fills in the
-	// data shards indicated by true values in the "required" parameter.
-	// The length of "required" array must be equal to DataShards.
+	// shards indicated by true values in the "required" parameter.
+	// The length of the "required" array must be equal to either Shards or DataShards.
+	// If the length is equal to DataShards, the reconstruction of parity shards will be ignored.
 	//
 	// The length of "shards" array must be equal to Shards.
 	// You indicate that a shard is missing by setting it to nil or zero-length.
@@ -652,12 +653,12 @@ func (r *reedSolomon) EncodeIdx(dataShard []byte, idx int, parity [][]byte) erro
 		return ErrShardSize
 	}
 
-	if avx2CodeGen && len(dataShard) >= r.o.perRound && len(parity) >= avx2CodeGenMinShards && ((pshufb && r.o.useAVX2) || r.o.useGFNI) {
+	if avx2CodeGen && len(dataShard) >= r.o.perRound && len(parity) >= avx2CodeGenMinShards && ((pshufb && r.o.useAVX2) || r.o.useAvx512GFNI || r.o.useAvxGNFI) {
 		m := make([][]byte, r.parityShards)
 		for iRow := range m {
 			m[iRow] = r.parity[iRow][idx : idx+1]
 		}
-		if r.o.useGFNI {
+		if r.o.useAvx512GFNI || r.o.useAvxGNFI {
 			r.codeSomeShardsGFNI(m, [][]byte{dataShard}, parity, len(dataShard), false)
 		} else {
 			r.codeSomeShardsAVXP(m, [][]byte{dataShard}, parity, len(dataShard), false)
@@ -809,7 +810,7 @@ func (r *reedSolomon) canAVX2C(byteCount int, inputs, outputs int) bool {
 }
 
 func (r *reedSolomon) canGFNI(byteCount int, inputs, outputs int) bool {
-	return avx2CodeGen && r.o.useGFNI &&
+	return avx2CodeGen && (r.o.useAvx512GFNI || r.o.useAvxGNFI) &&
 		byteCount >= avx2CodeGenMinSize && inputs+outputs >= avx2CodeGenMinShards &&
 		inputs <= maxAvx2Inputs && outputs <= maxAvx2Outputs
 }
@@ -840,7 +841,11 @@ func (r *reedSolomon) codeSomeShards(matrixRows, inputs, outputs [][]byte, byteC
 	if r.canGFNI(byteCount, len(inputs), len(outputs)) {
 		var gfni [maxAvx2Inputs * maxAvx2Outputs]uint64
 		m := genGFNIMatrix(matrixRows, len(inputs), 0, len(outputs), gfni[:])
-		start += galMulSlicesGFNI(m, inputs, outputs, 0, byteCount)
+		if r.o.useAvx512GFNI {
+			start += galMulSlicesGFNI(m, inputs, outputs, 0, byteCount)
+		} else {
+			start += galMulSlicesAvxGFNI(m, inputs, outputs, 0, byteCount)
+		}
 		end = len(inputs[0])
 	} else if r.canAVX2C(byteCount, len(inputs), len(outputs)) {
 		m := genAvx2Matrix(matrixRows, len(inputs), 0, len(outputs), r.getTmpSlice())
@@ -866,22 +871,28 @@ func (r *reedSolomon) codeSomeShards(matrixRows, inputs, outputs [][]byte, byteC
 				if len(outPer) > maxAvx2Outputs {
 					outPer = outPer[:maxAvx2Outputs]
 				}
-				if r.o.useGFNI {
+				if r.o.useAvx512GFNI {
 					m := genGFNIMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), gfni[:])
 					if inIdx == 0 {
-						galMulSlicesGFNI(m, inPer, outPer, 0, byteCount)
+						start = galMulSlicesGFNI(m, inPer, outPer, 0, byteCount)
 					} else {
-						galMulSlicesGFNIXor(m, inPer, outPer, 0, byteCount)
+						start = galMulSlicesGFNIXor(m, inPer, outPer, 0, byteCount)
+					}
+				} else if r.o.useAvxGNFI {
+					m := genGFNIMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), gfni[:])
+					if inIdx == 0 {
+						start = galMulSlicesAvxGFNI(m, inPer, outPer, 0, byteCount)
+					} else {
+						start = galMulSlicesAvxGFNIXor(m, inPer, outPer, 0, byteCount)
 					}
 				} else {
 					m = genAvx2Matrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), m)
 					if inIdx == 0 {
-						galMulSlicesAvx2(m, inPer, outPer, 0, byteCount)
+						start = galMulSlicesAvx2(m, inPer, outPer, 0, byteCount)
 					} else {
-						galMulSlicesAvx2Xor(m, inPer, outPer, 0, byteCount)
+						start = galMulSlicesAvx2Xor(m, inPer, outPer, 0, byteCount)
 					}
 				}
-				start = byteCount & avxSizeMask
 				outIdx += len(outPer)
 				outs = outs[len(outPer):]
 			}
@@ -927,7 +938,7 @@ func (r *reedSolomon) codeSomeShardsP(matrixRows, inputs, outputs [][]byte, byte
 	} else if useAvx2 {
 		avx2Matrix = genAvx2Matrix(matrixRows, len(inputs), 0, len(outputs), r.getTmpSlice())
 		defer r.putTmpSlice(avx2Matrix)
-	} else if r.o.useGFNI && byteCount < 10<<20 && len(inputs)+len(outputs) > avx2CodeGenMinShards &&
+	} else if (r.o.useAvx512GFNI || r.o.useAvxGNFI) && byteCount < 10<<20 && len(inputs)+len(outputs) > avx2CodeGenMinShards &&
 		r.canGFNI(byteCount/4, maxAvx2Inputs, maxAvx2Outputs) {
 		// It appears there is a switchover point at around 10MB where
 		// Regular processing is faster...
@@ -949,7 +960,11 @@ func (r *reedSolomon) codeSomeShardsP(matrixRows, inputs, outputs [][]byte, byte
 	exec := func(start, stop int) {
 		if stop-start >= 64 {
 			if useGFNI {
-				start += galMulSlicesGFNI(gfniMatrix, inputs, outputs, start, stop)
+				if r.o.useAvx512GFNI {
+					start += galMulSlicesGFNI(gfniMatrix, inputs, outputs, start, stop)
+				} else {
+					start += galMulSlicesAvxGFNI(gfniMatrix, inputs, outputs, start, stop)
+				}
 			} else if useAvx2 {
 				start += galMulSlicesAvx2(avx2Matrix, inputs, outputs, start, stop)
 			}
@@ -1098,14 +1113,15 @@ func (r *reedSolomon) codeSomeShardsAVXP(matrixRows, inputs, outputs [][]byte, b
 		for lstart < stop {
 			if lstop-lstart >= minAvx2Size {
 				// Execute plan...
+				var n int
 				for _, p := range plan {
 					if p.first {
-						galMulSlicesAvx2(p.m, p.input, p.output, lstart, lstop)
+						n = galMulSlicesAvx2(p.m, p.input, p.output, lstart, lstop)
 					} else {
-						galMulSlicesAvx2Xor(p.m, p.input, p.output, lstart, lstop)
+						n = galMulSlicesAvx2Xor(p.m, p.input, p.output, lstart, lstop)
 					}
 				}
-				lstart += (lstop - lstart) & avxSizeMask
+				lstart += n
 				if lstart == lstop {
 					lstop += r.o.perRound
 					if lstop > stop {
@@ -1247,14 +1263,25 @@ func (r *reedSolomon) codeSomeShardsGFNI(matrixRows, inputs, outputs [][]byte, b
 		for lstart < stop {
 			if lstop-lstart >= minAvx2Size {
 				// Execute plan...
-				for _, p := range plan {
-					if p.first {
-						galMulSlicesGFNI(p.m, p.input, p.output, lstart, lstop)
-					} else {
-						galMulSlicesGFNIXor(p.m, p.input, p.output, lstart, lstop)
+				var n int
+				if r.o.useAvx512GFNI {
+					for _, p := range plan {
+						if p.first {
+							n = galMulSlicesGFNI(p.m, p.input, p.output, lstart, lstop)
+						} else {
+							n = galMulSlicesGFNIXor(p.m, p.input, p.output, lstart, lstop)
+						}
+					}
+				} else {
+					for _, p := range plan {
+						if p.first {
+							n = galMulSlicesAvxGFNI(p.m, p.input, p.output, lstart, lstop)
+						} else {
+							n = galMulSlicesAvxGFNIXor(p.m, p.input, p.output, lstart, lstop)
+						}
 					}
 				}
-				lstart += (lstop - lstart) & avxSizeMask
+				lstart += n
 				if lstart == lstop {
 					lstop += r.o.perRound
 					if lstop > stop {
@@ -1402,13 +1429,14 @@ func (r *reedSolomon) ReconstructData(shards [][]byte) error {
 	return r.reconstruct(shards, true, nil)
 }
 
-// ReconstructSome will recreate only requested data shards, if possible.
+// ReconstructSome will recreate only requested shards, if possible.
 //
 // Given a list of shards, some of which contain data, fills in the
-// data shards indicated by true values in the "required" parameter.
-// The length of "required" array must be equal to dataShards.
+// shards indicated by true values in the "required" parameter.
+// The length of the "required" array must be equal to either Shards or DataShards.
+// If the length is equal to DataShards, the reconstruction of parity shards will be ignored.
 //
-// The length of "shards" array must be equal to shards.
+// The length of "shards" array must be equal to Shards.
 // You indicate that a shard is missing by setting it to nil or zero-length.
 // If a shard is zero-length but has sufficient capacity, that memory will
 // be used, otherwise a new []byte will be allocated.
@@ -1419,6 +1447,9 @@ func (r *reedSolomon) ReconstructData(shards [][]byte) error {
 // As the reconstructed shard set may contain missing parity shards,
 // calling the Verify function is likely to fail.
 func (r *reedSolomon) ReconstructSome(shards [][]byte, required []bool) error {
+	if len(required) == r.totalShards {
+		return r.reconstruct(shards, false, required)
+	}
 	return r.reconstruct(shards, true, required)
 }
 
