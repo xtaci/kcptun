@@ -181,12 +181,12 @@ func main() {
 		},
 		cli.BoolFlag{
 			Name:  "QPP",
-			Usage: "Enable Quantum Permutation Pad for universal quantum-safe cryptography, based on classic cryptography",
+			Usage: "enable Quantum Permutation Pads(QPP)",
 		},
 		cli.IntFlag{
 			Name:  "QPPCount",
 			Value: 64,
-			Usage: "Number of pads to use for QPP, the more the pads, the more secure, one pad costs 256 bytes",
+			Usage: "the number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes.",
 		},
 		cli.IntFlag{
 			Name:  "conn",
