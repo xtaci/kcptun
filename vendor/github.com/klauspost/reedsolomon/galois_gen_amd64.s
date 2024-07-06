@@ -126,7 +126,6 @@ TEXT ·mulAvxTwo_1x1_64(SB), $0-88
 	MOVQ    in_base+24(FP), CX
 	MOVQ    (CX), CX
 	MOVQ    out_base+48(FP), DX
-	MOVQ    out_base+48(FP), DX
 	MOVQ    (DX), DX
 	MOVQ    start+72(FP), BX
 
@@ -366,7 +365,6 @@ TEXT ·mulAvxTwo_1x1_64Xor(SB), $0-88
 	MOVQ    in_base+24(FP), CX
 	MOVQ    (CX), CX
 	MOVQ    out_base+48(FP), DX
-	MOVQ    out_base+48(FP), DX
 	MOVQ    (DX), DX
 	MOVQ    start+72(FP), BX
 
@@ -427,7 +425,6 @@ TEXT ·mulAvxTwo_1x2_64(SB), $0-88
 	JZ    mulAvxTwo_1x2_64_end
 	MOVQ  in_base+24(FP), DX
 	MOVQ  (DX), DX
-	MOVQ  out_base+48(FP), BX
 	MOVQ  out_base+48(FP), BX
 	MOVQ  (BX), SI
 	MOVQ  24(BX), BX
@@ -709,7 +706,6 @@ TEXT ·mulAvxTwo_1x2_64Xor(SB), $0-88
 	MOVQ  in_base+24(FP), DX
 	MOVQ  (DX), DX
 	MOVQ  out_base+48(FP), BX
-	MOVQ  out_base+48(FP), BX
 	MOVQ  (BX), SI
 	MOVQ  24(BX), BX
 	MOVQ  start+72(FP), DI
@@ -787,7 +783,6 @@ TEXT ·mulAvxTwo_1x3_64(SB), $0-88
 	JZ    mulAvxTwo_1x3_64_end
 	MOVQ  in_base+24(FP), DX
 	MOVQ  (DX), DX
-	MOVQ  out_base+48(FP), BX
 	MOVQ  out_base+48(FP), BX
 	MOVQ  (BX), SI
 	MOVQ  24(BX), DI
@@ -1109,7 +1104,6 @@ TEXT ·mulAvxTwo_1x3_64Xor(SB), $0-88
 	JZ    mulAvxTwo_1x3_64Xor_end
 	MOVQ  in_base+24(FP), DX
 	MOVQ  (DX), DX
-	MOVQ  out_base+48(FP), BX
 	MOVQ  out_base+48(FP), BX
 	MOVQ  (BX), SI
 	MOVQ  24(BX), DI
@@ -5164,7 +5158,6 @@ TEXT ·mulAvxTwo_2x1_64(SB), $0-88
 	MOVQ    (CX), DX
 	MOVQ    24(CX), CX
 	MOVQ    out_base+48(FP), BX
-	MOVQ    out_base+48(FP), BX
 	MOVQ    (BX), BX
 	MOVQ    start+72(FP), SI
 
@@ -5461,7 +5454,6 @@ TEXT ·mulAvxTwo_2x1_64Xor(SB), $0-88
 	MOVQ    (CX), DX
 	MOVQ    24(CX), CX
 	MOVQ    out_base+48(FP), BX
-	MOVQ    out_base+48(FP), BX
 	MOVQ    (BX), BX
 	MOVQ    start+72(FP), SI
 
@@ -5541,7 +5533,6 @@ TEXT ·mulAvxTwo_2x2_64(SB), $0-88
 	MOVQ  in_base+24(FP), DX
 	MOVQ  (DX), BX
 	MOVQ  24(DX), DX
-	MOVQ  out_base+48(FP), SI
 	MOVQ  out_base+48(FP), SI
 	MOVQ  (SI), DI
 	MOVQ  24(SI), SI
@@ -5900,7 +5891,6 @@ TEXT ·mulAvxTwo_2x2_64Xor(SB), $0-88
 	MOVQ  (DX), BX
 	MOVQ  24(DX), DX
 	MOVQ  out_base+48(FP), SI
-	MOVQ  out_base+48(FP), SI
 	MOVQ  (SI), DI
 	MOVQ  24(SI), SI
 	MOVQ  start+72(FP), R8
@@ -6007,7 +5997,6 @@ TEXT ·mulAvxTwo_2x3_64(SB), $0-88
 	MOVQ  in_base+24(FP), DX
 	MOVQ  (DX), BX
 	MOVQ  24(DX), DX
-	MOVQ  out_base+48(FP), SI
 	MOVQ  out_base+48(FP), SI
 	MOVQ  (SI), DI
 	MOVQ  24(SI), R8
@@ -6426,7 +6415,6 @@ TEXT ·mulAvxTwo_2x3_64Xor(SB), $0-88
 	MOVQ  in_base+24(FP), DX
 	MOVQ  (DX), BX
 	MOVQ  24(DX), DX
-	MOVQ  out_base+48(FP), SI
 	MOVQ  out_base+48(FP), SI
 	MOVQ  (SI), DI
 	MOVQ  24(SI), R8
@@ -11886,7 +11874,6 @@ TEXT ·mulAvxTwo_3x1_64(SB), $0-88
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DX
 	MOVQ  out_base+48(FP), DI
-	MOVQ  out_base+48(FP), DI
 	MOVQ  (DI), DI
 	MOVQ  start+72(FP), R8
 
@@ -12240,7 +12227,6 @@ TEXT ·mulAvxTwo_3x1_64Xor(SB), $0-88
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DX
 	MOVQ  out_base+48(FP), DI
-	MOVQ  out_base+48(FP), DI
 	MOVQ  (DI), DI
 	MOVQ  start+72(FP), R8
 
@@ -12345,7 +12331,6 @@ TEXT ·mulAvxTwo_3x2_64(SB), $0-88
 	MOVQ  (DX), BX
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DX
-	MOVQ  out_base+48(FP), DI
 	MOVQ  out_base+48(FP), DI
 	MOVQ  (DI), R8
 	MOVQ  24(DI), DI
@@ -12781,7 +12766,6 @@ TEXT ·mulAvxTwo_3x2_64Xor(SB), $0-88
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DX
 	MOVQ  out_base+48(FP), DI
-	MOVQ  out_base+48(FP), DI
 	MOVQ  (DI), R8
 	MOVQ  24(DI), DI
 	MOVQ  start+72(FP), R9
@@ -12917,7 +12901,6 @@ TEXT ·mulAvxTwo_3x3_64(SB), $0-88
 	MOVQ  (DX), BX
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DX
-	MOVQ  out_base+48(FP), DI
 	MOVQ  out_base+48(FP), DI
 	MOVQ  (DI), R8
 	MOVQ  24(DI), R9
@@ -13433,7 +13416,6 @@ TEXT ·mulAvxTwo_3x3_64Xor(SB), $0-88
 	MOVQ  (DX), BX
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DX
-	MOVQ  out_base+48(FP), DI
 	MOVQ  out_base+48(FP), DI
 	MOVQ  (DI), R8
 	MOVQ  24(DI), R9
@@ -20286,7 +20268,6 @@ TEXT ·mulAvxTwo_4x1_64(SB), $0-88
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), DX
 	MOVQ  out_base+48(FP), R8
-	MOVQ  out_base+48(FP), R8
 	MOVQ  (R8), R8
 	MOVQ  start+72(FP), R9
 
@@ -20697,7 +20678,6 @@ TEXT ·mulAvxTwo_4x1_64Xor(SB), $0-88
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), DX
 	MOVQ  out_base+48(FP), R8
-	MOVQ  out_base+48(FP), R8
 	MOVQ  (R8), R8
 	MOVQ  start+72(FP), R9
 
@@ -20823,7 +20803,6 @@ TEXT ·mulAvxTwo_4x2_64(SB), $0-88
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), DX
-	MOVQ  out_base+48(FP), R8
 	MOVQ  out_base+48(FP), R8
 	MOVQ  (R8), R9
 	MOVQ  24(R8), R8
@@ -21336,7 +21315,6 @@ TEXT ·mulAvxTwo_4x2_64Xor(SB), $0-88
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), DX
 	MOVQ  out_base+48(FP), R8
-	MOVQ  out_base+48(FP), R8
 	MOVQ  (R8), R9
 	MOVQ  24(R8), R8
 	MOVQ  start+72(FP), R10
@@ -21501,7 +21479,6 @@ TEXT ·mulAvxTwo_4x3_64(SB), $0-88
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), DX
-	MOVQ  out_base+48(FP), R8
 	MOVQ  out_base+48(FP), R8
 	MOVQ  (R8), R9
 	MOVQ  24(R8), R10
@@ -22114,7 +22091,6 @@ TEXT ·mulAvxTwo_4x3_64Xor(SB), $0-88
 	MOVQ  24(DX), SI
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), DX
-	MOVQ  out_base+48(FP), R8
 	MOVQ  out_base+48(FP), R8
 	MOVQ  (R8), R9
 	MOVQ  24(R8), R10
@@ -30216,7 +30192,6 @@ TEXT ·mulAvxTwo_5x1_64(SB), $0-88
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), DX
 	MOVQ  out_base+48(FP), R9
-	MOVQ  out_base+48(FP), R9
 	MOVQ  (R9), R9
 	MOVQ  start+72(FP), R10
 
@@ -30684,7 +30659,6 @@ TEXT ·mulAvxTwo_5x1_64Xor(SB), $0-88
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), DX
 	MOVQ  out_base+48(FP), R9
-	MOVQ  out_base+48(FP), R9
 	MOVQ  (R9), R9
 	MOVQ  start+72(FP), R10
 
@@ -30831,7 +30805,6 @@ TEXT ·mulAvxTwo_5x2_64(SB), $0-88
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), DX
-	MOVQ  out_base+48(FP), R9
 	MOVQ  out_base+48(FP), R9
 	MOVQ  (R9), R10
 	MOVQ  24(R9), R9
@@ -31421,7 +31394,6 @@ TEXT ·mulAvxTwo_5x2_64Xor(SB), $0-88
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), DX
 	MOVQ  out_base+48(FP), R9
-	MOVQ  out_base+48(FP), R9
 	MOVQ  (R9), R10
 	MOVQ  24(R9), R9
 	MOVQ  start+72(FP), R11
@@ -31615,7 +31587,6 @@ TEXT ·mulAvxTwo_5x3_64(SB), $0-88
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), DX
-	MOVQ  out_base+48(FP), R9
 	MOVQ  out_base+48(FP), R9
 	MOVQ  (R9), R10
 	MOVQ  24(R9), R11
@@ -32325,7 +32296,6 @@ TEXT ·mulAvxTwo_5x3_64Xor(SB), $0-88
 	MOVQ  48(DX), DI
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), DX
-	MOVQ  out_base+48(FP), R9
 	MOVQ  out_base+48(FP), R9
 	MOVQ  (R9), R10
 	MOVQ  24(R9), R11
@@ -41669,7 +41639,6 @@ TEXT ·mulAvxTwo_6x1_64(SB), $0-88
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), DX
 	MOVQ  out_base+48(FP), R10
-	MOVQ  out_base+48(FP), R10
 	MOVQ  (R10), R10
 	MOVQ  start+72(FP), R11
 
@@ -42194,7 +42163,6 @@ TEXT ·mulAvxTwo_6x1_64Xor(SB), $0-88
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), DX
 	MOVQ  out_base+48(FP), R10
-	MOVQ  out_base+48(FP), R10
 	MOVQ  (R10), R10
 	MOVQ  start+72(FP), R11
 
@@ -42362,7 +42330,6 @@ TEXT ·mulAvxTwo_6x2_64(SB), $0-88
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), DX
-	MOVQ  out_base+48(FP), R10
 	MOVQ  out_base+48(FP), R10
 	MOVQ  (R10), R11
 	MOVQ  24(R10), R10
@@ -43029,7 +42996,6 @@ TEXT ·mulAvxTwo_6x2_64Xor(SB), $0-88
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), DX
 	MOVQ  out_base+48(FP), R10
-	MOVQ  out_base+48(FP), R10
 	MOVQ  (R10), R11
 	MOVQ  24(R10), R10
 	MOVQ  start+72(FP), R12
@@ -43252,7 +43218,6 @@ TEXT ·mulAvxTwo_6x3_64(SB), $0-88
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), DX
-	MOVQ  out_base+48(FP), R10
 	MOVQ  out_base+48(FP), R10
 	MOVQ  (R10), R11
 	MOVQ  24(R10), R12
@@ -44059,7 +44024,6 @@ TEXT ·mulAvxTwo_6x3_64Xor(SB), $0-88
 	MOVQ  72(DX), R8
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), DX
-	MOVQ  out_base+48(FP), R10
 	MOVQ  out_base+48(FP), R10
 	MOVQ  (R10), R11
 	MOVQ  24(R10), R12
@@ -54644,7 +54608,6 @@ TEXT ·mulAvxTwo_7x1_64(SB), $0-88
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), DX
 	MOVQ  out_base+48(FP), R11
-	MOVQ  out_base+48(FP), R11
 	MOVQ  (R11), R11
 	MOVQ  start+72(FP), R12
 
@@ -55226,7 +55189,6 @@ TEXT ·mulAvxTwo_7x1_64Xor(SB), $0-88
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), DX
 	MOVQ  out_base+48(FP), R11
-	MOVQ  out_base+48(FP), R11
 	MOVQ  (R11), R11
 	MOVQ  start+72(FP), R12
 
@@ -55415,7 +55377,6 @@ TEXT ·mulAvxTwo_7x2_64(SB), $0-88
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), DX
-	MOVQ  out_base+48(FP), R11
 	MOVQ  out_base+48(FP), R11
 	MOVQ  (R11), R12
 	MOVQ  24(R11), R11
@@ -56159,7 +56120,6 @@ TEXT ·mulAvxTwo_7x2_64Xor(SB), $0-88
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), DX
 	MOVQ  out_base+48(FP), R11
-	MOVQ  out_base+48(FP), R11
 	MOVQ  (R11), R12
 	MOVQ  24(R11), R11
 	MOVQ  start+72(FP), R13
@@ -56411,7 +56371,6 @@ TEXT ·mulAvxTwo_7x3_64(SB), $0-88
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), DX
-	MOVQ  out_base+48(FP), R11
 	MOVQ  out_base+48(FP), R11
 	MOVQ  (R11), R12
 	MOVQ  24(R11), R13
@@ -57315,7 +57274,6 @@ TEXT ·mulAvxTwo_7x3_64Xor(SB), $0-88
 	MOVQ  96(DX), R9
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), DX
-	MOVQ  out_base+48(FP), R11
 	MOVQ  out_base+48(FP), R11
 	MOVQ  (R11), R12
 	MOVQ  24(R11), R13
@@ -69146,7 +69104,6 @@ TEXT ·mulAvxTwo_8x1_64(SB), $0-88
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), DX
 	MOVQ  out_base+48(FP), R12
-	MOVQ  out_base+48(FP), R12
 	MOVQ  (R12), R12
 	MOVQ  start+72(FP), R13
 
@@ -69785,7 +69742,6 @@ TEXT ·mulAvxTwo_8x1_64Xor(SB), $0-88
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), DX
 	MOVQ  out_base+48(FP), R12
-	MOVQ  out_base+48(FP), R12
 	MOVQ  (R12), R12
 	MOVQ  start+72(FP), R13
 
@@ -69995,7 +69951,6 @@ TEXT ·mulAvxTwo_8x2_64(SB), $0-88
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), DX
-	MOVQ  out_base+48(FP), R12
 	MOVQ  out_base+48(FP), R12
 	MOVQ  (R12), R13
 	MOVQ  24(R12), R12
@@ -70816,7 +70771,6 @@ TEXT ·mulAvxTwo_8x2_64Xor(SB), $0-88
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), DX
 	MOVQ  out_base+48(FP), R12
-	MOVQ  out_base+48(FP), R12
 	MOVQ  (R12), R13
 	MOVQ  24(R12), R12
 	MOVQ  start+72(FP), R14
@@ -71097,7 +71051,6 @@ TEXT ·mulAvxTwo_8x3_64(SB), $0-88
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), DX
-	MOVQ  out_base+48(FP), R12
 	MOVQ  out_base+48(FP), R12
 	MOVQ  (R12), R13
 	MOVQ  24(R12), R14
@@ -72098,7 +72051,6 @@ TEXT ·mulAvxTwo_8x3_64Xor(SB), $0-88
 	MOVQ  120(DX), R10
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), DX
-	MOVQ  out_base+48(FP), R12
 	MOVQ  out_base+48(FP), R12
 	MOVQ  (R12), R13
 	MOVQ  24(R12), R14
@@ -85180,7 +85132,6 @@ TEXT ·mulAvxTwo_9x1_64(SB), $0-88
 	MOVQ  168(DX), R12
 	MOVQ  192(DX), DX
 	MOVQ  out_base+48(FP), R13
-	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R13
 	MOVQ  start+72(FP), R14
 
@@ -85876,7 +85827,6 @@ TEXT ·mulAvxTwo_9x1_64Xor(SB), $0-88
 	MOVQ  168(DX), R12
 	MOVQ  192(DX), DX
 	MOVQ  out_base+48(FP), R13
-	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R13
 	MOVQ  start+72(FP), R14
 
@@ -86107,7 +86057,6 @@ TEXT ·mulAvxTwo_9x2_64(SB), $0-88
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), R12
 	MOVQ  192(DX), DX
-	MOVQ  out_base+48(FP), R13
 	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R14
 	MOVQ  24(R13), R13
@@ -87005,7 +86954,6 @@ TEXT ·mulAvxTwo_9x2_64Xor(SB), $0-88
 	MOVQ  168(DX), R12
 	MOVQ  192(DX), DX
 	MOVQ  out_base+48(FP), R13
-	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R14
 	MOVQ  24(R13), R13
 	MOVQ  start+72(FP), R15
@@ -87315,7 +87263,6 @@ TEXT ·mulAvxTwo_9x3_64(SB), $8-88
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), R12
 	MOVQ  192(DX), DX
-	MOVQ  out_base+48(FP), R13
 	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R14
 	MOVQ  24(R13), R15
@@ -88413,7 +88360,6 @@ TEXT ·mulAvxTwo_9x3_64Xor(SB), $8-88
 	MOVQ  144(DX), R11
 	MOVQ  168(DX), R12
 	MOVQ  192(DX), DX
-	MOVQ  out_base+48(FP), R13
 	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R14
 	MOVQ  24(R13), R15
@@ -102755,7 +102701,6 @@ TEXT ·mulAvxTwo_10x1_64(SB), $0-88
 	MOVQ  192(DX), R13
 	MOVQ  216(DX), DX
 	MOVQ  out_base+48(FP), R14
-	MOVQ  out_base+48(FP), R14
 	MOVQ  (R14), R14
 	MOVQ  start+72(FP), R15
 
@@ -103508,7 +103453,6 @@ TEXT ·mulAvxTwo_10x1_64Xor(SB), $0-88
 	MOVQ  192(DX), R13
 	MOVQ  216(DX), DX
 	MOVQ  out_base+48(FP), R14
-	MOVQ  out_base+48(FP), R14
 	MOVQ  (R14), R14
 	MOVQ  start+72(FP), R15
 
@@ -103760,7 +103704,6 @@ TEXT ·mulAvxTwo_10x2_64(SB), $8-88
 	MOVQ  168(DX), R12
 	MOVQ  192(DX), R13
 	MOVQ  216(DX), DX
-	MOVQ  out_base+48(FP), R14
 	MOVQ  out_base+48(FP), R14
 	MOVQ  (R14), R15
 	MOVQ  24(R14), R14
@@ -104735,7 +104678,6 @@ TEXT ·mulAvxTwo_10x2_64Xor(SB), $8-88
 	MOVQ  192(DX), R13
 	MOVQ  216(DX), DX
 	MOVQ  out_base+48(FP), R14
-	MOVQ  out_base+48(FP), R14
 	MOVQ  (R14), R15
 	MOVQ  24(R14), R14
 	MOVQ  start+72(FP), BP
@@ -105074,7 +105016,6 @@ TEXT ·mulAvxTwo_10x3_64(SB), $8-88
 	MOVQ  168(AX), R11
 	MOVQ  192(AX), R12
 	MOVQ  216(AX), AX
-	MOVQ  out_base+48(FP), R13
 	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R14
 	MOVQ  24(R13), R15
@@ -106283,7 +106224,6 @@ TEXT ·mulAvxTwo_10x3_64Xor(SB), $8-88
 	MOVQ  168(AX), R11
 	MOVQ  192(AX), R12
 	MOVQ  216(AX), AX
-	MOVQ  out_base+48(FP), R13
 	MOVQ  out_base+48(FP), R13
 	MOVQ  (R13), R14
 	MOVQ  24(R13), R15

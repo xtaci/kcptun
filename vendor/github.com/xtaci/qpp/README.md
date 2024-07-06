@@ -82,6 +82,10 @@ func main() {
 }
 ```
 
+## Performance
+![QQ_1720105700910](https://github.com/xtaci/qpp/assets/2346725/2c724b40-7210-4ebc-bb6d-08c4c6f5663b)
+
+
 ## Conclusion
 
 The Quantum Permutation Pad is a promising approach in the field of quantum cryptography, utilizing quantum mechanical properties to achieve secure communication. By applying quantum permutations to encrypt and decrypt data, QPP ensures high security and leverages the unique capabilities of quantum technology. As research and technology in quantum computing and quantum communication advance, protocols like QPP will play a crucial role in the next generation of secure communication systems.

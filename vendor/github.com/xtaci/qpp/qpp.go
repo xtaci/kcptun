@@ -8,7 +8,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
-	"math/rand/v2"
+	"math/rand"
+	"unsafe"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -25,17 +26,14 @@ const (
 	CHUNK_DERIVE_LOOPS     = 1024
 )
 
-type Source uint64
-
-func (s Source) Uint64() uint64 {
-	return uint64(s)
-}
-
 // QuantumPermutationPad represents the encryption/decryption structure using quantum permutation pads
 // QPP is a cryptographic technique that leverages quantum-inspired permutation matrices to provide secure encryption.
 type QuantumPermutationPad struct {
-	pads    [][]byte   // Encryption pads, each pad is a permutation matrix for encryption
-	rpads   [][]byte   // Decryption pads, each pad is a reverse permutation matrix for decryption
+	pads     []byte  // Encryption pads, each pad is a permutation matrix for encryption
+	rpads    []byte  // Decryption pads, each pad is a reverse permutation matrix for decryption
+	padsPtr  uintptr // raw pointer to encryption pads
+	rpadsPtr uintptr // raw pointer to encryption pads
+
 	numPads uint16     // Number of pads (permutation matrices)
 	qubits  uint8      // Number of quantum bits, determines the size of each pad
 	encRand *rand.Rand // Default random source for encryption pad selection
@@ -50,21 +48,24 @@ func NewQPP(seed []byte, numPads uint16, qubits uint8) *QuantumPermutationPad {
 		qubits:  qubits,
 	}
 
-	qpp.pads = make([][]byte, numPads)
-	qpp.rpads = make([][]byte, numPads)
+	matrixBytes := 1 << qubits
+	qpp.pads = make([]byte, int(numPads)*matrixBytes)
+	qpp.rpads = make([]byte, int(numPads)*matrixBytes)
+	qpp.padsPtr = uintptr(unsafe.Pointer(unsafe.SliceData(qpp.pads)))
+	qpp.rpadsPtr = uintptr(unsafe.Pointer(unsafe.SliceData(qpp.rpads)))
 
 	chunks := seedToChunks(seed, qubits)
 	// Initialize and shuffle pads to create permutation matrices
 	for i := 0; i < int(numPads); i++ {
-		qpp.pads[i] = make([]byte, 1<<qubits)
-		qpp.rpads[i] = make([]byte, 1<<qubits)
+		pad := qpp.pads[i*matrixBytes : (i+1)*matrixBytes]
+		rpad := qpp.rpads[i*matrixBytes : (i+1)*matrixBytes]
 
 		// Fill pad with sequential byte values
-		fill(qpp.pads[i])
+		fill(pad)
 		// Shuffle pad to create a unique permutation matrix
-		shuffle(chunks[i%len(chunks)], qubits, qpp.pads[i], uint16(i))
+		shuffle(chunks[i%len(chunks)], qubits, pad, uint16(i))
 		// Create the reverse permutation matrix for decryption
-		reverse(qpp.pads[i], qpp.rpads[i])
+		reverse(pad, rpad)
 	}
 
 	qpp.encRand = qpp.CreatePRNG(seed) // Create default PRNG for encryption
@@ -76,33 +77,13 @@ func NewQPP(seed []byte, numPads uint16, qubits uint8) *QuantumPermutationPad {
 // Encrypt encrypts the given data using the Quantum Permutation Pad with the default PRNG
 // It selects a permutation matrix based on a random index and uses it to permute each byte of the data
 func (qpp *QuantumPermutationPad) Encrypt(data []byte) {
-	switch qpp.qubits {
-	case NATIVE_BYTE_LENGTH:
-		for i := 0; i < len(data); i++ {
-			rand := qpp.encRand.Uint32()           // Generate a pseudo-random number
-			index := rand % uint32(qpp.numPads)    // Select a permutation matrix index
-			pad := qpp.pads[index]                 // Retrieve the permutation matrix
-			data[i] = pad[data[i]^byte(rand&0xFF)] // Apply the permutation to the data byte
-		}
-	default:
-		// Handle other cases if needed
-	}
+	qpp.EncryptWithPRNG(data, qpp.encRand)
 }
 
 // Decrypt decrypts the given data using the Quantum Permutation Pad with the default PRNG
 // It selects a reverse permutation matrix based on a random index and uses it to restore each byte of the data
 func (qpp *QuantumPermutationPad) Decrypt(data []byte) {
-	switch qpp.qubits {
-	case NATIVE_BYTE_LENGTH:
-		for i := 0; i < len(data); i++ {
-			rand := qpp.decRand.Uint32()              // Generate a pseudo-random number
-			index := rand % uint32(qpp.numPads)       // Select a reverse permutation matrix index
-			rpad := qpp.rpads[index]                  // Retrieve the reverse permutation matrix
-			data[i] = rpad[data[i]] ^ byte(rand&0xFF) // Restore the original byte
-		}
-	default:
-		// Handle other cases if needed
-	}
+	qpp.DecryptWithPRNG(data, qpp.decRand)
 }
 
 // CreatePRNG creates a deterministic pseudo-random number generator based on the provided seed
@@ -112,9 +93,8 @@ func (qpp *QuantumPermutationPad) CreatePRNG(seed []byte) *rand.Rand {
 	mac.Write([]byte(PM_SELECTOR_IDENTIFIER))
 	sum := mac.Sum(nil)
 	dk := pbkdf2.Key(sum, []byte(PRNG_SALT), PBKDF2_LOOPS, 8, sha1.New) // Derive a key for PRNG
-	//source := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))     // Create random source
-	//return rand.New(source) // Create and return PRNG
-	return rand.New(Source(binary.LittleEndian.Uint64(dk)))
+	source := rand.NewSource(int64(binary.LittleEndian.Uint64(dk)))     // Create random source
+	return rand.New(source)                                             // Create and return PRNG
 }
 
 // EncryptWithPRNG encrypts the data using the Quantum Permutation Pad with a custom PRNG
@@ -123,10 +103,10 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *rand.Rand) 
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
 		for i := 0; i < len(data); i++ {
-			rand := rand.Uint32()
-			index := rand % uint32(qpp.numPads)
-			pad := qpp.pads[index]
-			data[i] = pad[data[i]^byte(rand&0xFF)]
+			r := uint16(rand.Uint32())                                           // Generate a pseudo-random number
+			index := r % qpp.numPads                                             // Select a permutation matrix index
+			offset := qpp.padsPtr + uintptr(index)<<8 + uintptr(data[i]^byte(r)) // Calculate the offset
+			data[i] = *(*byte)(unsafe.Pointer(offset))                           // Apply the permutation to the data byte
 		}
 	default:
 		// Handle other cases if needed
@@ -139,10 +119,10 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *rand.Rand) 
 	switch qpp.qubits {
 	case NATIVE_BYTE_LENGTH:
 		for i := 0; i < len(data); i++ {
-			rand := rand.Uint32()
-			index := rand % uint32(qpp.numPads)
-			rpad := qpp.rpads[index]
-			data[i] = rpad[data[i]] ^ byte(rand&0xFF)
+			r := uint16(rand.Uint32())                                    // Generate a pseudo-random number
+			index := r % qpp.numPads                                      // Select a permutation matrix index
+			offset := qpp.rpadsPtr + uintptr(index)<<8 + uintptr(data[i]) // Calculate the offset
+			data[i] = *(*byte)(unsafe.Pointer(offset)) ^ byte(r)          // Apply the permutation to the data byte
 		}
 	default:
 		// Handle other cases if needed
@@ -236,7 +216,8 @@ func shuffle(chunk []byte, qubits uint8, pad []byte, padID uint16) {
 	block, _ := aes.NewCipher(aeskey)
 	for i := len(pad) - 1; i > 0; i-- {
 		block.Encrypt(sum, sum)
-		j := binary.LittleEndian.Uint64(sum) % uint64(i+1)
+		bigrand := new(big.Int).SetBytes(sum)
+		j := bigrand.Mod(bigrand, big.NewInt(int64(i+1))).Uint64()
 		pad[i], pad[j] = pad[j], pad[i]
 	}
 }

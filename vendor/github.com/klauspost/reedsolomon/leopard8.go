@@ -509,13 +509,13 @@ func (r *leopardFF8) reconstruct(shards [][]byte, recoverAll bool) error {
 		}
 
 		// Evaluate error locator polynomial8
-		fwht8(&errLocs, order8, m+r.dataShards)
+		fwht8(&errLocs, m+r.dataShards)
 
 		for i := 0; i < order8; i++ {
 			errLocs[i] = ffe8((uint(errLocs[i]) * uint(logWalsh8[i])) % modulus8)
 		}
 
-		fwht8(&errLocs, order8, order8)
+		fwht8(&errLocs, order8)
 
 		if r.inversion != nil {
 			c := leopardGF8cache{
@@ -943,11 +943,11 @@ func subMod8(a, b ffe8) ffe8 {
 // Decimation in time (DIT) Fast Walsh-Hadamard Transform
 // Unrolls pairs of layers to perform cross-layer operations in registers
 // mtrunc: Number of elements that are non-zero at the front of data
-func fwht8(data *[order8]ffe8, m, mtrunc int) {
+func fwht8(data *[order8]ffe8, mtrunc int) {
 	// Decimation in time: Unroll 2 layers at a time
 	dist := 1
 	dist4 := 4
-	for dist4 <= m {
+	for dist4 <= order8 {
 		// For each set of dist*4 elements:
 		for r := 0; r < mtrunc; r += dist4 {
 			// For each set of dist elements:
@@ -977,14 +977,6 @@ func fwht8(data *[order8]ffe8, m, mtrunc int) {
 		}
 		dist = dist4
 		dist4 <<= 2
-	}
-
-	// If there is one layer left:
-	if dist < m {
-		dist := uint16(dist)
-		for i := uint16(0); i < dist; i++ {
-			fwht28(&data[i], &data[i+dist])
-		}
 	}
 }
 
@@ -1113,7 +1105,7 @@ func initFFTSkew8() {
 	}
 	logWalsh8[0] = 0
 
-	fwht8(logWalsh8, order8, order8)
+	fwht8(logWalsh8, order8)
 }
 
 func initMul8LUT() {

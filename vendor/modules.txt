@@ -14,7 +14,7 @@ github.com/google/gopacket/layers
 # github.com/klauspost/cpuid/v2 v2.2.8
 ## explicit; go 1.15
 github.com/klauspost/cpuid/v2
-# github.com/klauspost/reedsolomon v1.12.1
+# github.com/klauspost/reedsolomon v1.12.2
 ## explicit; go 1.18
 github.com/klauspost/reedsolomon
 # github.com/pkg/errors v0.9.1
@@ -38,7 +38,7 @@ github.com/urfave/cli
 # github.com/xtaci/kcp-go/v5 v5.6.8
 ## explicit; go 1.21
 github.com/xtaci/kcp-go/v5
-# github.com/xtaci/qpp v1.1.5
+# github.com/xtaci/qpp v1.1.6
 ## explicit; go 1.22.3
 github.com/xtaci/qpp
 # github.com/xtaci/smux v1.5.24
@@ -47,8 +47,8 @@ github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.25
 ## explicit
 github.com/xtaci/tcpraw
-# golang.org/x/crypto v0.24.0
-## explicit; go 1.18
+# golang.org/x/crypto v0.25.0
+## explicit; go 1.20
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
 golang.org/x/crypto/internal/alias
@@ -58,14 +58,14 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/tea
 golang.org/x/crypto/twofish
 golang.org/x/crypto/xtea
-# golang.org/x/net v0.26.0
+# golang.org/x/net v0.27.0
 ## explicit; go 1.18
 golang.org/x/net/bpf
 golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
-# golang.org/x/sys v0.21.0
+# golang.org/x/sys v0.22.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
