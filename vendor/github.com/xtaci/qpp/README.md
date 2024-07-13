@@ -1,4 +1,12 @@
 # Quantum Permutation Pad
+![image](https://github.com/xtaci/qpp/assets/2346725/7a05cc4b-b207-437e-a015-57918906b738)
+
+[![GoDoc][1]][2] [![Go Report Card][3]][4]
+
+[1]: https://godoc.org/github.com/xtaci/qpp?status.svg
+[2]: https://pkg.go.dev/github.com/xtaci/qpp
+[3]: https://goreportcard.com/badge/github.com/xtaci/qpp
+[4]: https://goreportcard.com/report/github.com/xtaci/qpp
 
 The [Quantum Permutation Pad](https://link.springer.com/content/pdf/10.1140/epjqt/s40507-023-00164-3.pdf) (QPP) is a cryptographic protocol designed to leverage the principles of quantum mechanics for secure communication. While the exact details of the QPP can vary based on the specific implementation and the theoretical model, the general concept involves using quantum properties such as superposition and entanglement to enhance the security of data transmission. Here’s an overview of the QPP and its relationship to quantum mechanics and cryptography:
 
