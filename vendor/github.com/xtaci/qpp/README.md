@@ -52,6 +52,9 @@ The number of permutation matrices in an 8-qubit system is determined based on t
 
 Try directly from https://github.com/xtaci/kcptun/releases with the ```-QPP``` option enabled.
 
+## Performance
+![QQ_1720969905297](https://github.com/user-attachments/assets/9e620927-a40c-4792-8ebf-958b0c8cc7f8)
+
 ## Usage
 ```golang
 Internal PRNG:
@@ -90,8 +93,6 @@ func main() {
 }
 ```
 
-## Performance
-![QQ_1720105700910](https://github.com/xtaci/qpp/assets/2346725/2c724b40-7210-4ebc-bb6d-08c4c6f5663b)
 
 
 ## Conclusion

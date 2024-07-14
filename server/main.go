@@ -30,8 +30,6 @@ const (
 	maxSmuxVer = 2
 	// stream copy buffer size
 	bufSize = 4096
-	// quantum bits
-	QUBIT = 8
 )
 
 // VERSION is injected by buildflags
@@ -483,7 +481,7 @@ func main() {
 		// create shared QPP
 		var _Q_ *qpp.QuantumPermutationPad
 		if config.QPP {
-			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount), QUBIT)
+			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount))
 		}
 
 		// main loop
