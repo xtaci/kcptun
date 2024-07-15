@@ -16,7 +16,7 @@ The [Quantum Permutation Pad](https://link.springer.com/content/pdf/10.1140/epjq
 
 2. **Quantum Bits (Qubits)**: Instead of classical bits (which are either 0 or 1), QPP uses qubits, which can be in a state of 0, 1, or any quantum superposition of these states.
 
-3. **Permutation Operations**: Permutations in the context of QPP refer to rearranging the order of qubits in a quantum state. These permutations can be thought of as quantum gates that alter the qubit states in a manner that is hard to predict without the correct key.
+3. **Permutation Operations**: Permutations in the context of QPP refer to rearranging the order of computational base. These permutations can be thought of as quantum gates that alter the qubit states in a manner that is hard to predict without the correct key.
 
 ## Functionality of Quantum Permutation Pad
 
@@ -64,7 +64,7 @@ func main() {
     seed := make([]byte, 32)
     io.ReadFull(rand.Reader, seed)
 
-    qpp := NewQPP(seed, 1024, 8)
+    qpp := NewQPP(seed, 1024)
 
     msg := make([]byte, 65536)
     io.ReadFull(rand.Reader, msg)
@@ -81,7 +81,7 @@ func main() {
     seed := make([]byte, 32)
     io.ReadFull(rand.Reader, seed)
 
-    qpp := NewQPP(seed, 1024, 8)
+    qpp := NewQPP(seed, 1024)
 
     msg := make([]byte, 65536)
     io.ReadFull(rand.Reader, msg)
@@ -100,5 +100,18 @@ func main() {
 
 The Quantum Permutation Pad is a promising approach in the field of quantum cryptography, utilizing quantum mechanical properties to achieve secure communication. By applying quantum permutations to encrypt and decrypt data, QPP ensures high security and leverages the unique capabilities of quantum technology. As research and technology in quantum computing and quantum communication advance, protocols like QPP will play a crucial role in the next generation of secure communication systems.
 
----
+## Contributing
 
+Contributions are welcome! Please open an issue or submit a pull request for any improvements, bug fixes, or additional features.
+
+## License
+
+This project is licensed under the GPLv3 License. See the [LICENSE](LICENSE) file for details.
+
+## References
+
+For more detailed information, please refer to the [research paper](https://link.springer.com/content/pdf/10.1140/epjqt/s40507-023-00164-3.pdf).
+
+## Acknowledgments
+
+Special thanks to the authors of the research paper for their groundbreaking work on Quantum Permutation Pad.
