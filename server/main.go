@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"math/rand"
 	"net"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
+	"github.com/fatih/color"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/kcptun/generic"
@@ -215,8 +217,8 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "QPPCount",
-			Value: 64,
-			Usage: "the number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes.",
+			Value: 61,
+			Usage: "the prime number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes.",
 		},
 
 		cli.StringFlag{
@@ -424,12 +426,16 @@ func main() {
 		if config.QPP {
 			minSeedLength := qpp.QPPMinimumSeedLength(8)
 			if len(config.Key) < minSeedLength {
-				log.Printf("QPP Warning: 'key' has size of %d bytes, required %d bytes at least", len(config.Key), minSeedLength)
+				color.Red("QPP Warning: 'key' has size of %d bytes, required %d bytes at least", len(config.Key), minSeedLength)
 			}
 
 			minPads := qpp.QPPMinimumPads(8)
 			if config.QPPCount < minPads {
-				log.Printf("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
+				color.Red("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
+			}
+
+			if new(big.Int).GCD(nil, nil, big.NewInt(int64(config.QPPCount)), big.NewInt(8)).Int64() != 1 {
+				color.Red("QPP Warning: QPPCount %d, choose a prime number for security", config.QPPCount)
 			}
 		}
 		// parameters check

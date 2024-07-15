@@ -4,7 +4,7 @@
         "key": "PASSWORD",
         "crypt": "aes-128",
         "qpp":true,
-        "qpp-count":64,
+        "qpp-count":61,
         "mode": "fast3",
         "mtu": 1400,
         "sndwnd": 2048,
