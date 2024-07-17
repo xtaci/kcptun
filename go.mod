@@ -1,11 +1,12 @@
 module github.com/xtaci/kcptun
 
 require (
+	github.com/fatih/color v1.17.0
 	github.com/golang/snappy v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli v1.22.15
 	github.com/xtaci/kcp-go/v5 v5.6.8
-	github.com/xtaci/qpp v1.1.16
+	github.com/xtaci/qpp v1.1.17
 	github.com/xtaci/smux v1.5.24
 	github.com/xtaci/tcpraw v1.2.25
 	golang.org/x/crypto v0.25.0
@@ -14,7 +15,6 @@ require (
 require (
 	github.com/coreos/go-iptables v0.7.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
-	github.com/fatih/color v1.17.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/klauspost/reedsolomon v1.12.2 // indirect
