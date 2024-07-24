@@ -1,0 +1,9 @@
+kern.ipc.maxsockbuf=67108864
+net.inet.tcp.sendbuf_max=67108864
+net.inet.tcp.recvbuf_max=67108864
+net.inet.tcp.sendbuf_auto=1
+net.inet.tcp.recvbuf_auto=1
+net.inet.tcp.sendbuf_inc=16384
+net.inet.tcp.functions_default=bbr
+net.inet.udp.recvspace=1048576
+net.netlink.sendspace=1048576
