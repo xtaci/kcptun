@@ -17,7 +17,7 @@ github.com/google/gopacket/layers
 # github.com/klauspost/cpuid/v2 v2.2.8
 ## explicit; go 1.15
 github.com/klauspost/cpuid/v2
-# github.com/klauspost/reedsolomon v1.12.2
+# github.com/klauspost/reedsolomon v1.12.3
 ## explicit; go 1.18
 github.com/klauspost/reedsolomon
 # github.com/mattn/go-colorable v0.1.13
@@ -44,7 +44,7 @@ github.com/tjfoc/gmsm/sm4
 # github.com/urfave/cli v1.22.15
 ## explicit; go 1.11
 github.com/urfave/cli
-# github.com/xtaci/kcp-go/v5 v5.6.8
+# github.com/xtaci/kcp-go/v5 v5.6.9
 ## explicit; go 1.21
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.17

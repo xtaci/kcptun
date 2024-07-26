@@ -6,6 +6,8 @@
 // Copyright 2015, Klaus Post, see LICENSE for details.
 // Copyright 2017, Minio, Inc.
 
+#include "textflag.h"
+
 #define LOAD(LO1, LO2, HI1, HI2) \
 	VLD1.P 32(R1), [LO1.B16, LO2.B16] \
 	                                  \
@@ -100,3 +102,14 @@ loopXor:
 
 completeXor:
 	RET
+
+TEXT ·getVectorLength(SB), NOSPLIT, $0
+    WORD $0xd2800002 // mov   x2, #0
+    WORD $0x04225022 // addvl x2, x2, #1
+    WORD $0xd37df042 // lsl   x2, x2, #3
+    WORD $0xd2800003 // mov   x3, #0
+    WORD $0x04635023 // addpl x3, x3, #1
+    WORD $0xd37df063 // lsl   x3, x3, #3
+    MOVD R2, vl+0(FP)
+    MOVD R3, pl+8(FP)
+    RET
