@@ -24,6 +24,7 @@ package generic
 
 import (
 	"io"
+	"sync"
 )
 
 const bufSize = 4096
@@ -50,13 +51,20 @@ func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
 	defer alice.Close()
 	defer bob.Close()
 
+	// use WaitGroup to wait for both streams to finish
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	streamCopy := func(dst io.Writer, src io.ReadCloser, err *error) {
 		// write error directly to the *pointer
 		_, *err = Copy(dst, src)
+		wg.Done()
 	}
 
 	go streamCopy(alice, bob, &errA)
 	streamCopy(bob, alice, &errB)
 
+	// wait for both streams to finish before we close
+	wg.Wait()
 	return
 }
