@@ -20,6 +20,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// THE GENERALIZED REED-SOLOMON FEC SCHEME
+//
+// Encoding:
+// -----------
+// Message:         | M1 | M2 | M3 | M4 |
+// Generate Parity: | P1 | P2 |
+// Encoded Codeword:| M1 | M2 | M3 | M4 | P1 | P2 |
+//
+// Decoding with Erasures:
+// ------------------------
+// Received:        | M1 | ?? | M3 | M4 | P1 | ?? |
+// Erasures:        |    | E1 |    |    |    | E2 |
+// Syndromes:       S1, S2, ...
+// Error Locator:   Λ(x) = ...
+// Correct Erasures:Determine values for E1 (M2) and E2 (P2).
+// Corrected:       | M1 | M2 | M3 | M4 | P1 | P2 |
+
 package kcp
 
 import (
@@ -112,6 +129,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 		}
 	}
 
+	// if signal is out-of-sync, try to detect the pattern in the signal
 	if dec.shouldTune {
 		autoDS := dec.autoTune.FindPeriod(true)
 		autoPS := dec.autoTune.FindPeriod(false)

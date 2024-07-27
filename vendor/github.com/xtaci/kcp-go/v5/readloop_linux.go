@@ -35,7 +35,7 @@ import (
 	"golang.org/x/net/ipv6"
 )
 
-// the read loop for a client session
+// readLoop is the optimized version of readLoop for linux utilizing recvmmsg syscall
 func (s *UDPSession) readLoop() {
 	// default version
 	if s.xconn == nil {
@@ -83,7 +83,7 @@ func (s *UDPSession) readLoop() {
 	}
 }
 
-// monitor incoming data for all connections of server
+// monitor is the optimized version of monitor for linux utilizing recvmmsg syscall
 func (l *Listener) monitor() {
 	var xconn batchConn
 	if _, ok := l.conn.(*net.UDPConn); ok {

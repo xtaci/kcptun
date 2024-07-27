@@ -44,3 +44,19 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 	buf := make([]byte, bufSize)
 	return io.CopyBuffer(dst, src, buf)
 }
+
+// Pipe create a general bidirectional pipe between two streams
+func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
+	defer alice.Close()
+	defer bob.Close()
+
+	streamCopy := func(dst io.Writer, src io.ReadCloser, err *error) {
+		// write error directly to the *pointer
+		_, *err = Copy(dst, src)
+	}
+
+	go streamCopy(alice, bob, &errA)
+	streamCopy(bob, alice, &errB)
+
+	return
+}

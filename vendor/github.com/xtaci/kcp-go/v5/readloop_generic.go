@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 //go:build !linux
-// +build !linux
 
 package kcp
 

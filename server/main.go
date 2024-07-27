@@ -103,16 +103,13 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 				p1.Close()
 				return
 			}
-			if !config.QPP {
-				handleClient(p1, p2, config.Quiet)
-			} else {
-				handleQPPClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
-			}
+
+			handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
 		}(stream)
 	}
 }
 
-func handleClient(p1 *smux.Stream, p2 net.Conn, quiet bool) {
+func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -125,71 +122,22 @@ func handleClient(p1 *smux.Stream, p2 net.Conn, quiet bool) {
 	logln("stream opened", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
 	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
 
-	// start tunnel & wait for tunnel termination
-	streamCopy := func(dst io.Writer, src io.ReadCloser) {
-		if _, err := generic.Copy(dst, src); err != nil {
-			if err == smux.ErrInvalidProtocol {
-				log.Println("smux", err, "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
-			}
-		}
-		p1.Close()
-		p2.Close()
+	var s1, s2 io.ReadWriteCloser = p1, p2
+	// if QPP is enabled, create QPP read write closer
+	if _Q_ != nil {
+		// replace s1 with QPP port
+		s1 = generic.NewQPPPort(p1, _Q_, seed)
 	}
 
-	go streamCopy(p2, p1)
-	streamCopy(p1, p2)
-}
+	// stream layer
+	err1, err2 := generic.Pipe(s1, s2)
 
-// same as above, but handles quantum permutation pads
-func handleQPPClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool) {
-	logln := func(v ...interface{}) {
-		if !quiet {
-			log.Println(v...)
-		}
+	// handles transport layer errors
+	if err1 != nil && err1 != io.EOF {
+		logln("error:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
 	}
-
-	defer p1.Close()
-	defer p2.Close()
-
-	logln("stream opened", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
-	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
-
-	// copy from net.Conn, QPP-encrypt and send to session
-	go func() {
-		buf := make([]byte, bufSize)
-		prng := _Q_.CreatePRNG(seed)
-		for {
-			n, err := p2.Read(buf)
-			if err != nil {
-				p2.Close()
-				return
-			}
-
-			// QPP-encrypt
-			_Q_.EncryptWithPRNG(buf[:n], prng)
-			if _, err = p1.Write(buf[:n]); err != nil {
-				p1.Close()
-				return
-			}
-		}
-	}()
-
-	// copy from stream, QPP-decrypt and send to net.Conn
-	buf := make([]byte, bufSize)
-	prng := _Q_.CreatePRNG(seed)
-	for {
-		n, err := p1.Read(buf)
-		if err != nil {
-			p1.Close()
-			return
-		}
-
-		// QPP-encrypt
-		_Q_.DecryptWithPRNG(buf[:n], prng)
-		if _, err = p2.Write(buf[:n]); err != nil {
-			p2.Close()
-			return
-		}
+	if err2 != nil && err2 != io.EOF {
+		logln("error:", err2, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
 	}
 }
 

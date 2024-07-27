@@ -81,6 +81,7 @@ func NewTimedSched(parallel int) *TimedSched {
 	return ts
 }
 
+// sched is a goroutine to schedule and execute timed tasks.
 func (ts *TimedSched) sched() {
 	var tasks timedFuncHeap
 	timer := time.NewTimer(0)
@@ -119,6 +120,7 @@ func (ts *TimedSched) sched() {
 	}
 }
 
+// prepend is the front desk goroutine to register tasks
 func (ts *TimedSched) prepend() {
 	var tasks []timedFunc
 	for {

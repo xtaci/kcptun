@@ -31,6 +31,8 @@ import (
 )
 
 // Entropy defines a entropy source
+//
+//	Entropy in this file generate random bits for the first 16-bytes of each packets.
 type Entropy interface {
 	Init()
 	Fill(nonce []byte)

@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 //go:build linux
-// +build linux
 
 package kcp
 
@@ -34,6 +33,7 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
+// tx is the optimized procedure to transmit packets utilizing the linux sendmmsg system call
 func (s *UDPSession) tx(txqueue []ipv4.Message) {
 	// default version
 	if s.xconn == nil || s.xconnWriteError != nil {

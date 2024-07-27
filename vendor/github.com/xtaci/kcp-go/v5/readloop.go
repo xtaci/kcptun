@@ -28,6 +28,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// defaultReadLoop is the standard procedure for reading from a connection
 func (s *UDPSession) defaultReadLoop() {
 	buf := make([]byte, mtuLimit)
 	var src string
@@ -48,6 +49,7 @@ func (s *UDPSession) defaultReadLoop() {
 	}
 }
 
+// defaultReadLoop is the standard procedure for reading and accepting connections on a listener
 func (l *Listener) defaultMonitor() {
 	buf := make([]byte, mtuLimit)
 	for {

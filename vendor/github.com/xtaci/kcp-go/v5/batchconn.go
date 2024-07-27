@@ -28,6 +28,7 @@ const (
 	batchSize = 16
 )
 
+// batchConn defines the interface used in batch IO
 type batchConn interface {
 	WriteBatch(ms []ipv4.Message, flags int) (int, error)
 	ReadBatch(ms []ipv4.Message, flags int) (int, error)

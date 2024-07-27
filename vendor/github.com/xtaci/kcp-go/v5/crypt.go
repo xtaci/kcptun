@@ -42,6 +42,11 @@ import (
 )
 
 var (
+	// a defined initial vector
+	// https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Initialization_vector_.28IV.29
+	// https://en.wikipedia.org/wiki/Initialization_vector
+	// actually initial vector is not used in this package, we prepend a random nonce to each outgoing packets.
+	// though IV is fixed, the first 8 bytes of the encrypted data is always random.
 	initialVector = []byte{167, 115, 79, 156, 18, 172, 27, 1, 164, 21, 242, 193, 252, 120, 230, 107}
 	saltxor       = `sH3CIVoF#rWLtJo6`
 )
@@ -459,6 +464,7 @@ func decrypt8(block cipher.Block, dst, src, buf []byte) {
 	ptr_tbl := (*uint64)(unsafe.Pointer(&tbl[0]))
 	ptr_next := (*uint64)(unsafe.Pointer(&next[0]))
 
+	// loop unrolling to relieve data dependency
 	for i := 0; i < repeat; i++ {
 		s := src[base:][0:64]
 		d := dst[base:][0:64]
@@ -545,6 +551,8 @@ func decrypt16(block cipher.Block, dst, src, buf []byte) {
 	base := 0
 	repeat := n / 8
 	left := n % 8
+
+	// loop unrolling to relieve data dependency
 	for i := 0; i < repeat; i++ {
 		s := src[base:][0:128]
 		d := dst[base:][0:128]

@@ -19,6 +19,30 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+
+// [THE GENERALIZED DATA PIPELINE FOR KCP-GO]
+//
+// Outgoing Data Pipeline:                        Incoming Data Pipeline:
+// Stream          (Input Data)                   Packet Network  (Network Interface Card)
+//   |                                               |
+//   v                                               v
+// KCP Output      (Reliable Transport Layer)     Reader/Listener (Reception Queue)
+//   |                                               |
+//   v                                               v
+// FEC Encoding    (Forward Error Correction)     Decryption      (Data Security)
+//   |                                               |
+//   v                                               v
+// CRC32 Checksum  (Error Detection)              CRC32 Checksum  (Error Detection)
+//   |                                               |
+//   v                                               v
+// Encryption      (Data Security)                FEC Decoding    (Forward Error Correction)
+//   |                                               |
+//   v                                               v
+// TxQueue         (Transmission Queue)           KCP Input       (Reliable Transport Layer)
+//   |                                               |
+//   v                                               v
+// Packet Network  (Network Transmission)         Stream          (Input Data)
+
 package kcp
 
 import (
@@ -51,6 +75,9 @@ const (
 
 	// accept backlog
 	acceptBacklog = 128
+
+	// max latency for consecutive FEC encoding, in millisecond
+	maxFECEncodeLatency = 500
 )
 
 var (
@@ -116,7 +143,8 @@ type (
 		nonce Entropy
 
 		// packets waiting to be sent on wire
-		txqueue         []ipv4.Message
+		chPostProcessing chan []byte
+
 		xconn           batchConn // for x/net
 		xconnWriteError error
 
@@ -146,6 +174,7 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 	sess.chWriteEvent = make(chan struct{}, 1)
 	sess.chSocketReadError = make(chan struct{})
 	sess.chSocketWriteError = make(chan struct{})
+	sess.chPostProcessing = make(chan []byte, acceptBacklog)
 	sess.remote = remote
 	sess.conn = conn
 	sess.ownConn = ownConn
@@ -182,11 +211,25 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 	}
 
 	sess.kcp = NewKCP(conv, func(buf []byte, size int) {
+		// A basic check for the minimum packet size
 		if size >= IKCP_OVERHEAD+sess.headerSize {
-			sess.output(buf[:size])
+			// make a copy
+			bts := xmitBuf.Get().([]byte)[:size]
+			copy(bts, buf)
+
+			// delivery to post processing
+			select {
+			case sess.chPostProcessing <- bts:
+			case <-sess.die:
+				return
+			}
+
 		}
 	})
 	sess.kcp.ReserveBytes(sess.headerSize)
+
+	// create post-processing goroutine
+	go sess.postProcess()
 
 	if sess.l == nil { // it's a client connection
 		go sess.readLoop()
@@ -222,7 +265,10 @@ RESET_TIMER:
 
 	for {
 		s.mu.Lock()
-		if len(s.bufptr) > 0 { // copy from buffer into b
+		// bufptr points to the current position of recvbuf,
+		// if previous 'b' is insufficient to accommodate the data, the
+		// remaining data will be stored in bufptr for next read.
+		if len(s.bufptr) > 0 {
 			n = copy(b, s.bufptr)
 			s.bufptr = s.bufptr[n:]
 			s.mu.Unlock()
@@ -231,23 +277,28 @@ RESET_TIMER:
 		}
 
 		if size := s.kcp.PeekSize(); size > 0 { // peek data size from kcp
-			if len(b) >= size { // receive data into 'b' directly
+			// if 'b' is large enough to accommodate the data, read directly
+			// from kcp.recv() to 'b', like 'DMA'.
+			if len(b) >= size {
 				s.kcp.Recv(b)
 				s.mu.Unlock()
 				atomic.AddUint64(&DefaultSnmp.BytesReceived, uint64(size))
 				return size, nil
 			}
 
-			// if necessary resize the stream buffer to guarantee a sufficient buffer space
+			// otherwise, read to recvbuf first, then copy to 'b'.
+			// dynamically adjust the buffer size to the maximum of 'packet size' when necessary.
 			if cap(s.recvbuf) < size {
+				// usually recvbuf has a size of maximum packet size
 				s.recvbuf = make([]byte, size)
 			}
 
 			// resize the length of recvbuf to correspond to data size
 			s.recvbuf = s.recvbuf[:size]
-			s.kcp.Recv(s.recvbuf)
-			n = copy(b, s.recvbuf)   // copy to 'b'
+			s.kcp.Recv(s.recvbuf)    // read data to recvbuf first
+			n = copy(b, s.recvbuf)   // then copy bytes to 'b' as many as possible
 			s.bufptr = s.recvbuf[n:] // pointer update
+
 			s.mu.Unlock()
 			atomic.AddUint64(&DefaultSnmp.BytesReceived, uint64(n))
 			return n, nil
@@ -255,7 +306,8 @@ RESET_TIMER:
 
 		s.mu.Unlock()
 
-		// wait for read event or timeout or error
+		// if it runs here, that means we have to block the call, and wait until the
+		// next data packet arrives.
 		select {
 		case <-s.chReadEvent:
 			if timeout != nil {
@@ -288,6 +340,7 @@ RESET_TIMER:
 	}
 
 	for {
+		// check for connection close and socket error
 		select {
 		case <-s.chSocketWriteError:
 			return 0, s.socketWriteError.Load().(error)
@@ -301,8 +354,10 @@ RESET_TIMER:
 		// make sure write do not overflow the max sliding window on both side
 		waitsnd := s.kcp.WaitSnd()
 		if waitsnd < int(s.kcp.snd_wnd) && waitsnd < int(s.kcp.rmt_wnd) {
+			// transmit all data sequentially, make sure every packet size is within 'mss'
 			for _, b := range v {
 				n += len(b)
+				// handle each slice for packet splitting
 				for {
 					if len(b) <= int(s.kcp.mss) {
 						s.kcp.Send(b)
@@ -316,8 +371,10 @@ RESET_TIMER:
 
 			waitsnd = s.kcp.WaitSnd()
 			if waitsnd >= int(s.kcp.snd_wnd) || waitsnd >= int(s.kcp.rmt_wnd) || !s.writeDelay {
+				// put the packets on wire immediately if the inflight window is full
+				// or if we've specified write no delay(NO merging of outgoing bytes)
+				// we don't have to wait until the periodical update() procedure uncorks.
 				s.kcp.flush(false)
-				s.uncork()
 			}
 			s.mu.Unlock()
 			atomic.AddUint64(&DefaultSnmp.BytesSent, uint64(n))
@@ -326,6 +383,8 @@ RESET_TIMER:
 
 		s.mu.Unlock()
 
+		// if it runs here, that means we have to block the call, and wait until the
+		// transmit buffer to become available again.
 		select {
 		case <-s.chWriteEvent:
 			if timeout != nil {
@@ -342,19 +401,6 @@ RESET_TIMER:
 	}
 }
 
-// uncork sends data in txqueue if there is any
-func (s *UDPSession) uncork() {
-	if len(s.txqueue) > 0 {
-		s.tx(s.txqueue)
-		// recycle
-		for k := range s.txqueue {
-			xmitBuf.Put(s.txqueue[k].Buffers[0])
-			s.txqueue[k].Buffers = nil
-		}
-		s.txqueue = s.txqueue[:0]
-	}
-}
-
 // Close closes the connection.
 func (s *UDPSession) Close() error {
 	var once bool
@@ -366,11 +412,11 @@ func (s *UDPSession) Close() error {
 	if once {
 		atomic.AddUint64(&DefaultSnmp.CurrEstab, ^uint64(0))
 
-		// try best to send all queued messages
+		// try best to send all queued messages especially the data in txqueue
 		s.mu.Lock()
 		s.kcp.flush(false)
-		s.uncork()
-		// release pending segments
+
+		// release pending segments to recyle memory
 		s.kcp.ReleaseTX()
 		if s.fecDecoder != nil {
 			s.fecDecoder.release()
@@ -544,51 +590,79 @@ func (s *UDPSession) SetWriteBuffer(bytes int) error {
 	return errInvalidOperation
 }
 
-// post-processing for sending a packet from kcp core
-// steps:
-// 1. FEC packet generation
-// 2. CRC32 integrity
-// 3. Encryption
-// 4. TxQueue
-func (s *UDPSession) output(buf []byte) {
-	var ecc [][]byte
+// a goroutine to handle post processing of kcp and make the critical section smaller
+// pipeline for outgoing packets (from ARQ to network)
+//
+//	KCP output -> FEC encoding -> CRC32 integrity -> Encryption -> TxQueue
+func (s *UDPSession) postProcess() {
+	txqueue := make([]ipv4.Message, 0, acceptBacklog)
+	chCork := make(chan struct{}, 1)
 
-	// 1. FEC encoding
-	if s.fecEncoder != nil {
-		ecc = s.fecEncoder.encode(buf, s.kcp.rx_rto)
-	}
+	for {
+		select {
+		case buf := <-s.chPostProcessing: // dequeue from post processing
+			var ecc [][]byte
 
-	// 2&3. crc32 & encryption
-	if s.block != nil {
-		s.nonce.Fill(buf[:nonceSize])
-		checksum := crc32.ChecksumIEEE(buf[cryptHeaderSize:])
-		binary.LittleEndian.PutUint32(buf[nonceSize:], checksum)
-		s.block.Encrypt(buf, buf)
+			// 1. FEC encoding
+			if s.fecEncoder != nil {
+				ecc = s.fecEncoder.encode(buf, maxFECEncodeLatency)
+			}
 
-		for k := range ecc {
-			s.nonce.Fill(ecc[k][:nonceSize])
-			checksum := crc32.ChecksumIEEE(ecc[k][cryptHeaderSize:])
-			binary.LittleEndian.PutUint32(ecc[k][nonceSize:], checksum)
-			s.block.Encrypt(ecc[k], ecc[k])
+			// 2&3. crc32 & encryption
+			if s.block != nil {
+				s.nonce.Fill(buf[:nonceSize])
+				checksum := crc32.ChecksumIEEE(buf[cryptHeaderSize:])
+				binary.LittleEndian.PutUint32(buf[nonceSize:], checksum)
+				s.block.Encrypt(buf, buf)
+
+				for k := range ecc {
+					s.nonce.Fill(ecc[k][:nonceSize])
+					checksum := crc32.ChecksumIEEE(ecc[k][cryptHeaderSize:])
+					binary.LittleEndian.PutUint32(ecc[k][nonceSize:], checksum)
+					s.block.Encrypt(ecc[k], ecc[k])
+				}
+			}
+
+			// 4. TxQueue
+			var msg ipv4.Message
+			for i := 0; i < s.dup+1; i++ {
+				bts := xmitBuf.Get().([]byte)[:len(buf)]
+				copy(bts, buf)
+				msg.Buffers = [][]byte{bts}
+				msg.Addr = s.remote
+				txqueue = append(txqueue, msg)
+			}
+
+			for k := range ecc {
+				bts := xmitBuf.Get().([]byte)[:len(ecc[k])]
+				copy(bts, ecc[k])
+				msg.Buffers = [][]byte{bts}
+				msg.Addr = s.remote
+				txqueue = append(txqueue, msg)
+			}
+
+			// notify chCork only when chPostProcessing is empty
+			if len(s.chPostProcessing) == 0 {
+				select {
+				case chCork <- struct{}{}:
+				default:
+				}
+			}
+
+		case <-chCork: // emulate a corked socket
+			if len(txqueue) > 0 {
+				s.tx(txqueue)
+				// recycle
+				for k := range txqueue {
+					xmitBuf.Put(txqueue[k].Buffers[0])
+					txqueue[k].Buffers = nil
+				}
+				txqueue = txqueue[:0]
+			}
+
+		case <-s.die:
+			return
 		}
-	}
-
-	// 4. TxQueue
-	var msg ipv4.Message
-	for i := 0; i < s.dup+1; i++ {
-		bts := xmitBuf.Get().([]byte)[:len(buf)]
-		copy(bts, buf)
-		msg.Buffers = [][]byte{bts}
-		msg.Addr = s.remote
-		s.txqueue = append(s.txqueue, msg)
-	}
-
-	for k := range ecc {
-		bts := xmitBuf.Get().([]byte)[:len(ecc[k])]
-		copy(bts, ecc[k])
-		msg.Buffers = [][]byte{bts}
-		msg.Addr = s.remote
-		s.txqueue = append(s.txqueue, msg)
 	}
 }
 
@@ -603,7 +677,6 @@ func (s *UDPSession) update() {
 		if waitsnd < int(s.kcp.snd_wnd) && waitsnd < int(s.kcp.rmt_wnd) {
 			s.notifyWriteEvent()
 		}
-		s.uncork()
 		s.mu.Unlock()
 		// self-synchronized timed scheduling
 		SystemTimedSched.Put(s.update, time.Now().Add(time.Duration(interval)*time.Millisecond))
@@ -662,7 +735,8 @@ func (s *UDPSession) notifyWriteError(err error) {
 	})
 }
 
-// packet input stage
+// packet input pipeline:
+// network -> [decryption ->] [crc32 ->] [FEC ->] [KCP input ->] stream -> application
 func (s *UDPSession) packetInput(data []byte) {
 	decrypted := false
 	if s.block != nil && len(data) >= cryptHeaderSize {
@@ -698,9 +772,12 @@ func (s *UDPSession) kcpInput(data []byte) {
 			// lock
 			s.mu.Lock()
 			// if fecDecoder is not initialized, create one with default parameter
+			// lazy initialization
 			if s.fecDecoder == nil {
 				s.fecDecoder = newFECDecoder(1, 1)
 			}
+
+			// FEC decoding
 			recovers := s.fecDecoder.decode(f)
 			if f.flag() == typeData {
 				if ret := s.kcp.Input(data[fecHeaderSizePlus2:], true, s.ackNoDelay); ret != 0 {
@@ -708,6 +785,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 				}
 			}
 
+			// If there're some packets recovered from FEC, feed them into kcp
 			for _, r := range recovers {
 				if len(r) >= 2 { // must be larger than 2bytes
 					sz := binary.LittleEndian.Uint16(r)
@@ -723,21 +801,21 @@ func (s *UDPSession) kcpInput(data []byte) {
 				} else {
 					fecErrs++
 				}
-				// recycle the recovers
+				// recycle the buffer
 				xmitBuf.Put(r)
 			}
 
-			// to notify the readers to receive the data
+			// to notify the readers to receive the data if there's any
 			if n := s.kcp.PeekSize(); n > 0 {
 				s.notifyReadEvent()
 			}
-			// to notify the writers
+
+			// to notify the writers if the window size allows to send more packets
+			// and the remote window size is not full.
 			waitsnd := s.kcp.WaitSnd()
 			if waitsnd < int(s.kcp.snd_wnd) && waitsnd < int(s.kcp.rmt_wnd) {
 				s.notifyWriteEvent()
 			}
-
-			s.uncork()
 			s.mu.Unlock()
 		} else {
 			atomic.AddUint64(&DefaultSnmp.InErrs, 1)
@@ -754,7 +832,6 @@ func (s *UDPSession) kcpInput(data []byte) {
 		if waitsnd < int(s.kcp.snd_wnd) && waitsnd < int(s.kcp.rmt_wnd) {
 			s.notifyWriteEvent()
 		}
-		s.uncork()
 		s.mu.Unlock()
 	}
 
