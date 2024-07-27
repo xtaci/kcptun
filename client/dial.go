@@ -33,20 +33,22 @@ import (
 	"github.com/xtaci/tcpraw"
 )
 
+// dial connects to the remote address
 func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
 	mp, err := generic.ParseMultiPort(config.RemoteAddr)
 	if err != nil {
 		return nil, err
 	}
 
+	// generate a random port
 	var randport uint64
 	err = binary.Read(rand.Reader, binary.LittleEndian, &randport)
 	if err != nil {
 		return nil, err
 	}
-
 	remoteAddr := fmt.Sprintf("%v:%v", mp.Host, uint64(mp.MinPort)+randport%uint64(mp.MaxPort-mp.MinPort+1))
 
+	// emulate TCP connection
 	if config.TCP {
 		conn, err := tcpraw.Dial("tcp", remoteAddr)
 		if err != nil {
@@ -54,6 +56,7 @@ func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
 		}
 		return kcp.NewConn(remoteAddr, block, config.DataShard, config.ParityShard, conn)
 	}
-	return kcp.DialWithOptions(remoteAddr, block, config.DataShard, config.ParityShard)
 
+	// default UDP connection
+	return kcp.DialWithOptions(remoteAddr, block, config.DataShard, config.ParityShard)
 }

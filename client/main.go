@@ -554,6 +554,7 @@ func main() {
 	myApp.Run(os.Args)
 }
 
+// scavenger goroutine is used to close expired sessions
 func scavenger(ch chan timedSession, config *Config) {
 	// When AutoExpire is set to 0 (default), sessionList will keep empty.
 	// Then this routine won't need to do anything; thus just terminate it.

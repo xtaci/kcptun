@@ -37,6 +37,7 @@ func init() {
 	go sigHandler()
 }
 
+// sigHandler handles SNMP information dump
 func sigHandler() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGUSR1)

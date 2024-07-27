@@ -30,6 +30,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CompStream is a net.Conn wrapper that compresses data using snappy
 type CompStream struct {
 	conn net.Conn
 	w    *snappy.Writer
@@ -75,6 +76,7 @@ func (c *CompStream) SetWriteDeadline(t time.Time) error {
 	return c.conn.SetWriteDeadline(t)
 }
 
+// NewCompStream creates a new stream that compresses data using snappy
 func NewCompStream(conn net.Conn) *CompStream {
 	c := new(CompStream)
 	c.conn = conn
