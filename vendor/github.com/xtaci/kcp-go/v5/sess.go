@@ -625,19 +625,25 @@ func (s *UDPSession) postProcess() {
 
 			// 4. TxQueue
 			var msg ipv4.Message
-			for i := 0; i < s.dup+1; i++ {
+			msg.Addr = s.remote
+
+			// original copy, move buf to txqueue directly
+			msg.Buffers = [][]byte{buf}
+			txqueue = append(txqueue, msg)
+
+			// dup copies for testing if set
+			for i := 0; i < s.dup; i++ {
 				bts := xmitBuf.Get().([]byte)[:len(buf)]
 				copy(bts, buf)
 				msg.Buffers = [][]byte{bts}
-				msg.Addr = s.remote
 				txqueue = append(txqueue, msg)
 			}
 
+			// parity
 			for k := range ecc {
 				bts := xmitBuf.Get().([]byte)[:len(ecc[k])]
 				copy(bts, ecc[k])
 				msg.Buffers = [][]byte{bts}
-				msg.Addr = s.remote
 				txqueue = append(txqueue, msg)
 			}
 
