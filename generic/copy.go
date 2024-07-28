@@ -48,10 +48,8 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 
 // Pipe create a general bidirectional pipe between two streams
 func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
-	defer alice.Close()
-	defer bob.Close()
+	var closed sync.Once
 
-	// use WaitGroup to wait for both streams to finish
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -59,12 +57,20 @@ func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
 		// write error directly to the *pointer
 		_, *err = Copy(dst, src)
 		wg.Done()
+
+		// close only once
+		closed.Do(func() {
+			alice.Close()
+			bob.Close()
+		})
 	}
 
+	// start bidirectional stream copying
 	go streamCopy(alice, bob, &errA)
-	streamCopy(bob, alice, &errB)
+	go streamCopy(bob, alice, &errB)
 
-	// wait for both streams to finish before we close
+	// wait for both direction to close
 	wg.Wait()
+
 	return
 }
