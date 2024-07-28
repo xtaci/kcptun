@@ -22,10 +22,12 @@
 
 package smux
 
+// _itimediff returns the time difference between two uint32
 func _itimediff(later, earlier uint32) int32 {
 	return (int32)(later - earlier)
 }
 
+// shaperHeap is a min-heap of writeRequest
 type shaperHeap []writeRequest
 
 func (h shaperHeap) Len() int { return len(h) }

@@ -43,7 +43,7 @@ const (
 type CLASSID int
 
 const (
-	CLSCTRL CLASSID = iota
+	CLSCTRL CLASSID = iota // prioritized control signal
 	CLSDATA
 )
 
@@ -362,7 +362,7 @@ func (s *Session) recvLoop() {
 			sid := hdr.StreamID()
 			switch hdr.Cmd() {
 			case cmdNOP:
-			case cmdSYN:
+			case cmdSYN: // stream opening
 				s.streamLock.Lock()
 				if _, ok := s.streams[sid]; !ok {
 					stream := newStream(sid, s.config.MaxFrameSize, s)
@@ -373,14 +373,14 @@ func (s *Session) recvLoop() {
 					}
 				}
 				s.streamLock.Unlock()
-			case cmdFIN:
+			case cmdFIN: // stream closing
 				s.streamLock.Lock()
 				if stream, ok := s.streams[sid]; ok {
 					stream.fin()
 					stream.notifyReadEvent()
 				}
 				s.streamLock.Unlock()
-			case cmdPSH:
+			case cmdPSH: // data frame
 				if hdr.Length() > 0 {
 					newbuf := defaultAllocator.Get(int(hdr.Length()))
 					if written, err := io.ReadFull(s.conn, newbuf); err == nil {
@@ -396,7 +396,7 @@ func (s *Session) recvLoop() {
 						return
 					}
 				}
-			case cmdUPD:
+			case cmdUPD: // a window update signal
 				if _, err := io.ReadFull(s.conn, updHdr[:]); err == nil {
 					s.streamLock.Lock()
 					if stream, ok := s.streams[sid]; ok {
@@ -418,6 +418,7 @@ func (s *Session) recvLoop() {
 	}
 }
 
+// keepalive sends NOP frame to peer to keep the connection alive, and detect dead peers
 func (s *Session) keepalive() {
 	tickerPing := time.NewTicker(s.config.KeepAliveInterval)
 	tickerTimeout := time.NewTicker(s.config.KeepAliveTimeout)
@@ -443,7 +444,8 @@ func (s *Session) keepalive() {
 	}
 }
 
-// shaper shapes the sending sequence among streams
+// shaperLoop implements a priority queue for write requests,
+// some control messages are prioritized over data messages
 func (s *Session) shaperLoop() {
 	var reqs shaperHeap
 	var next writeRequest
@@ -484,6 +486,7 @@ func (s *Session) shaperLoop() {
 	}
 }
 
+// sendLoop sends frames to the underlying connection
 func (s *Session) sendLoop() {
 	var buf []byte
 	var n int

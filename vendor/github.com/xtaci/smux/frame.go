@@ -60,16 +60,18 @@ const (
 
 // Frame defines a packet from or to be multiplexed into a single connection
 type Frame struct {
-	ver  byte
-	cmd  byte
-	sid  uint32
-	data []byte
+	ver  byte   // version
+	cmd  byte   // command
+	sid  uint32 // stream id
+	data []byte // payload
 }
 
+// newFrame creates a new frame with given version, command and stream id
 func newFrame(version byte, cmd byte, sid uint32) Frame {
 	return Frame{ver: version, cmd: cmd, sid: sid}
 }
 
+// rawHeader is a byte array representation of Frame header
 type rawHeader [headerSize]byte
 
 func (h rawHeader) Version() byte {
@@ -93,6 +95,7 @@ func (h rawHeader) String() string {
 		h.Version(), h.Cmd(), h.StreamID(), h.Length())
 }
 
+// updHeader is a byte array representation of cmdUPD
 type updHeader [szCmdUPD]byte
 
 func (h updHeader) Consumed() uint32 {
