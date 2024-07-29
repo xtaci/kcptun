@@ -28,7 +28,6 @@ import (
 	"io"
 	"log"
 	"math/big"
-	"math/rand"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -110,7 +109,6 @@ type timedSession struct {
 }
 
 func main() {
-	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
