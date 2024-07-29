@@ -306,15 +306,19 @@ In kcptun, after v20240701, it adapts [QPP](https://github.com/xtaci/qpp) based 
 
 To enable QPP in kcptun, you need to set: 
 ```
-   --QPP                Enable Quantum Permutation Pad for universal quantum-safe cryptography, based on classic cryptography
-   --QPPCount value     Number of pads to use for QPP, the more the pads, the more secure, one pad costs 256 bytes (default: 64)
+   --QPP                enable Quantum Permutation Pads(QPP)
+   --QPPCount value     the prime number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes. (default: 61)
 ```
 Your could also specify
 ```json
      "qpp":true,
-     "qpp-count":64,
+     "qpp-count":61,
 ```
 in your client and server side json file. These 2 parameters must be identical on both sides.
+
+1. To achieve **Effective Quantum-Resistance,**, specify at least **211** bytes in  the `-key` parameter and ensure `-QPPCount` is no less than **7**.
+2. Make sure `-QPPCount` is **COPRIME（互素）** to **8**(or simply set to a **PRIME** number) like: 
+```101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199... ```
 
 #### Memory Control
 
