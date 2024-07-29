@@ -57,57 +57,6 @@ const (
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
-// handleClient aggregates connection p1 on mux
-func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool) {
-	logln := func(v ...interface{}) {
-		if !quiet {
-			log.Println(v...)
-		}
-	}
-
-	// handles transport layer
-	defer p1.Close()
-	p2, err := session.OpenStream()
-	if err != nil {
-		logln(err)
-		return
-	}
-	defer p2.Close()
-
-	logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-
-	var s1, s2 io.ReadWriteCloser = p1, p2
-	// if QPP is enabled, create QPP read write closer
-	if _Q_ != nil {
-		// replace s2 with QPP port
-		s2 = generic.NewQPPPort(p2, _Q_, seed)
-	}
-
-	// stream layer
-	err1, err2 := generic.Pipe(s1, s2)
-
-	// handles transport layer errors
-	if err1 != nil && err1 != io.EOF {
-		logln("error:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-	}
-	if err2 != nil && err2 != io.EOF {
-		logln("error:", err2, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-	}
-}
-
-func checkError(err error) {
-	if err != nil {
-		log.Printf("%+v\n", err)
-		os.Exit(-1)
-	}
-}
-
-type timedSession struct {
-	session    *smux.Session
-	expiryDate time.Time
-}
-
 func main() {
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
@@ -550,6 +499,58 @@ func main() {
 		}
 	}
 	myApp.Run(os.Args)
+}
+
+// handleClient aggregates connection p1 on mux
+func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool) {
+	logln := func(v ...interface{}) {
+		if !quiet {
+			log.Println(v...)
+		}
+	}
+
+	// handles transport layer
+	defer p1.Close()
+	p2, err := session.OpenStream()
+	if err != nil {
+		logln(err)
+		return
+	}
+	defer p2.Close()
+
+	logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+
+	var s1, s2 io.ReadWriteCloser = p1, p2
+	// if QPP is enabled, create QPP read write closer
+	if _Q_ != nil {
+		// replace s2 with QPP port
+		s2 = generic.NewQPPPort(p2, _Q_, seed)
+	}
+
+	// stream layer
+	err1, err2 := generic.Pipe(s1, s2)
+
+	// handles transport layer errors
+	if err1 != nil && err1 != io.EOF {
+		logln("error:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	}
+	if err2 != nil && err2 != io.EOF {
+		logln("error:", err2, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	}
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Printf("%+v\n", err)
+		os.Exit(-1)
+	}
+}
+
+// timedSession is a wrapper for smux.Session with expiry date
+type timedSession struct {
+	session    *smux.Session
+	expiryDate time.Time
 }
 
 // scavenger goroutine is used to close expired sessions

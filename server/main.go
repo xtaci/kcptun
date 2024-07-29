@@ -58,95 +58,6 @@ const (
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
-// handle multiplex-ed connection
-func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
-	// check if target is unix domain socket
-	var isUnix bool
-	if _, _, err := net.SplitHostPort(config.Target); err != nil {
-		isUnix = true
-	}
-	log.Println("smux version:", config.SmuxVer, "on connection:", conn.LocalAddr(), "->", conn.RemoteAddr())
-
-	// stream multiplex
-	smuxConfig := smux.DefaultConfig()
-	smuxConfig.Version = config.SmuxVer
-	smuxConfig.MaxReceiveBuffer = config.SmuxBuf
-	smuxConfig.MaxStreamBuffer = config.StreamBuf
-	smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
-
-	mux, err := smux.Server(conn, smuxConfig)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer mux.Close()
-
-	for {
-		stream, err := mux.AcceptStream()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		go func(p1 *smux.Stream) {
-			var p2 net.Conn
-			var err error
-			if !isUnix {
-				p2, err = net.Dial("tcp", config.Target)
-			} else {
-				p2, err = net.Dial("unix", config.Target)
-			}
-
-			if err != nil {
-				log.Println(err)
-				p1.Close()
-				return
-			}
-
-			handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
-		}(stream)
-	}
-}
-
-func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool) {
-	logln := func(v ...interface{}) {
-		if !quiet {
-			log.Println(v...)
-		}
-	}
-
-	defer p1.Close()
-	defer p2.Close()
-
-	logln("stream opened", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
-	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
-
-	var s1, s2 io.ReadWriteCloser = p1, p2
-	// if QPP is enabled, create QPP read write closer
-	if _Q_ != nil {
-		// replace s1 with QPP port
-		s1 = generic.NewQPPPort(p1, _Q_, seed)
-	}
-
-	// stream layer
-	err1, err2 := generic.Pipe(s1, s2)
-
-	// handles transport layer errors
-	if err1 != nil && err1 != io.EOF {
-		logln("error:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
-	}
-	if err2 != nil && err2 != io.EOF {
-		logln("error:", err2, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
-	}
-}
-
-func checkError(err error) {
-	if err != nil {
-		log.Printf("%+v\n", err)
-		os.Exit(-1)
-	}
-}
-
 func main() {
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
@@ -526,4 +437,94 @@ func main() {
 		return nil
 	}
 	myApp.Run(os.Args)
+}
+
+// handle multiplex-ed connection
+func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
+	// check if target is unix domain socket
+	var isUnix bool
+	if _, _, err := net.SplitHostPort(config.Target); err != nil {
+		isUnix = true
+	}
+	log.Println("smux version:", config.SmuxVer, "on connection:", conn.LocalAddr(), "->", conn.RemoteAddr())
+
+	// stream multiplex
+	smuxConfig := smux.DefaultConfig()
+	smuxConfig.Version = config.SmuxVer
+	smuxConfig.MaxReceiveBuffer = config.SmuxBuf
+	smuxConfig.MaxStreamBuffer = config.StreamBuf
+	smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
+
+	mux, err := smux.Server(conn, smuxConfig)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer mux.Close()
+
+	for {
+		stream, err := mux.AcceptStream()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		go func(p1 *smux.Stream) {
+			var p2 net.Conn
+			var err error
+			if !isUnix {
+				p2, err = net.Dial("tcp", config.Target)
+			} else {
+				p2, err = net.Dial("unix", config.Target)
+			}
+
+			if err != nil {
+				log.Println(err)
+				p1.Close()
+				return
+			}
+
+			handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
+		}(stream)
+	}
+}
+
+// handleClient pipes two streams
+func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool) {
+	logln := func(v ...interface{}) {
+		if !quiet {
+			log.Println(v...)
+		}
+	}
+
+	defer p1.Close()
+	defer p2.Close()
+
+	logln("stream opened", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
+	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
+
+	var s1, s2 io.ReadWriteCloser = p1, p2
+	// if QPP is enabled, create QPP read write closer
+	if _Q_ != nil {
+		// replace s1 with QPP port
+		s1 = generic.NewQPPPort(p1, _Q_, seed)
+	}
+
+	// stream layer
+	err1, err2 := generic.Pipe(s1, s2)
+
+	// handles transport layer errors
+	if err1 != nil && err1 != io.EOF {
+		logln("error:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
+	}
+	if err2 != nil && err2 != io.EOF {
+		logln("error:", err2, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
+	}
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Printf("%+v\n", err)
+		os.Exit(-1)
+	}
 }
