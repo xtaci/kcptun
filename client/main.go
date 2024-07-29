@@ -40,7 +40,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go/v5"
-	"github.com/xtaci/kcptun/generic"
+	"github.com/xtaci/kcptun/std"
 	"github.com/xtaci/qpp"
 	"github.com/xtaci/smux"
 )
@@ -434,7 +434,7 @@ func main() {
 			if config.NoComp {
 				session, err = smux.Client(kcpconn, smuxConfig)
 			} else {
-				session, err = smux.Client(generic.NewCompStream(kcpconn), smuxConfig)
+				session, err = smux.Client(std.NewCompStream(kcpconn), smuxConfig)
 			}
 			if err != nil {
 				return nil, errors.Wrap(err, "createConn()")
@@ -455,7 +455,7 @@ func main() {
 		}
 
 		// start snmp logger
-		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
+		go std.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 
 		// start pprof
 		if config.Pprof {
@@ -525,11 +525,11 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Ses
 	// if QPP is enabled, create QPP read write closer
 	if _Q_ != nil {
 		// replace s2 with QPP port
-		s2 = generic.NewQPPPort(p2, _Q_, seed)
+		s2 = std.NewQPPPort(p2, _Q_, seed)
 	}
 
 	// stream layer
-	err1, err2 := generic.Pipe(s1, s2)
+	err1, err2 := std.Pipe(s1, s2)
 
 	// handles transport layer errors
 	if err1 != nil && err1 != io.EOF {

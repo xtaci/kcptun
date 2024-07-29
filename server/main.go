@@ -40,7 +40,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go/v5"
-	"github.com/xtaci/kcptun/generic"
+	"github.com/xtaci/kcptun/std"
 	"github.com/xtaci/qpp"
 	"github.com/xtaci/smux"
 	"github.com/xtaci/tcpraw"
@@ -358,7 +358,7 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
+		go std.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
@@ -396,7 +396,7 @@ func main() {
 					if config.NoComp {
 						go handleMux(_Q_, conn, &config)
 					} else {
-						go handleMux(_Q_, generic.NewCompStream(conn), &config)
+						go handleMux(_Q_, std.NewCompStream(conn), &config)
 					}
 				} else {
 					log.Printf("%+v", err)
@@ -404,7 +404,7 @@ func main() {
 			}
 		}
 
-		mp, err := generic.ParseMultiPort(config.Listen)
+		mp, err := std.ParseMultiPort(config.Listen)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -507,11 +507,11 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 	// if QPP is enabled, create QPP read write closer
 	if _Q_ != nil {
 		// replace s1 with QPP port
-		s1 = generic.NewQPPPort(p1, _Q_, seed)
+		s1 = std.NewQPPPort(p1, _Q_, seed)
 	}
 
 	// stream layer
-	err1, err2 := generic.Pipe(s1, s2)
+	err1, err2 := std.Pipe(s1, s2)
 
 	// handles transport layer errors
 	if err1 != nil && err1 != io.EOF {

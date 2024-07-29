@@ -20,33 +20,49 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//go:build linux || darwin || freebsd
-
-package main
+package std
 
 import (
+	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
+	"path/filepath"
+	"time"
 
 	kcp "github.com/xtaci/kcp-go/v5"
 )
 
-func init() {
-	go sigHandler()
-}
-
-// sigHandler handles SNMP information dump
-func sigHandler() {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGUSR1)
-	signal.Ignore(syscall.SIGPIPE)
-
+func SnmpLogger(path string, interval int) {
+	if path == "" || interval == 0 {
+		return
+	}
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
 	for {
-		switch <-ch {
-		case syscall.SIGUSR1:
-			log.Printf("KCP SNMP:%+v", kcp.DefaultSnmp.Copy())
+		select {
+		case <-ticker.C:
+			// split path into dirname and filename
+			logdir, logfile := filepath.Split(path)
+			// only format logfile
+			f, err := os.OpenFile(logdir+time.Now().Format(logfile), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			w := csv.NewWriter(f)
+			// write header in empty file
+			if stat, err := f.Stat(); err == nil && stat.Size() == 0 {
+				if err := w.Write(append([]string{"Unix"}, kcp.DefaultSnmp.Header()...)); err != nil {
+					log.Println(err)
+				}
+			}
+			if err := w.Write(append([]string{fmt.Sprint(time.Now().Unix())}, kcp.DefaultSnmp.ToSlice()...)); err != nil {
+				log.Println(err)
+			}
+			// kcp.DefaultSnmp.Reset()
+			w.Flush()
+			f.Close()
 		}
 	}
 }

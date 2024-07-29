@@ -20,54 +20,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package generic
+package std
 
 import (
-	"fmt"
-	"regexp"
-	"strconv"
-	"testing"
+	"io"
+
+	"github.com/xtaci/qpp"
 )
 
-func TestDial(t *testing.T) {
-	reg := regexp.MustCompile(`(.*)\:([0-9]{1,5})-?([0-9]{1,5})?`)
-	matches := reg.FindStringSubmatch("www.unknown.unknown:20000-21000")
-	for i := 0; i < len(matches); i++ {
-		fmt.Println(matches[i])
-	}
+// QPPPort implements io.ReadWriteCloser interface for Quantum Permutation Pads
+type QPPPort struct {
+	underlying io.ReadWriteCloser // io.Writer is not enough, we need to close the underlying writer as well
 
-	minPort, err := strconv.Atoi(matches[2])
-	if err != nil {
-		t.Fatal(err)
-	}
-	maxPort, err := strconv.Atoi(matches[3])
-	if err != nil {
-		t.Fatal(err)
-	}
+	qpp   *qpp.QuantumPermutationPad
+	wprng *qpp.Rand
+	rprng *qpp.Rand
+}
 
-	t.Log("minport:", minPort)
-	t.Log("maxport:", maxPort)
+func NewQPPPort(underlying io.ReadWriteCloser, qpp *qpp.QuantumPermutationPad, seed []byte) *QPPPort {
+	wprng := qpp.CreatePRNG(seed)
+	rprng := qpp.CreatePRNG(seed)
+	return &QPPPort{underlying, qpp, wprng, rprng}
+}
 
-	remoteAddr := fmt.Sprintf("%v:%v", matches[1], uint64(minPort)+1000%uint64(maxPort-minPort+1))
+func (port *QPPPort) Read(p []byte) (n int, err error) {
+	n, err = port.underlying.Read(p)
+	port.qpp.DecryptWithPRNG(p[:n], port.rprng)
+	return
+}
 
-	t.Log("RemoteAddr:", remoteAddr)
+func (r *QPPPort) Write(p []byte) (n int, err error) {
+	r.qpp.EncryptWithPRNG(p, r.wprng)
+	return r.underlying.Write(p)
+}
 
-	testcase2 := "1.2.3.4:20000"
-	matches = reg.FindStringSubmatch(testcase2)
-	for i := 0; i < len(matches); i++ {
-		t.Log(testcase2, "submatch", i, matches[i])
-	}
-
-	testcase3 := ":20000-20001"
-	matches = reg.FindStringSubmatch(testcase3)
-	for i := 0; i < len(matches); i++ {
-		t.Log(testcase3, "submatch", i, matches[i])
-	}
-
-	testcase4 := ":20000"
-	matches = reg.FindStringSubmatch(testcase4)
-	for i := 0; i < len(matches); i++ {
-		t.Log(testcase4, "submatch", i, matches[i])
-	}
-
+func (r *QPPPort) Close() error {
+	return r.underlying.Close()
 }
