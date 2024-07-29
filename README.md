@@ -133,15 +133,15 @@ If you insist on running under some ARM routers, you'd better turn off `FEC` and
 #### Usage
 
 ```
-➜  ~ ./client_linux_amd64 -h
+> ./client_freebsd_amd64 -h
 NAME:
    kcptun - client(with SMUX)
 
 USAGE:
-   client_linux_amd64 [global options] command [command options] [arguments...]
+   client_freebsd_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20190924
+   20240729
 
 COMMANDS:
    help, h  Shows a list of commands or help for one command
@@ -150,8 +150,10 @@ GLOBAL OPTIONS:
    --localaddr value, -l value      local listen address (default: ":12948")
    --remoteaddr value, -r value     kcp server address, eg: "IP:29900" a for single port, "IP:minport-maxport" for port range (default: "vps:29900")
    --key value                      pre-shared secret between client and server (default: "it's a secrect") [$KCPTUN_KEY]
-   --crypt value                    aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none (default: "aes")
+   --crypt value                    aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none, null (default: "aes")
    --mode value                     profiles: fast3, fast2, fast, normal, manual (default: "fast")
+   --QPP                            enable Quantum Permutation Pads(QPP)
+   --QPPCount value                 the prime number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes. (default: 61)
    --conn value                     set num of UDP connections to server (default: 1)
    --autoexpire value               set auto expiration time(in seconds) for a single UDP connection, 0 to disable (default: 0)
    --scavengettl value              set how long an expired connection can live (in seconds) (default: 600)
@@ -173,18 +175,19 @@ GLOBAL OPTIONS:
    --quiet                          to suppress the 'stream open/close' messages
    --tcp                            to emulate a TCP connection(linux)
    -c value                         config from json file, which will override the command from shell
+   --pprof                          start profiling server on :6060
    --help, -h                       show help
    --version, -v                    print the version
    
-➜  ~ ./server_linux_amd64 -h
+> ./server_freebsd_amd64 -h
 NAME:
    kcptun - server(with SMUX)
 
 USAGE:
-   server_linux_amd64 [global options] command [command options] [arguments...]
+   server_freebsd_amd64 [global options] command [command options] [arguments...]
 
 VERSION:
-   20190924
+   20240729
 
 COMMANDS:
    help, h  Shows a list of commands or help for one command
@@ -193,7 +196,9 @@ GLOBAL OPTIONS:
    --listen value, -l value         kcp server listen address, eg: "IP:29900" for a single port, "IP:minport-maxport" for port range (default: ":29900")
    --target value, -t value         target server address, or path/to/unix_socket (default: "127.0.0.1:12948")
    --key value                      pre-shared secret between client and server (default: "it's a secrect") [$KCPTUN_KEY]
-   --crypt value                    aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none (default: "aes")
+   --crypt value                    aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none, null (default: "aes")
+   --QPP                            enable Quantum Permutation Pads(QPP)
+   --QPPCount value                 the prime number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes. (default: 61)
    --mode value                     profiles: fast3, fast2, fast, normal, manual (default: "fast")
    --mtu value                      set maximum transmission unit for UDP packets (default: 1350)
    --sndwnd value                   set send window size(num of packets) (default: 1024)
