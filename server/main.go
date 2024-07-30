@@ -55,6 +55,11 @@ const (
 	bufSize = 4096
 )
 
+const (
+	TGT_UNIX = iota
+	TGT_TCP
+)
+
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
@@ -441,10 +446,10 @@ func main() {
 
 // handle multiplex-ed connection
 func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
-	// check if target is unix domain socket
-	var isUnix bool
+	// check target type
+	targetType := TGT_TCP
 	if _, _, err := net.SplitHostPort(config.Target); err != nil {
-		isUnix = true
+		targetType = TGT_UNIX
 	}
 	log.Println("smux version:", config.SmuxVer, "on connection:", conn.LocalAddr(), "->", conn.RemoteAddr())
 
@@ -472,19 +477,26 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 		go func(p1 *smux.Stream) {
 			var p2 net.Conn
 			var err error
-			if !isUnix {
+
+			switch targetType {
+			case TGT_TCP:
 				p2, err = net.Dial("tcp", config.Target)
-			} else {
+				if err != nil {
+					log.Println(err)
+					p1.Close()
+					return
+				}
+				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
+			case TGT_UNIX:
 				p2, err = net.Dial("unix", config.Target)
+				if err != nil {
+					log.Println(err)
+					p1.Close()
+					return
+				}
+				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
 			}
 
-			if err != nil {
-				log.Println(err)
-				p1.Close()
-				return
-			}
-
-			handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
 		}(stream)
 	}
 }
