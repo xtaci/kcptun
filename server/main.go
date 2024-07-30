@@ -51,8 +51,6 @@ const (
 	SALT = "kcp-go"
 	// maximum supported smux version
 	maxSmuxVer = 2
-	// stream copy buffer size
-	bufSize = 4096
 )
 
 const (
