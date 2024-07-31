@@ -174,9 +174,8 @@ type KCP struct {
 
 	acklist []ackItem
 
-	buffer   []byte
-	reserved int
-	output   output_callback
+	buffer []byte
+	output output_callback
 }
 
 type ackItem struct {
@@ -220,19 +219,6 @@ func (kcp *KCP) delSegment(seg *segment) {
 		xmitBuf.Put(seg.data)
 		seg.data = nil
 	}
-}
-
-// ReserveBytes keeps n bytes untouched from the beginning of the buffer,
-// the output_callback function should be aware of this.
-//
-// Return false if n >= mss
-func (kcp *KCP) ReserveBytes(n int) bool {
-	if n >= int(kcp.mtu-IKCP_OVERHEAD) || n < 0 {
-		return false
-	}
-	kcp.reserved = n
-	kcp.mss = kcp.mtu - IKCP_OVERHEAD - uint32(n)
-	return true
 }
 
 // PeekSize checks the size of next message in the recv queue
@@ -700,21 +686,21 @@ func (kcp *KCP) flush(ackOnly bool) uint32 {
 	seg.una = kcp.rcv_nxt
 
 	buffer := kcp.buffer
-	ptr := buffer[kcp.reserved:] // keep n bytes untouched
+	ptr := buffer
 
 	// makeSpace makes room for writing
 	makeSpace := func(space int) {
 		size := len(buffer) - len(ptr)
 		if size+space > int(kcp.mtu) {
 			kcp.output(buffer, size)
-			ptr = buffer[kcp.reserved:]
+			ptr = buffer
 		}
 	}
 
 	// flush bytes in buffer if there is any
 	flushBuffer := func() {
 		size := len(buffer) - len(ptr)
-		if size > kcp.reserved {
+		if size > 0 {
 			kcp.output(buffer, size)
 		}
 	}
@@ -1011,16 +997,14 @@ func (kcp *KCP) SetMtu(mtu int) int {
 	if mtu < 50 || mtu < IKCP_OVERHEAD {
 		return -1
 	}
-	if kcp.reserved >= int(kcp.mtu-IKCP_OVERHEAD) || kcp.reserved < 0 {
-		return -1
-	}
 
 	buffer := make([]byte, mtu)
 	if buffer == nil {
 		return -2
 	}
+
 	kcp.mtu = uint32(mtu)
-	kcp.mss = kcp.mtu - IKCP_OVERHEAD - uint32(kcp.reserved)
+	kcp.mss = kcp.mtu - IKCP_OVERHEAD
 	kcp.buffer = buffer
 	return 0
 }

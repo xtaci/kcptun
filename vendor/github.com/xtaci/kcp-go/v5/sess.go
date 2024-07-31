@@ -212,10 +212,11 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 
 	sess.kcp = NewKCP(conv, func(buf []byte, size int) {
 		// A basic check for the minimum packet size
-		if size >= IKCP_OVERHEAD+sess.headerSize {
+		if size >= IKCP_OVERHEAD {
 			// make a copy
-			bts := xmitBuf.Get().([]byte)[:size]
-			copy(bts, buf)
+			bts := xmitBuf.Get().([]byte)[:size+sess.headerSize]
+			// copy the data to a new buffer, and reserve header space
+			copy(bts[sess.headerSize:], buf)
 
 			// delivery to post processing
 			select {
@@ -226,7 +227,6 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 
 		}
 	})
-	sess.kcp.ReserveBytes(sess.headerSize)
 
 	// create post-processing goroutine
 	go sess.postProcess()

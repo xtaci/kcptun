@@ -1,4 +1,4 @@
-<img src="kcp-go.png" alt="kcp-go" height="50px" />
+<img src="assets/kcp-go.png" alt="kcp-go" height="50px" />
 
 
 [![GoDoc][1]][2] [![Powered][9]][10] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Coverage Statusd][7]][8] [![Sourcegraph][13]][14]
@@ -44,7 +44,7 @@ For complete documentation, see the associated [Godoc](https://godoc.org/github.
 
 ## Specification
 
-<img src="frame.png" alt="Frame Format" height="109px" />
+<img src="assets/frame.png" alt="Frame Format" height="109px" />
 
 ```
 NONCE:
@@ -200,7 +200,7 @@ ok      github.com/xtaci/kcp-go/v5      64.151s
 
 
 ## Typical Flame Graph
-![Flame Graph in kcptun](flame.png)
+![Flame Graph in kcptun](assets/flame.png)
 
 ## Key Design Considerations
 
