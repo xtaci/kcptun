@@ -4,8 +4,8 @@
 
 [1]: https://img.shields.io/docker/pulls/xtaci/kcptun
 [2]: https://hub.docker.com/r/xtaci/kcptun
-[3]: https://travis-ci.org/xtaci/kcptun.svg?branch=master
-[4]: https://travis-ci.org/xtaci/kcptun
+[3]: https://img.shields.io/github/created-at/xtaci/kcptun
+[4]: https://img.shields.io/github/created-at/xtaci/kcptun
 [5]: https://goreportcard.com/badge/github.com/xtaci/kcptun
 [6]: https://goreportcard.com/report/github.com/xtaci/kcptun
 [11]: https://img.shields.io/github/license/xtaci/kcptun
