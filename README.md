@@ -93,36 +93,33 @@ All precompiled releases are genereated from `build-release.sh` script.
 
 ### Basic Tuning Guide
 
-#### Improving Thoughput
+#### Improving Throughput
 
-> **Q: I have a high speed network link, how to reach the maximum bandwidth?**        
+> **Q: I have a high-speed network link. How can I maximize bandwidth?**
 
-> **A:** Increase `-rcvwnd` on KCP Client and `-sndwnd` on KCP Server **simultaneously & gradually**, the mininum one decides the maximum transfer rate of the link, as `wnd * mtu / rtt`; Then try downloading something and to see if it meets your requirements. 
-(mtu is adjustable by `-mtu`)
+> **A:** Increase `-rcvwnd` on the KCP Client and `-sndwnd` on the KCP Server **simultaneously and gradually**. The minimum of these values determines the maximum transfer rate of the link, as `wnd * mtu / rtt`. Then, try downloading something to see if it meets your requirements. (The MTU is adjustable with `-mtu`.)
 
 #### Improving Latency
 
-> **Q: I'm using kcptun for game, I don't want any lag happening.**    
+> **Q: I'm using kcptun for gaming and want to avoid any lag.**
 
-> **A:** Lag means packet loss for most of the time, lags can be improved by changing `-mode`.
+> **A:** Lag often indicates packet loss. You can reduce lag by changing the `-mode` parameter. 
 
-> eg: `-mode fast3`    
+> For example: `-mode fast3`
 
-> Aggresiveness/Responsiveness on retransmission for embedded modes are:
+> Aggressiveness/Responsiveness on retransmission for embedded modes:
 
 > *fast3 > fast2 > fast > normal > default*
 
-#### HOLB
+#### Head-of-Line Blocking (HOLB)
 
-Since streams are multiplexed into a single physical channel, head of line blocking may appear under certain circumstances, by
-increasing `-smuxbuf` to a larger value (default 4MB) may mitigate this problem, obviously this will costs more memory.
+Since streams are multiplexed into a single physical channel, head-of-line blocking may occur. Increasing `-smuxbuf` to a larger value (default is 4MB) may mitigate this problem, though it will use more memory.
 
-For versions >= v20190924, you can switch to smux version 2, smux v2 has options to limit per-stream memory usage, now set `-smuxver 2` to enable smux v2, and adjust `-streambuf` to limit per-stream memory usage, eg: `-streambuf 2097152` can limit per-stream memory usage to 2MB. By limiting stream buffer on the receiver side, a back-pressure will be conducted to the sender and limits reading, and finally prevent source from sending too much data to occupy every bits of buffer along the link. (Setting -smuxver **MUST** be **IDENTICAL** on both side, default is 1. )
+For versions >= v20190924, you can switch to smux version 2. Smux v2 has options to limit per-stream memory usage. Set `-smuxver 2` to enable smux v2, and adjust `-streambuf` to limit per-stream memory usage. For example: `-streambuf 2097152` limits per-stream memory usage to 2MB. Limiting the stream buffer on the receiver side applies back-pressure to the sender, preventing the sender from overwhelming the buffer along the link. (The `-smuxver` setting **MUST** be **IDENTICAL** on both sides, the default is 1.)
 
 #### Slow Devices
 
-kcptun made use of **ReedSolomon-Codes** to recover lost packets, which requires massive amount of computation, a low-end ARM device cannot satisfy kcptun well. To unleash the full potential of kcptun, a multi-core x86 homeserver CPU like AMD Opteron is recommended.
-If you insist on running under some ARM routers, you'd better turn off `FEC` and use `salsa20` as the encryption method.
+kcptun uses **Reed-Solomon Codes** to recover lost packets, which requires substantial computation. Low-end ARM devices may not perform well with kcptun. For optimal performance, a multi-core x86 home server CPU like AMD Opteron is recommended. If you must use ARM routers, it's best to disable `FEC` and use `salsa20` as the encryption method.
 
 ### Expert Tuning Guide
 
