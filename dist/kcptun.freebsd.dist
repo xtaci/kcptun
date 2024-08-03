@@ -4,7 +4,7 @@
 # REQUIRE: LOGIN
 # KEYWORD: shutdown
 
-# FreeBSD startup script, rename and put this file to 
+# FreeBSD startup script, rename and put this file to
 #   /usr/local/etc/rc.d/kcptun
 # and, run:
 #   chmod +x /usr/local/etc/rc.d/kcptun
@@ -21,6 +21,6 @@ load_rc_config $name # Loads the config file, if relevant.
 dir="/home/xtaci"   # change this to the directory where kcptun binaries are.
 command="/usr/sbin/daemon"
 pidfile="/var/run/${name}.pid"
-command_args="-c -f -S -P ${pidfile} -r $dir/client_freebsd_amd64 -c $dir/local-ss.json"
+command_args="-u nobody -c -f -S -P ${pidfile} -r $dir/client_freebsd_amd64 -c $dir/local-ss.json"
 
 run_rc_command "$1"
