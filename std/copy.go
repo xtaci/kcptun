@@ -61,7 +61,7 @@ func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
 		// write error directly to the *pointer
 		_, *err = Copy(dst, src)
 
-		// wait for a constant time before closing he streams
+		// wait for a constant time before closing the streams
 		<-time.After(closeWait * time.Second)
 
 		// wg.Done() called
