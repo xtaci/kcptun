@@ -1,4 +1,4 @@
-#!/bin/bash
+#!bash
 
 BUILD_DIR=$(dirname "$0")/build
 mkdir -p $BUILD_DIR
