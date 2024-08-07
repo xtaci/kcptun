@@ -25,9 +25,13 @@ package std
 import (
 	"io"
 	"sync"
+	"time"
 )
 
-const bufSize = 4096
+const (
+	bufSize   = 4096
+	closeWait = 30 // secs
+)
 
 // Memory optimized io.Copy function specified for this library
 func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
@@ -56,6 +60,11 @@ func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
 	streamCopy := func(dst io.Writer, src io.ReadCloser, err *error) {
 		// write error directly to the *pointer
 		_, *err = Copy(dst, src)
+
+		// wait for a constant time before closing he streams
+		<-time.After(closeWait * time.Second)
+
+		// wg.Done() called
 		wg.Done()
 
 		// close only once
