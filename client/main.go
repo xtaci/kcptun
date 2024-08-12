@@ -356,7 +356,7 @@ func main() {
 
 		// Scavenge parameters check
 		if config.AutoExpire != 0 && config.ScavengeTTL > config.AutoExpire {
-			color.Red("WARNING: scavengettl is smaller than autoexpire, it will eventually run out the outgoings port.")
+			color.Red("WARNING: scavengettl is smaller than autoexpire, connections may race to use bandwidth")
 		}
 
 		// SMUX Version check
