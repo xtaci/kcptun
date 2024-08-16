@@ -32,11 +32,11 @@ github.com/pkg/errors
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
-# github.com/templexxx/cpu v0.1.0
+# github.com/templexxx/cpu v0.1.1
 ## explicit
 github.com/templexxx/cpu
-# github.com/templexxx/xorsimd v0.4.2
-## explicit; go 1.13
+# github.com/templexxx/xorsimd v0.4.3
+## explicit; go 1.19
 github.com/templexxx/xorsimd
 # github.com/tjfoc/gmsm v1.4.1
 ## explicit; go 1.14
@@ -44,7 +44,7 @@ github.com/tjfoc/gmsm/sm4
 # github.com/urfave/cli v1.22.15
 ## explicit; go 1.11
 github.com/urfave/cli
-# github.com/xtaci/kcp-go/v5 v5.6.12
+# github.com/xtaci/kcp-go/v5 v5.6.13
 ## explicit; go 1.21
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.17
