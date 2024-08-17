@@ -14,6 +14,7 @@
 . /etc/rc.subr
 
 name="kcptun" # How the service will be invoked from service
+desc="kcptun daemon" # the description
 rcvar="kcptun_enable" # The variable in rc.conf that will allow this service to run
 load_rc_config $name # Loads the config file, if relevant.
 : ${kcptun_enable:="NO"}
