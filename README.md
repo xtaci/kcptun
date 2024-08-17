@@ -34,6 +34,10 @@
 
 ### QuickStart
 
+Download:
+
+`curl -L  https://raw.githubusercontent.com/xtaci/kcptun/master/download.sh | sh`
+
 Increase the number of open files on your server, as:
 
 `ulimit -n 65535`, or write it in `~/.bashrc`.
