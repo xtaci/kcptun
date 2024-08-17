@@ -50,6 +50,8 @@ const (
 	SALT = "kcp-go"
 	// maximum supported smux version
 	maxSmuxVer = 2
+	// scavenger check period
+	scavengePeriod = 5
 )
 
 // VERSION is injected by buildflags
@@ -356,7 +358,8 @@ func main() {
 
 		// Scavenge parameters check
 		if config.AutoExpire != 0 && config.ScavengeTTL > config.AutoExpire {
-			color.Red("WARNING: scavengettl is smaller than autoexpire, connections may race to use bandwidth")
+			color.Red("WARNING: scavengettl is bigger than autoexpire, connections may race hard to use bandwidth.")
+			color.Red("Try limiting scavengettl to a smaller value.")
 		}
 
 		// SMUX Version check
@@ -465,9 +468,11 @@ func main() {
 			go http.ListenAndServe(":6060", nil)
 		}
 
-		// start scavenger
+		// start scavenger if autoexpire is set
 		chScavenger := make(chan timedSession, 128)
-		go scavenger(chScavenger, &config)
+		if config.AutoExpire > 0 {
+			go scavenger(chScavenger, &config)
+		}
 
 		// start listener
 		numconn := uint16(config.Conn)
@@ -558,13 +563,7 @@ type timedSession struct {
 
 // scavenger goroutine is used to close expired sessions
 func scavenger(ch chan timedSession, config *Config) {
-	// When AutoExpire is set to 0 (default), sessionList will keep empty.
-	// Then this routine won't need to do anything; thus just terminate it.
-	if config.AutoExpire <= 0 {
-		return
-	}
-
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(scavengePeriod * time.Second)
 	defer ticker.Stop()
 	var sessionList []timedSession
 	for {
@@ -574,10 +573,6 @@ func scavenger(ch chan timedSession, config *Config) {
 				item.session,
 				item.expiryDate.Add(time.Duration(config.ScavengeTTL) * time.Second)})
 		case <-ticker.C:
-			if len(sessionList) == 0 {
-				continue
-			}
-
 			var newList []timedSession
 			for k := range sessionList {
 				s := sessionList[k]
