@@ -6,7 +6,7 @@ ARCH=$(uname -m)
 
 # Map architecture to the corresponding string used in the release names
 case "$ARCH" in
-    x86_64)
+    x86_64 | amd64)
         ARCH="amd64"
         ;;
     i386 | i686)
