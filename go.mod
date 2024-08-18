@@ -8,7 +8,7 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.13
 	github.com/xtaci/qpp v1.1.17
 	github.com/xtaci/smux v1.5.26
-	github.com/xtaci/tcpraw v1.2.25
+	github.com/xtaci/tcpraw v1.2.26
 	golang.org/x/crypto v0.26.0
 )
 
@@ -28,4 +28,6 @@ require (
 	golang.org/x/sys v0.23.0 // indirect
 )
 
-go 1.21
+go 1.22.3
+
+toolchain go1.23.0
