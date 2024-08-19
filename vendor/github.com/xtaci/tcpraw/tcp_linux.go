@@ -124,6 +124,8 @@ func (conn *tcpConn) lockflow(addr net.Addr, f func(e *tcpFlow)) {
 // clean expired flows
 func (conn *tcpConn) cleaner() {
 	ticker := time.NewTicker(time.Minute) // Create a ticker to trigger flow cleanup every minute
+	defer ticker.Stop()
+
 	select {
 	case <-conn.die: // Exit if the connection is closed
 		return
@@ -306,6 +308,7 @@ func (conn *tcpConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 // Close closes the connection.
 func (conn *tcpConn) Close() error {
 	var err error
+
 	conn.dieOnce.Do(func() {
 		// signal closing
 		close(conn.die)
@@ -430,6 +433,12 @@ func Dial(network, address string) (*TCPConn, error) {
 		return nil, err
 	}
 
+	// parse local ip and port from tcpconn
+	laddr, lport, err := net.SplitHostPort(tcpconn.LocalAddr().String())
+	if err != nil {
+		return nil, err
+	}
+
 	// fields
 	conn := new(tcpConn)
 	conn.die = make(chan struct{})
@@ -451,8 +460,9 @@ func Dial(network, address string) (*TCPConn, error) {
 		return nil, err
 	}
 
+	// setup iptables only when it's the first connection
 	if ipt, err := iptables.NewWithProtocol(iptables.ProtocolIPv4); err == nil {
-		rule := []string{"-m", "ttl", "--ttl-eq", "1", "-p", "tcp", "-d", raddr.IP.String(), "--dport", fmt.Sprint(raddr.Port), "-j", "DROP"}
+		rule := []string{"-m", "ttl", "--ttl-eq", "1", "-p", "tcp", "-s", laddr, "--sport", lport, "-d", raddr.IP.String(), "--dport", fmt.Sprint(raddr.Port), "-j", "DROP"}
 		if exists, err := ipt.Exists("filter", "OUTPUT", rule...); err == nil {
 			if !exists {
 				if err = ipt.Append("filter", "OUTPUT", rule...); err == nil {
@@ -463,7 +473,7 @@ func Dial(network, address string) (*TCPConn, error) {
 		}
 	}
 	if ipt, err := iptables.NewWithProtocol(iptables.ProtocolIPv6); err == nil {
-		rule := []string{"-m", "hl", "--hl-eq", "1", "-p", "tcp", "-d", raddr.IP.String(), "--dport", fmt.Sprint(raddr.Port), "-j", "DROP"}
+		rule := []string{"-m", "hl", "--hl-eq", "1", "-p", "tcp", "-s", laddr, "--sport", lport, "-d", raddr.IP.String(), "--dport", fmt.Sprint(raddr.Port), "-j", "DROP"}
 		if exists, err := ipt.Exists("filter", "OUTPUT", rule...); err == nil {
 			if !exists {
 				if err = ipt.Append("filter", "OUTPUT", rule...); err == nil {
