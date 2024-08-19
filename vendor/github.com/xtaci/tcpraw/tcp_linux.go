@@ -1,4 +1,26 @@
-// +build linux
+// The MIT License (MIT)
+//
+// Copyright (c) 2019 xtaci
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+//go:build linux
 
 package tcpraw
 
@@ -10,6 +32,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -21,9 +44,9 @@ import (
 )
 
 var (
-	errOpNotImplemented = errors.New("operation not implemented")
-	errTimeout          = errors.New("timeout")
-	expire              = time.Minute
+	errOpNotImplemented = errors.New("operation not implemented") // Error for unimplemented operations
+	errTimeout          = errors.New("timeout")                   // Error for operation timeout
+	expire              = time.Minute                             // Duration to define expiration time for flows
 )
 
 // a message from NIC
@@ -44,8 +67,14 @@ type tcpFlow struct {
 	tcpHeader    layers.TCP
 }
 
-// TCPConn defines a TCP-packet oriented connection
+// TCPConn
 type TCPConn struct {
+	// a wrapper for tcpconn for gc purpose
+	*tcpConn
+}
+
+// tcpConn defines a TCP-packet oriented connection
+type tcpConn struct {
 	die     chan struct{}
 	dieOnce sync.Once
 
@@ -64,50 +93,49 @@ type TCPConn struct {
 	flowsLock sync.Mutex
 
 	// iptables
-	iptables *iptables.IPTables
-	iprule   []string
-
-	ip6tables *iptables.IPTables
-	ip6rule   []string
+	iptables  *iptables.IPTables // Handle for IPv4 iptables rules
+	iprule    []string           // IPv4 iptables rule associated with the connection
+	ip6tables *iptables.IPTables // Handle for IPv6 iptables rules
+	ip6rule   []string           // IPv6 iptables rule associated with the connection
 
 	// deadlines
-	readDeadline  atomic.Value
-	writeDeadline atomic.Value
+	readDeadline  atomic.Value // Atomic value for read deadline
+	writeDeadline atomic.Value // Atomic value for write deadline
 
 	// serialization
 	opts gopacket.SerializeOptions
 }
 
 // lockflow locks the flow table and apply function `f` to the entry, and create one if not exist
-func (conn *TCPConn) lockflow(addr net.Addr, f func(e *tcpFlow)) {
-	key := addr.String()
-	conn.flowsLock.Lock()
+func (conn *tcpConn) lockflow(addr net.Addr, f func(e *tcpFlow)) {
+	key := addr.String()  // Use the string representation of the address as the key
+	conn.flowsLock.Lock() // Lock the flowTable for safe access
 	e := conn.flowTable[key]
 	if e == nil { // entry first visit
-		e = new(tcpFlow)
-		e.ts = time.Now()
-		e.buf = gopacket.NewSerializeBuffer()
+		e = new(tcpFlow)                      // Create a new flow if it doesn't exist
+		e.ts = time.Now()                     // Set the timestamp to the current time
+		e.buf = gopacket.NewSerializeBuffer() // Initialize the serialization buffer
 	}
-	f(e)
-	conn.flowTable[key] = e
-	conn.flowsLock.Unlock()
+	f(e)                    // Apply the function to the flow entry
+	conn.flowTable[key] = e // Store the modified flow entry back into the table
+	conn.flowsLock.Unlock() // Unlock the flowTable
 }
 
 // clean expired flows
-func (conn *TCPConn) cleaner() {
-	ticker := time.NewTicker(time.Minute)
+func (conn *tcpConn) cleaner() {
+	ticker := time.NewTicker(time.Minute) // Create a ticker to trigger flow cleanup every minute
 	select {
-	case <-conn.die:
+	case <-conn.die: // Exit if the connection is closed
 		return
-	case <-ticker.C:
+	case <-ticker.C: // On each tick, clean up expired flows
 		conn.flowsLock.Lock()
 		for k, v := range conn.flowTable {
-			if time.Now().Sub(v.ts) > expire {
+			if time.Now().Sub(v.ts) > expire { // Check if the flow has expired
 				if v.conn != nil {
-					setTTL(v.conn, 64)
+					setTTL(v.conn, 64) // Set TTL before closing the connection
 					v.conn.Close()
 				}
-				delete(conn.flowTable, k)
+				delete(conn.flowTable, k) // Remove the flow from the table
 			}
 		}
 		conn.flowsLock.Unlock()
@@ -115,7 +143,7 @@ func (conn *TCPConn) cleaner() {
 }
 
 // captureFlow capture every inbound packets based on rules of BPF
-func (conn *TCPConn) captureFlow(handle *net.IPConn, port int) {
+func (conn *tcpConn) captureFlow(handle *net.IPConn, port int) {
 	buf := make([]byte, 2048)
 	opt := gopacket.DecodeOptions{NoCopy: true, Lazy: true}
 	for {
@@ -179,7 +207,7 @@ func (conn *TCPConn) captureFlow(handle *net.IPConn, port int) {
 }
 
 // ReadFrom implements the PacketConn ReadFrom method.
-func (conn *TCPConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
+func (conn *tcpConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
 	var timer *time.Timer
 	var deadline <-chan time.Time
 	if d, ok := conn.readDeadline.Load().(time.Time); ok && !d.IsZero() {
@@ -200,7 +228,7 @@ func (conn *TCPConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
 }
 
 // WriteTo implements the PacketConn WriteTo method.
-func (conn *TCPConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
+func (conn *tcpConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 	var deadline <-chan time.Time
 	if d, ok := conn.writeDeadline.Load().(time.Time); ok && !d.IsZero() {
 		timer := time.NewTimer(time.Until(d))
@@ -276,7 +304,7 @@ func (conn *TCPConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 }
 
 // Close closes the connection.
-func (conn *TCPConn) Close() error {
+func (conn *tcpConn) Close() error {
 	var err error
 	conn.dieOnce.Do(func() {
 		// signal closing
@@ -316,7 +344,7 @@ func (conn *TCPConn) Close() error {
 }
 
 // LocalAddr returns the local network address.
-func (conn *TCPConn) LocalAddr() net.Addr {
+func (conn *tcpConn) LocalAddr() net.Addr {
 	if conn.tcpconn != nil {
 		return conn.tcpconn.LocalAddr()
 	} else if conn.listener != nil {
@@ -326,7 +354,7 @@ func (conn *TCPConn) LocalAddr() net.Addr {
 }
 
 // SetDeadline implements the Conn SetDeadline method.
-func (conn *TCPConn) SetDeadline(t time.Time) error {
+func (conn *tcpConn) SetDeadline(t time.Time) error {
 	if err := conn.SetReadDeadline(t); err != nil {
 		return err
 	}
@@ -337,19 +365,19 @@ func (conn *TCPConn) SetDeadline(t time.Time) error {
 }
 
 // SetReadDeadline implements the Conn SetReadDeadline method.
-func (conn *TCPConn) SetReadDeadline(t time.Time) error {
+func (conn *tcpConn) SetReadDeadline(t time.Time) error {
 	conn.readDeadline.Store(t)
 	return nil
 }
 
 // SetWriteDeadline implements the Conn SetWriteDeadline method.
-func (conn *TCPConn) SetWriteDeadline(t time.Time) error {
+func (conn *tcpConn) SetWriteDeadline(t time.Time) error {
 	conn.writeDeadline.Store(t)
 	return nil
 }
 
 // SetDSCP sets the 6bit DSCP field in IPv4 header, or 8bit Traffic Class in IPv6 header.
-func (conn *TCPConn) SetDSCP(dscp int) error {
+func (conn *tcpConn) SetDSCP(dscp int) error {
 	for k := range conn.handles {
 		if err := setDSCP(conn.handles[k], dscp); err != nil {
 			return err
@@ -359,7 +387,7 @@ func (conn *TCPConn) SetDSCP(dscp int) error {
 }
 
 // SetReadBuffer sets the size of the operating system's receive buffer associated with the connection.
-func (conn *TCPConn) SetReadBuffer(bytes int) error {
+func (conn *tcpConn) SetReadBuffer(bytes int) error {
 	var err error
 	for k := range conn.handles {
 		if err := conn.handles[k].SetReadBuffer(bytes); err != nil {
@@ -370,7 +398,7 @@ func (conn *TCPConn) SetReadBuffer(bytes int) error {
 }
 
 // SetWriteBuffer sets the size of the operating system's transmit buffer associated with the connection.
-func (conn *TCPConn) SetWriteBuffer(bytes int) error {
+func (conn *tcpConn) SetWriteBuffer(bytes int) error {
 	var err error
 	for k := range conn.handles {
 		if err := conn.handles[k].SetWriteBuffer(bytes); err != nil {
@@ -403,7 +431,7 @@ func Dial(network, address string) (*TCPConn, error) {
 	}
 
 	// fields
-	conn := new(TCPConn)
+	conn := new(tcpConn)
 	conn.die = make(chan struct{})
 	conn.flowTable = make(map[string]*tcpFlow)
 	conn.tcpconn = tcpconn
@@ -448,15 +476,14 @@ func Dial(network, address string) (*TCPConn, error) {
 
 	// discard everything
 	go io.Copy(ioutil.Discard, tcpconn)
-
-	return conn, nil
+	return wrapConn(conn), nil
 }
 
 // Listen acts like net.ListenTCP,
 // and returns a single packet-oriented connection
 func Listen(network, address string) (*TCPConn, error) {
 	// fields
-	conn := new(TCPConn)
+	conn := new(tcpConn)
 	conn.flowTable = make(map[string]*tcpFlow)
 	conn.die = make(chan struct{})
 	conn.chMessage = make(chan message)
@@ -563,7 +590,7 @@ func Listen(network, address string) (*TCPConn, error) {
 		}
 	}()
 
-	return conn, nil
+	return wrapConn(conn), nil
 }
 
 // setTTL sets the Time-To-Live field on a given connection
@@ -604,4 +631,15 @@ func setDSCP(c *net.IPConn, dscp int) error {
 		})
 	}
 	return err
+}
+
+// wrapConn wraps a tcpConn in a TCPConn.
+func wrapConn(conn *tcpConn) *TCPConn {
+	// Set up a finalizer to ensure resources are cleaned up when the TCPConn is garbage collected
+	wrapper := &TCPConn{conn}
+	runtime.SetFinalizer(wrapper, func(wrapper *TCPConn) {
+		wrapper.Close()
+	})
+
+	return wrapper
 }
