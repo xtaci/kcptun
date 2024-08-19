@@ -1149,6 +1149,11 @@ func DialWithOptions(raddr string, block BlockCrypt, dataShards, parityShards in
 	return newUDPSession(convid, dataShards, parityShards, nil, conn, true, udpaddr, block), nil
 }
 
+// NewConn4 establishes a session and talks KCP protocol over a packet connection.
+func NewConn4(convid uint32, raddr net.Addr, block BlockCrypt, dataShards, parityShards int, ownConn bool, conn net.PacketConn) (*UDPSession, error) {
+	return newUDPSession(convid, dataShards, parityShards, nil, conn, ownConn, raddr, block), nil
+}
+
 // NewConn3 establishes a session and talks KCP protocol over a packet connection.
 func NewConn3(convid uint32, raddr net.Addr, block BlockCrypt, dataShards, parityShards int, conn net.PacketConn) (*UDPSession, error) {
 	return newUDPSession(convid, dataShards, parityShards, nil, conn, false, raddr, block), nil

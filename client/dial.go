@@ -26,6 +26,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"net"
 
 	"github.com/pkg/errors"
 	kcp "github.com/xtaci/kcp-go/v5"
@@ -54,7 +55,15 @@ func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "tcpraw.Dial()")
 		}
-		return kcp.NewConn(remoteAddr, block, config.DataShard, config.ParityShard, conn)
+
+		udpaddr, err := net.ResolveUDPAddr("udp", remoteAddr)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		var convid uint32
+		binary.Read(rand.Reader, binary.LittleEndian, &convid)
+		return kcp.NewConn4(convid, udpaddr, block, config.DataShard, config.ParityShard, true, conn)
 	}
 
 	// default UDP connection

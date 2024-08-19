@@ -5,7 +5,7 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli v1.22.15
-	github.com/xtaci/kcp-go/v5 v5.6.13
+	github.com/xtaci/kcp-go/v5 v5.6.14
 	github.com/xtaci/qpp v1.1.17
 	github.com/xtaci/smux v1.5.26
 	github.com/xtaci/tcpraw v1.2.26
@@ -24,8 +24,8 @@ require (
 	github.com/templexxx/cpu v0.1.1 // indirect
 	github.com/templexxx/xorsimd v0.4.3 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
-	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
 )
 
 go 1.22.3
