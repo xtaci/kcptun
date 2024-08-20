@@ -25,6 +25,7 @@
 package tcpraw
 
 import (
+	"container/list"
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
@@ -47,6 +48,11 @@ var (
 	errOpNotImplemented = errors.New("operation not implemented") // Error for unimplemented operations
 	errTimeout          = errors.New("timeout")                   // Error for operation timeout
 	expire              = time.Minute                             // Duration to define expiration time for flows
+)
+
+var (
+	connList   list.List
+	connListMu sync.Mutex
 )
 
 // a message from NIC
@@ -75,6 +81,7 @@ type TCPConn struct {
 
 // tcpConn defines a TCP-packet oriented connection
 type tcpConn struct {
+	elem    *list.Element // elem in the list
 	die     chan struct{}
 	dieOnce sync.Once
 
@@ -342,6 +349,11 @@ func (conn *tcpConn) Close() error {
 		if conn.ip6tables != nil {
 			conn.ip6tables.Delete("filter", "OUTPUT", conn.ip6rule...)
 		}
+
+		// remove from the global list
+		connListMu.Lock()
+		connList.Remove(conn.elem)
+		connListMu.Unlock()
 	})
 	return err
 }
@@ -486,6 +498,12 @@ func Dial(network, address string) (*TCPConn, error) {
 
 	// discard everything
 	go io.Copy(ioutil.Discard, tcpconn)
+
+	// push back to the global list and set the elem
+	connListMu.Lock()
+	conn.elem = connList.PushBack(conn)
+	connListMu.Unlock()
+
 	return wrapConn(conn), nil
 }
 
@@ -600,6 +618,11 @@ func Listen(network, address string) (*TCPConn, error) {
 		}
 	}()
 
+	// push back to the global list and set the elem
+	connListMu.Lock()
+	conn.elem = connList.PushBack(conn)
+	connListMu.Unlock()
+
 	return wrapConn(conn), nil
 }
 
@@ -646,7 +669,7 @@ func setDSCP(c *net.IPConn, dscp int) error {
 // wrapConn wraps a tcpConn in a TCPConn.
 func wrapConn(conn *tcpConn) *TCPConn {
 	// Set up a finalizer to ensure resources are cleaned up when the TCPConn is garbage collected
-	wrapper := &TCPConn{conn}
+	wrapper := &TCPConn{tcpConn: conn}
 	runtime.SetFinalizer(wrapper, func(wrapper *TCPConn) {
 		wrapper.Close()
 	})

@@ -8,7 +8,7 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.6.14
 	github.com/xtaci/qpp v1.1.17
 	github.com/xtaci/smux v1.5.26
-	github.com/xtaci/tcpraw v1.2.27
+	github.com/xtaci/tcpraw v1.2.28
 	golang.org/x/crypto v0.26.0
 )
 
