@@ -25,7 +25,6 @@
 package tcpraw
 
 import (
-	"container/list"
 	"os"
 	"os/signal"
 	"sync"
@@ -46,13 +45,11 @@ func sigHandler() {
 	connListMu.Lock()
 	var wg sync.WaitGroup
 	wg.Add(connList.Len())
-	var next *list.Element
-	for elem := connList.Front(); elem != nil; elem = next {
-		next = elem.Next()
-		go func() {
-			elem.Value.(*tcpConn).Close()
+	for elem := connList.Front(); elem != nil; elem = elem.Next() {
+		go func(conn *tcpConn) {
+			conn.Close()
 			wg.Done()
-		}()
+		}(elem.Value.(*tcpConn))
 	}
 	connListMu.Unlock()
 	wg.Wait()
