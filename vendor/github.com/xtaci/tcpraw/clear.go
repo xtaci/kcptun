@@ -25,22 +25,10 @@
 package tcpraw
 
 import (
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 )
 
-func init() {
-	go sigHandler()
-}
-
-func sigHandler() {
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-
-	<-sigCh
-
+func IPTablesReset() {
 	// gracefully shutdown all connection
 	connListMu.Lock()
 	var wg sync.WaitGroup
@@ -53,5 +41,4 @@ func sigHandler() {
 	}
 	connListMu.Unlock()
 	wg.Wait()
-	os.Exit(0)
 }

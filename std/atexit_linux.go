@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// # Copyright (c) 2016 xtaci
+// # Copyright (c) 2024 xtaci
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,37 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//go:build linux || darwin || freebsd
+//go:build linux
 
 package std
 
-import (
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
+import "github.com/xtaci/tcpraw"
 
-	kcp "github.com/xtaci/kcp-go/v5"
-)
-
-func init() {
-	go sigHandler()
-}
-
-func sigHandler() {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGUSR1, syscall.SIGTERM, syscall.SIGINT)
-	signal.Ignore(syscall.SIGPIPE)
-
-	for {
-		sig := <-ch
-		switch sig {
-		case syscall.SIGUSR1:
-			log.Printf("KCP SNMP:%+v", kcp.DefaultSnmp.Copy())
-		case syscall.SIGTERM, syscall.SIGINT:
-			postProcess()
-			signal.Stop(ch)
-			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
-		}
-	}
+func postProcess() {
+	tcpraw.IPTablesReset()
 }
