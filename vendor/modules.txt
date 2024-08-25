@@ -53,7 +53,7 @@ github.com/xtaci/qpp
 # github.com/xtaci/smux v1.5.26
 ## explicit; go 1.13
 github.com/xtaci/smux
-# github.com/xtaci/tcpraw v1.2.30
+# github.com/xtaci/tcpraw v1.2.31
 ## explicit; go 1.13
 github.com/xtaci/tcpraw
 # golang.org/x/crypto v0.26.0
