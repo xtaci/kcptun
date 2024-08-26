@@ -83,6 +83,7 @@ const (
 var (
 	errInvalidOperation = errors.New("invalid operation")
 	errTimeout          = errors.New("timeout")
+	errNotOwner         = errors.New("not the owner of this connection")
 )
 
 var (
@@ -590,6 +591,18 @@ func (s *UDPSession) SetWriteBuffer(bytes int) error {
 	return errInvalidOperation
 }
 
+// Control applys a procedure to the underly socket fd.
+// CAUTION: BE VERY CAREFUL TO USE THIS FUNCTION, YOU MAY BREAK THE PROTOCOL.
+func (s *UDPSession) Control(f func(conn net.PacketConn) error) error {
+	if !s.ownConn {
+		return errNotOwner
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return f(s.conn)
+}
+
 // a goroutine to handle post processing of kcp and make the critical section smaller
 // pipeline for outgoing packets (from ARQ to network)
 //
@@ -1058,6 +1071,14 @@ func (l *Listener) Close() error {
 		err = errors.WithStack(io.ErrClosedPipe)
 	}
 	return err
+}
+
+// Control applys a procedure to the underly socket fd.
+// CAUTION: BE VERY CAREFUL TO USE THIS FUNCTION, YOU MAY BREAK THE PROTOCOL.
+func (l *Listener) Control(f func(conn net.PacketConn) error) error {
+	l.sessionLock.Lock()
+	defer l.sessionLock.Unlock()
+	return f(l.conn)
 }
 
 // closeSession notify the listener that a session has closed

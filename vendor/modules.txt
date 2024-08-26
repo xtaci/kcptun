@@ -44,7 +44,7 @@ github.com/tjfoc/gmsm/sm4
 # github.com/urfave/cli v1.22.15
 ## explicit; go 1.11
 github.com/urfave/cli
-# github.com/xtaci/kcp-go/v5 v5.6.14
+# github.com/xtaci/kcp-go/v5 v5.6.15
 ## explicit; go 1.21
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.17
