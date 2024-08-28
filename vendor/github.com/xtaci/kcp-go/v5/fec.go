@@ -420,12 +420,11 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 func (enc *fecEncoder) markData(data []byte) {
 	binary.LittleEndian.PutUint32(data, enc.next)
 	binary.LittleEndian.PutUint16(data[4:], typeData)
-	enc.next++
+	enc.next = (enc.next + 1) % enc.paws
 }
 
 func (enc *fecEncoder) markParity(data []byte) {
 	binary.LittleEndian.PutUint32(data, enc.next)
 	binary.LittleEndian.PutUint16(data[4:], typeParity)
-	// sequence wrap will only happen at parity shard
 	enc.next = (enc.next + 1) % enc.paws
 }
