@@ -401,6 +401,10 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 					ps[k] = ps[k][:enc.maxSize]
 				}
 			}
+		} else {
+			// through we do not send non-continuous parity shard, we still increase the next value
+			// to keep the seqid aligned with 0 start
+			enc.next = (enc.next + uint32(enc.parityShards)) % enc.paws
 		}
 
 		// counters resetting

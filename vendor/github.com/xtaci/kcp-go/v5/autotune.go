@@ -37,7 +37,10 @@ type autoTune struct {
 
 // Sample adds a signal sample to the pulse buffer
 func (tune *autoTune) Sample(bit bool, seq uint32) {
-	tune.pulses[seq%maxAutoTuneSamples] = pulse{bit, seq}
+	// ensure seq is in range [pulses[0].seq, pulses[0].seq + maxAutoTuneSamples]
+	if seq >= tune.pulses[0].seq && seq <= tune.pulses[0].seq+maxAutoTuneSamples {
+		tune.pulses[seq%maxAutoTuneSamples] = pulse{bit, seq}
+	}
 }
 
 // Find a period for a given signal

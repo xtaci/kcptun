@@ -610,6 +610,7 @@ func (s *UDPSession) Control(f func(conn net.PacketConn) error) error {
 func (s *UDPSession) postProcess() {
 	txqueue := make([]ipv4.Message, 0, acceptBacklog)
 	chCork := make(chan struct{}, 1)
+	chDie := s.die
 
 	for {
 		select {
@@ -668,6 +669,9 @@ func (s *UDPSession) postProcess() {
 				}
 			}
 
+			// re-enable die channel
+			chDie = s.die
+
 		case <-chCork: // emulate a corked socket
 			if len(txqueue) > 0 {
 				s.tx(txqueue)
@@ -679,7 +683,15 @@ func (s *UDPSession) postProcess() {
 				txqueue = txqueue[:0]
 			}
 
-		case <-s.die:
+			// re-enable die channel
+			chDie = s.die
+
+		case <-chDie:
+			// remaining packets in txqueue should be sent out
+			if len(chCork) > 0 || len(s.chPostProcessing) > 0 {
+				chDie = nil // block chDie temporarily
+				continue
+			}
 			return
 		}
 	}
