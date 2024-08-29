@@ -4,8 +4,8 @@
 
 [1]: https://godoc.org/github.com/xtaci/tcpraw?status.svg
 [2]: https://godoc.org/github.com/xtaci/tcpraw
-[3]: https://travis-ci.org/xtaci/tcpraw.svg?branch=master
-[4]: https://travis-ci.org/xtaci/tcpraw
+[3]: https://img.shields.io/github/created-at/xtaci/tcpraw
+[4]: https://img.shields.io/github/created-at/xtaci/tcpraw
 [5]: https://goreportcard.com/badge/github.com/xtaci/tcpraw
 [6]: https://goreportcard.com/report/github.com/xtaci/tcpraw
 [7]: https://codecov.io/gh/xtaci/tcpraw/branch/master/graph/badge.svg

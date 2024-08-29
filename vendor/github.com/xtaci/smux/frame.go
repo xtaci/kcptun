@@ -1,3 +1,25 @@
+// MIT License
+//
+// Copyright (c) 2016-2017 xtaci
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 package smux
 
 import (
@@ -38,16 +60,18 @@ const (
 
 // Frame defines a packet from or to be multiplexed into a single connection
 type Frame struct {
-	ver  byte
-	cmd  byte
-	sid  uint32
-	data []byte
+	ver  byte   // version
+	cmd  byte   // command
+	sid  uint32 // stream id
+	data []byte // payload
 }
 
+// newFrame creates a new frame with given version, command and stream id
 func newFrame(version byte, cmd byte, sid uint32) Frame {
 	return Frame{ver: version, cmd: cmd, sid: sid}
 }
 
+// rawHeader is a byte array representation of Frame header
 type rawHeader [headerSize]byte
 
 func (h rawHeader) Version() byte {
@@ -71,6 +95,7 @@ func (h rawHeader) String() string {
 		h.Version(), h.Cmd(), h.StreamID(), h.Length())
 }
 
+// updHeader is a byte array representation of cmdUPD
 type updHeader [szCmdUPD]byte
 
 func (h updHeader) Consumed() uint32 {

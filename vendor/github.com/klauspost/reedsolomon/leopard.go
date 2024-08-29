@@ -451,13 +451,13 @@ func (r *leopardFF16) reconstruct(shards [][]byte, recoverAll bool) error {
 	}
 
 	// Evaluate error locator polynomial
-	fwht(&errLocs, order, m+r.dataShards)
+	fwht(&errLocs, m+r.dataShards)
 
 	for i := 0; i < order; i++ {
 		errLocs[i] = ffe((uint(errLocs[i]) * uint(logWalsh[i])) % modulus)
 	}
 
-	fwht(&errLocs, order, order)
+	fwht(&errLocs, order)
 
 	var work [][]byte
 	if w, ok := r.workPool.Get().([][]byte); ok {
@@ -863,11 +863,11 @@ func ceilPow2(n int) int {
 // Decimation in time (DIT) Fast Walsh-Hadamard Transform
 // Unrolls pairs of layers to perform cross-layer operations in registers
 // mtrunc: Number of elements that are non-zero at the front of data
-func fwht(data *[order]ffe, m, mtrunc int) {
+func fwht(data *[order]ffe, mtrunc int) {
 	// Decimation in time: Unroll 2 layers at a time
 	dist := 1
 	dist4 := 4
-	for dist4 <= m {
+	for dist4 <= order {
 		// For each set of dist*4 elements:
 		for r := 0; r < mtrunc; r += dist4 {
 			// For each set of dist elements:
@@ -897,14 +897,6 @@ func fwht(data *[order]ffe, m, mtrunc int) {
 		}
 		dist = dist4
 		dist4 <<= 2
-	}
-
-	// If there is one layer left:
-	if dist < m {
-		dist := uint16(dist)
-		for i := uint16(0); i < dist; i++ {
-			fwht2(&data[i], &data[i+dist])
-		}
 	}
 }
 
@@ -1036,7 +1028,7 @@ func initFFTSkew() {
 	}
 	logWalsh[0] = 0
 
-	fwht(logWalsh, order, order)
+	fwht(logWalsh, order)
 }
 
 func initMul16LUT() {

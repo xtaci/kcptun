@@ -1,3 +1,25 @@
+// The MIT License (MIT)
+//
+// # Copyright (c) 2016 xtaci
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 package main
 
 import (
@@ -5,7 +27,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
+	"math/big"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -15,10 +37,11 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go/v5"
-	"github.com/xtaci/kcptun/generic"
+	"github.com/xtaci/kcptun/std"
 	"github.com/xtaci/qpp"
 	"github.com/xtaci/smux"
 )
@@ -28,122 +51,14 @@ const (
 	SALT = "kcp-go"
 	// maximum supported smux version
 	maxSmuxVer = 2
-	// stream copy buffer size
-	bufSize = 4096
-	// quantum bits
-	QUBIT = 8
+	// scavenger check period
+	scavengePeriod = 5
 )
 
 // VERSION is injected by buildflags
 var VERSION = "SELFBUILD"
 
-// handleClient aggregates connection p1 on mux with 'writeLock'
-func handleClient(session *smux.Session, p1 net.Conn, quiet bool) {
-	logln := func(v ...interface{}) {
-		if !quiet {
-			log.Println(v...)
-		}
-	}
-	defer p1.Close()
-	p2, err := session.OpenStream()
-	if err != nil {
-		logln(err)
-		return
-	}
-
-	defer p2.Close()
-
-	logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-
-	// start tunnel & wait for tunnel termination
-	streamCopy := func(dst io.Writer, src io.ReadCloser) {
-		if _, err := generic.Copy(dst, src); err != nil {
-			// report protocol error
-			if err == smux.ErrInvalidProtocol {
-				log.Println("smux", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-			}
-		}
-		p1.Close()
-		p2.Close()
-	}
-
-	go streamCopy(p1, p2)
-	streamCopy(p2, p1)
-}
-
-// same as above, but handles quantum permutation pads
-func handleQPPClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool) {
-	logln := func(v ...interface{}) {
-		if !quiet {
-			log.Println(v...)
-		}
-	}
-	defer p1.Close()
-	p2, err := session.OpenStream()
-	if err != nil {
-		logln(err)
-		return
-	}
-
-	defer p2.Close()
-
-	logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
-
-	// copy from net.Conn, QPP-encrypt and send to session
-	go func() {
-		buf := make([]byte, bufSize)
-		prng := _Q_.CreatePRNG(seed)
-		for {
-			n, err := p1.Read(buf)
-			if err != nil {
-				p1.Close()
-				return
-			}
-
-			// QPP-encrypt
-			_Q_.EncryptWithPRNG(buf[:n], prng)
-			if _, err = p2.Write(buf[:n]); err != nil {
-				p2.Close()
-				return
-			}
-		}
-	}()
-
-	// copy from stream, QPP-decrypt and send to net.Conn
-	buf := make([]byte, bufSize)
-	prng := _Q_.CreatePRNG(seed)
-	for {
-		n, err := p2.Read(buf)
-		if err != nil {
-			p2.Close()
-			return
-		}
-
-		// QPP-encrypt
-		_Q_.DecryptWithPRNG(buf[:n], prng)
-		if _, err = p1.Write(buf[:n]); err != nil {
-			p1.Close()
-			return
-		}
-	}
-}
-
-func checkError(err error) {
-	if err != nil {
-		log.Printf("%+v\n", err)
-		os.Exit(-1)
-	}
-}
-
-type timedSession struct {
-	session    *smux.Session
-	expiryDate time.Time
-}
-
 func main() {
-	rand.Seed(int64(time.Now().Nanosecond()))
 	if VERSION == "SELFBUILD" {
 		// add more log flags for debugging
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -182,12 +97,12 @@ func main() {
 		},
 		cli.BoolFlag{
 			Name:  "QPP",
-			Usage: "Enable Quantum Permutation Pad for universal quantum-safe cryptography, based on classic cryptography",
+			Usage: "enable Quantum Permutation Pads(QPP)",
 		},
 		cli.IntFlag{
 			Name:  "QPPCount",
-			Value: 64,
-			Usage: "Number of pads to use for QPP, the more the pads, the more secure, one pad costs 256 bytes",
+			Value: 61,
+			Usage: "the prime number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes.",
 		},
 		cli.IntFlag{
 			Name:  "conn",
@@ -425,19 +340,30 @@ func main() {
 		log.Println("tcp:", config.TCP)
 		log.Println("pprof:", config.Pprof)
 
+		// QPP parameters check
 		if config.QPP {
 			minSeedLength := qpp.QPPMinimumSeedLength(8)
 			if len(config.Key) < minSeedLength {
-				log.Printf("QPP Warning: 'key' has size of %d bytes, required %d bytes at least", len(config.Key), minSeedLength)
+				color.Red("QPP Warning: 'key' has size of %d bytes, required %d bytes at least", len(config.Key), minSeedLength)
 			}
 
 			minPads := qpp.QPPMinimumPads(8)
 			if config.QPPCount < minPads {
-				log.Printf("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
+				color.Red("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
+			}
+
+			if new(big.Int).GCD(nil, nil, big.NewInt(int64(config.QPPCount)), big.NewInt(8)).Int64() != 1 {
+				color.Red("QPP Warning: QPPCount %d, choose a prime number for security", config.QPPCount)
 			}
 		}
 
-		// parameters check
+		// Scavenge parameters check
+		if config.AutoExpire != 0 && config.ScavengeTTL > config.AutoExpire {
+			color.Red("WARNING: scavengettl is bigger than autoexpire, connections may race hard to use bandwidth.")
+			color.Red("Try limiting scavengettl to a smaller value.")
+		}
+
+		// SMUX Version check
 		if config.SmuxVer > maxSmuxVer {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
 		}
@@ -515,7 +441,7 @@ func main() {
 			if config.NoComp {
 				session, err = smux.Client(kcpconn, smuxConfig)
 			} else {
-				session, err = smux.Client(generic.NewCompStream(kcpconn), smuxConfig)
+				session, err = smux.Client(std.NewCompStream(kcpconn), smuxConfig)
 			}
 			if err != nil {
 				return nil, errors.Wrap(err, "createConn()")
@@ -536,16 +462,18 @@ func main() {
 		}
 
 		// start snmp logger
-		go generic.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
+		go std.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 
 		// start pprof
 		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
 
-		// start scavenger
+		// start scavenger if autoexpire is set
 		chScavenger := make(chan timedSession, 128)
-		go scavenger(chScavenger, &config)
+		if config.AutoExpire > 0 {
+			go scavenger(chScavenger, &config)
+		}
 
 		// start listener
 		rlen := (uint16)(len(config.RemoteAddr))
@@ -556,7 +484,7 @@ func main() {
 		// create shared QPP
 		var _Q_ *qpp.QuantumPermutationPad
 		if config.QPP {
-			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount), QUBIT)
+			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount))
 		}
 
 		for {
@@ -577,25 +505,68 @@ func main() {
 				}
 			}
 
-			if !config.QPP {
-				go handleClient(muxes[idx].session, p1, config.Quiet)
-			} else {
-				go handleQPPClient(_Q_, []byte(config.Key), muxes[idx].session, p1, config.Quiet)
-			}
+			go handleClient(_Q_, []byte(config.Key), muxes[idx].session, p1, config.Quiet)
 			rr++
 		}
 	}
 	myApp.Run(os.Args)
 }
 
-func scavenger(ch chan timedSession, config *Config) {
-	// When AutoExpire is set to 0 (default), sessionList will keep empty.
-	// Then this routine won't need to do anything; thus just terminate it.
-	if config.AutoExpire <= 0 {
-		return
+// handleClient aggregates connection p1 on mux
+func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool) {
+	logln := func(v ...interface{}) {
+		if !quiet {
+			log.Println(v...)
+		}
 	}
 
-	ticker := time.NewTicker(time.Second)
+	// handles transport layer
+	defer p1.Close()
+	p2, err := session.OpenStream()
+	if err != nil {
+		logln(err)
+		return
+	}
+	defer p2.Close()
+
+	logln("stream opened", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+
+	var s1, s2 io.ReadWriteCloser = p1, p2
+	// if QPP is enabled, create QPP read write closer
+	if _Q_ != nil {
+		// replace s2 with QPP port
+		s2 = std.NewQPPPort(p2, _Q_, seed)
+	}
+
+	// stream layer
+	err1, err2 := std.Pipe(s1, s2)
+
+	// handles transport layer errors
+	if err1 != nil && err1 != io.EOF {
+		logln("pipe:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	}
+	if err2 != nil && err2 != io.EOF {
+		logln("pipe:", err2, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
+	}
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Printf("%+v\n", err)
+		os.Exit(-1)
+	}
+}
+
+// timedSession is a wrapper for smux.Session with expiry date
+type timedSession struct {
+	session    *smux.Session
+	expiryDate time.Time
+}
+
+// scavenger goroutine is used to close expired sessions
+func scavenger(ch chan timedSession, config *Config) {
+	ticker := time.NewTicker(scavengePeriod * time.Second)
 	defer ticker.Stop()
 	var sessionList []timedSession
 	for {
@@ -605,10 +576,6 @@ func scavenger(ch chan timedSession, config *Config) {
 				item.session,
 				item.expiryDate.Add(time.Duration(config.ScavengeTTL) * time.Second)})
 		case <-ticker.C:
-			if len(sessionList) == 0 {
-				continue
-			}
-
 			var newList []timedSession
 			for k := range sessionList {
 				s := sessionList[k]

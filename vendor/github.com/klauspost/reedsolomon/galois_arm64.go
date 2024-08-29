@@ -13,6 +13,16 @@ func galMulNEON(low, high, in, out []byte)
 //go:noescape
 func galMulXorNEON(low, high, in, out []byte)
 
+func getVectorLength() (vl, pl uint64)
+
+func init() {
+	if defaultOptions.useSVE {
+		if vl, _ := getVectorLength(); vl != 256 {
+			defaultOptions.useSVE = false // Temp fix: disable SVE for non-256 vector widths (ie Graviton4)
+		}
+	}
+}
+
 func galMulSlice(c byte, in, out []byte, o *options) {
 	if c == 1 {
 		copy(out, in)

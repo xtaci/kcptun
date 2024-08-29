@@ -25,6 +25,10 @@ Using Go modules is recommended.
 
 # Changes
 
+## 2024
+
+ * Auto-generation of SVE and NEON routines for ARM based on AVX2 code. This results in a speedup of 2x for SVE (as measured using Graviton 3 on AWS) and a speedup of 1.5x as compared to the existing NEON-accelerated code.
+
 ## 2022
 
 * [GFNI](https://github.com/klauspost/reedsolomon/pull/224) support for amd64, for up to 3x faster processing.
@@ -558,8 +562,9 @@ The removed code may not be infringing and even after `-tags=nopshufb` there may
 * [Reed-Solomon Erasure Coding in Haskell](https://github.com/NicolasT/reedsolomon). Haskell port of the package with similar performance.
 * [reed-solomon-erasure](https://github.com/darrenldl/reed-solomon-erasure). Compatible Rust implementation.
 * [go-erasure](https://github.com/somethingnew2-0/go-erasure). A similar library using cgo, slower in my tests.
-* [Screaming Fast Galois Field Arithmetic](http://www.snia.org/sites/default/files2/SDC2013/presentations/NewThinking/EthanMiller_Screaming_Fast_Galois_Field%20Arithmetic_SIMD%20Instructions.pdf). Basis for SSE3 optimizations.
+* [Screaming Fast Galois Field Arithmetic](https://www.snia.org/sites/default/files/files2/files2/SDC2013/presentations/NewThinking/EthanMiller_Screaming_Fast_Galois_Field%20Arithmetic_SIMD%20Instructions.pdf). Basis for SSE3 optimizations.
 * [Leopard-RS](https://github.com/catid/leopard) C library used as basis for GF16 implementation.
+* [reed-solomon-simd](https://github.com/AndersTrier/reed-solomon-simd) Leopard-RS Rust implementation.
 
 # License
 

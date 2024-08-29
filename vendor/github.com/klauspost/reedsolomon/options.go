@@ -21,7 +21,9 @@ type options struct {
 	useAVX512,
 	useAVX2,
 	useSSSE3,
-	useSSE2 bool
+	useSSE2,
+	useNEON,
+	useSVE bool
 
 	useJerasureMatrix    bool
 	usePAR1Matrix        bool
@@ -51,6 +53,8 @@ var defaultOptions = options{
 	useAVX512:     cpuid.CPU.Supports(cpuid.AVX512F, cpuid.AVX512BW, cpuid.AVX512VL),
 	useAvx512GFNI: cpuid.CPU.Supports(cpuid.AVX512F, cpuid.GFNI, cpuid.AVX512DQ),
 	useAvxGNFI:    cpuid.CPU.Supports(cpuid.AVX, cpuid.GFNI),
+	useNEON:       cpuid.CPU.Supports(cpuid.ASIMD),
+	useSVE:        cpuid.CPU.Supports(cpuid.SVE),
 }
 
 // leopardMode controls the use of leopard GF in encoding and decoding.
@@ -315,6 +319,11 @@ func (o *options) cpuOptions() string {
 	}
 	if o.useAvxGNFI {
 		res = append(res, "AVX+GFNI")
+	}
+	if o.useSVE {
+		res = append(res, "ARM+SVE")
+	} else if o.useNEON {
+		res = append(res, "ARM+NEON")
 	}
 	if len(res) == 0 {
 		return "pure Go"

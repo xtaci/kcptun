@@ -1,0 +1,5 @@
+net.core.rmem_max=26214400 // BDP - bandwidth delay product
+net.core.rmem_default=26214400
+net.core.wmem_max=26214400
+net.core.wmem_default=26214400
+net.core.netdev_max_backlog=2048 // proportional to -rcvwnd

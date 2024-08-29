@@ -1,3 +1,25 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2015 xtaci
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 package kcp
 
 import (
@@ -152,9 +174,8 @@ type KCP struct {
 
 	acklist []ackItem
 
-	buffer   []byte
-	reserved int
-	output   output_callback
+	buffer []byte
+	output output_callback
 }
 
 type ackItem struct {
@@ -198,19 +219,6 @@ func (kcp *KCP) delSegment(seg *segment) {
 		xmitBuf.Put(seg.data)
 		seg.data = nil
 	}
-}
-
-// ReserveBytes keeps n bytes untouched from the beginning of the buffer,
-// the output_callback function should be aware of this.
-//
-// Return false if n >= mss
-func (kcp *KCP) ReserveBytes(n int) bool {
-	if n >= int(kcp.mtu-IKCP_OVERHEAD) || n < 0 {
-		return false
-	}
-	kcp.reserved = n
-	kcp.mss = kcp.mtu - IKCP_OVERHEAD - uint32(n)
-	return true
 }
 
 // PeekSize checks the size of next message in the recv queue
@@ -678,21 +686,21 @@ func (kcp *KCP) flush(ackOnly bool) uint32 {
 	seg.una = kcp.rcv_nxt
 
 	buffer := kcp.buffer
-	ptr := buffer[kcp.reserved:] // keep n bytes untouched
+	ptr := buffer
 
 	// makeSpace makes room for writing
 	makeSpace := func(space int) {
 		size := len(buffer) - len(ptr)
 		if size+space > int(kcp.mtu) {
 			kcp.output(buffer, size)
-			ptr = buffer[kcp.reserved:]
+			ptr = buffer
 		}
 	}
 
 	// flush bytes in buffer if there is any
 	flushBuffer := func() {
 		size := len(buffer) - len(ptr)
-		if size > kcp.reserved {
+		if size > 0 {
 			kcp.output(buffer, size)
 		}
 	}
@@ -989,16 +997,14 @@ func (kcp *KCP) SetMtu(mtu int) int {
 	if mtu < 50 || mtu < IKCP_OVERHEAD {
 		return -1
 	}
-	if kcp.reserved >= int(kcp.mtu-IKCP_OVERHEAD) || kcp.reserved < 0 {
-		return -1
-	}
 
 	buffer := make([]byte, mtu)
 	if buffer == nil {
 		return -2
 	}
+
 	kcp.mtu = uint32(mtu)
-	kcp.mss = kcp.mtu - IKCP_OVERHEAD - uint32(kcp.reserved)
+	kcp.mss = kcp.mtu - IKCP_OVERHEAD
 	kcp.buffer = buffer
 	return 0
 }
