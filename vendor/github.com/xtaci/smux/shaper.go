@@ -22,15 +22,21 @@
 
 package smux
 
-// _itimediff returns the time difference between two uint32
+// _itimediff returns the time difference between two uint32 values.
+// The result is a signed 32-bit integer representing the difference between 'later' and 'earlier'.
 func _itimediff(later, earlier uint32) int32 {
 	return (int32)(later - earlier)
 }
 
-// shaperHeap is a min-heap of writeRequest
+// shaperHeap is a min-heap of writeRequest.
+// It orders writeRequests by class first, then by sequence number within the same class.
 type shaperHeap []writeRequest
 
 func (h shaperHeap) Len() int { return len(h) }
+
+// Less determines the ordering of elements in the heap.
+// Requests are ordered by their class first. If two requests have the same class,
+// they are ordered by their sequence numbers.
 func (h shaperHeap) Less(i, j int) bool {
 	if h[i].class != h[j].class {
 		return h[i].class < h[j].class

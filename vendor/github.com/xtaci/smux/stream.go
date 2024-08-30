@@ -33,25 +33,25 @@ import (
 
 // Stream implements net.Conn
 type Stream struct {
-	id   uint32
+	id   uint32 // Stream identifier
 	sess *Session
 
 	buffers [][]byte // the sequential buffers of stream
 	heads   [][]byte // slice heads of the buffers above, kept for recycle
 
-	bufferLock sync.Mutex
-	frameSize  int
+	bufferLock sync.Mutex // Mutex to protect access to buffers
+	frameSize  int        // Maximum frame size for the stream
 
 	// notify a read event
 	chReadEvent chan struct{}
 
 	// flag the stream has closed
 	die     chan struct{}
-	dieOnce sync.Once
+	dieOnce sync.Once // Ensures die channel is closed only once
 
 	// FIN command
 	chFinEvent   chan struct{}
-	finEventOnce sync.Once
+	finEventOnce sync.Once // Ensures chFinEvent is closed only once
 
 	// deadlines
 	readDeadline  atomic.Value
@@ -68,7 +68,7 @@ type Stream struct {
 	chUpdate     chan struct{} // notify of remote data consuming and window update
 }
 
-// newStream initiates a Stream struct
+// newStream initializes and returns a new Stream.
 func newStream(id uint32, frameSize int, sess *Session) *Stream {
 	s := new(Stream)
 	s.id = id
@@ -82,12 +82,12 @@ func newStream(id uint32, frameSize int, sess *Session) *Stream {
 	return s
 }
 
-// ID returns the unique stream ID.
+// ID returns the stream's unique identifier.
 func (s *Stream) ID() uint32 {
 	return s.id
 }
 
-// Read implements net.Conn
+// Read reads data from the stream into the provided buffer.
 func (s *Stream) Read(b []byte) (n int, err error) {
 	for {
 		n, err = s.tryRead(b)
@@ -101,7 +101,7 @@ func (s *Stream) Read(b []byte) (n int, err error) {
 	}
 }
 
-// tryRead is the nonblocking version of Read
+// tryRead attempts to read data from the stream without blocking.
 func (s *Stream) tryRead(b []byte) (n int, err error) {
 	if s.sess.config.Version == 2 {
 		return s.tryReadv2(b)
@@ -139,6 +139,7 @@ func (s *Stream) tryRead(b []byte) (n int, err error) {
 	}
 }
 
+// tryReadv2 is the non-blocking version of Read for version 2 streams.
 func (s *Stream) tryReadv2(b []byte) (n int, err error) {
 	if len(b) == 0 {
 		return 0, nil
@@ -275,6 +276,7 @@ func (s *Stream) writeTov2(w io.Writer) (n int64, err error) {
 	}
 }
 
+// sendWindowUpdate sends a window update frame to the peer.
 func (s *Stream) sendWindowUpdate(consumed uint32) error {
 	var timer *time.Timer
 	var deadline <-chan time.Time
@@ -293,7 +295,7 @@ func (s *Stream) sendWindowUpdate(consumed uint32) error {
 	return err
 }
 
-// waitRead blocks on a read event
+// waitRead blocks until a read event occurs or a deadline is reached.
 func (s *Stream) waitRead() error {
 	var timer *time.Timer
 	var deadline <-chan time.Time
@@ -344,6 +346,8 @@ func (s *Stream) Write(b []byte) (n int, err error) {
 
 	// check if stream has closed
 	select {
+	case <-s.chFinEvent: // passive closing
+		return 0, io.EOF
 	case <-s.die:
 		return 0, io.ErrClosedPipe
 	default:
@@ -371,6 +375,7 @@ func (s *Stream) Write(b []byte) (n int, err error) {
 	return sent, nil
 }
 
+// writeV2 writes data to the stream for version 2 streams.
 func (s *Stream) writeV2(b []byte) (n int, err error) {
 	// check empty input
 	if len(b) == 0 {
@@ -379,6 +384,8 @@ func (s *Stream) writeV2(b []byte) (n int, err error) {
 
 	// check if stream has closed
 	select {
+	case <-s.chFinEvent:
+		return 0, io.EOF
 	case <-s.die:
 		return 0, io.ErrClosedPipe
 	default:

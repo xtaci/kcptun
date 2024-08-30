@@ -19,7 +19,7 @@
         "resend": 2,
         "nc": 1,
         "sockbuf": 16777217,
-        "smuxver": 1,
+        "smuxver": 2,
         "smuxbuf": 16777217,
         "streambuf": 2097152,
         "keepalive": 10,

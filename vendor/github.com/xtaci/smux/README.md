@@ -1,15 +1,15 @@
-<img src="smux.png" alt="smux" height="35px" />
+<img src="assets/smux.png" alt="smux" height="35px" />
 
 [![GoDoc][1]][2] [![MIT licensed][3]][4] [![Build Status][5]][6] [![Go Report Card][7]][8] [![Coverage Statusd][9]][10] [![Sourcegraph][11]][12]
 
-<img src="mux.jpg" alt="smux" height="120px" /> 
+<img src="assets/mux.jpg" alt="smux" height="120px" /> 
 
 [1]: https://godoc.org/github.com/xtaci/smux?status.svg
 [2]: https://godoc.org/github.com/xtaci/smux
 [3]: https://img.shields.io/badge/license-MIT-blue.svg
 [4]: LICENSE
-[5]: https://travis-ci.org/xtaci/smux.svg?branch=master
-[6]: https://travis-ci.org/xtaci/smux
+[5]: https://img.shields.io/github/created-at/xtaci/smux
+[6]: https://img.shields.io/github/created-at/xtaci/smux
 [7]: https://goreportcard.com/badge/github.com/xtaci/smux
 [8]: https://goreportcard.com/report/github.com/xtaci/smux
 [9]: https://codecov.io/gh/xtaci/smux/branch/master/graph/badge.svg
@@ -30,7 +30,7 @@ Smux ( **S**imple **MU**ltiple**X**ing) is a multiplexing library for Golang. It
 5. Builtin fair queue traffic shaping.
 6. Per-stream sliding window to control congestion.(protocol version 2+).
 
-![smooth bandwidth curve](curve.jpg)
+![smooth bandwidth curve](assets/curve.jpg)
 
 ## Documentation
 

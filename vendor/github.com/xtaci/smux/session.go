@@ -36,10 +36,10 @@ import (
 const (
 	defaultAcceptBacklog = 1024
 	maxShaperSize        = 1024
-	openCloseTimeout     = 30 * time.Second // stream open/close timeout
+	openCloseTimeout     = 30 * time.Second // Timeout for opening/closing streams
 )
 
-// define frame class
+// CLASSID represents the class of a frame
 type CLASSID int
 
 const (
@@ -47,14 +47,27 @@ const (
 	CLSDATA
 )
 
+// timeoutError representing timeouts for operations such as accept, read and write
+//
+// To better cooperate with the standard library, timeoutError should implement the standard library's `net.Error`.
+//
+// For example, using smux to implement net.Listener and work with http.Server, the keep-alive connection (*smux.Stream) will be unexpectedly closed.
+// For more details, see https://github.com/xtaci/smux/pull/99.
+type timeoutError struct{}
+
+func (timeoutError) Error() string   { return "timeout" }
+func (timeoutError) Temporary() bool { return true }
+func (timeoutError) Timeout() bool   { return true }
+
 var (
-	ErrInvalidProtocol = errors.New("invalid protocol")
-	ErrConsumed        = errors.New("peer consumed more than sent")
-	ErrGoAway          = errors.New("stream id overflows, should start a new connection")
-	ErrTimeout         = errors.New("timeout")
-	ErrWouldBlock      = errors.New("operation would block on IO")
+	ErrInvalidProtocol           = errors.New("invalid protocol")
+	ErrConsumed                  = errors.New("peer consumed more than sent")
+	ErrGoAway                    = errors.New("stream id overflows, should start a new connection")
+	ErrTimeout         net.Error = &timeoutError{}
+	ErrWouldBlock                = errors.New("operation would block on IO")
 )
 
+// writeRequest represents a request to write a frame
 type writeRequest struct {
 	class  CLASSID
 	frame  Frame
@@ -62,6 +75,7 @@ type writeRequest struct {
 	result chan writeResult
 }
 
+// writeResult represents the result of a write request
 type writeResult struct {
 	n   int
 	err error
@@ -105,7 +119,7 @@ type Session struct {
 
 	deadline atomic.Value
 
-	requestID uint32            // write request monotonic increasing
+	requestID uint32            // Monotonic increasing write request ID
 	shaper    chan writeRequest // a shaper for writing
 	writes    chan writeRequest
 }
