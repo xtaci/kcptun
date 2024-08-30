@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Detect the operating system type and architecture
 OS=$(uname | tr '[:upper:]' '[:lower:]')
