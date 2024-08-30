@@ -32,6 +32,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -76,7 +77,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "remoteaddr, r",
 			Value: "vps:29900",
-			Usage: `kcp server address, eg: "IP:29900" a for single port, "IP:minport-maxport" for port range`,
+			Usage: `kcp server address, eg: "IP:29900" a for single server/port, "IP1:minport-maxport_IP2:minport-maxport..." for multi server and port range`,
 		},
 		cli.StringFlag{
 			Name:   "key",
@@ -238,7 +239,7 @@ func main() {
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
 		config.LocalAddr = c.String("localaddr")
-		config.RemoteAddr = c.String("remoteaddr")
+		config.RemoteAddr = strings.Split(c.String("remoteaddr"), "_") // remote address split by "_"
 		config.Key = c.String("key")
 		config.Crypt = c.String("crypt")
 		config.Mode = c.String("mode")
@@ -403,8 +404,8 @@ func main() {
 			block, _ = kcp.NewAESBlockCrypt(pass)
 		}
 
-		createConn := func() (*smux.Session, error) {
-			kcpconn, err := dial(&config, block)
+		createConn := func(idx uint16) (*smux.Session, error) {
+			kcpconn, err := dial(&config, block, idx)
 			if err != nil {
 				return nil, errors.Wrap(err, "dial()")
 			}
@@ -449,9 +450,9 @@ func main() {
 		}
 
 		// wait until a connection is ready
-		waitConn := func() *smux.Session {
+		waitConn := func(idx uint16) *smux.Session {
 			for {
-				if session, err := createConn(); err == nil {
+				if session, err := createConn(idx); err == nil {
 					return session
 				} else {
 					log.Println("re-connecting:", err)
@@ -475,7 +476,8 @@ func main() {
 		}
 
 		// start listener
-		numconn := uint16(config.Conn)
+		rlen := (uint16)(len(config.RemoteAddr))
+		numconn := uint16(config.Conn * int(rlen))
 		muxes := make([]timedSession, numconn)
 		rr := uint16(0)
 
@@ -491,11 +493,12 @@ func main() {
 				log.Fatalf("%+v", err)
 			}
 			idx := rr % numconn
+			ridx := rr % rlen
 
 			// do auto expiration && reconnection
 			if muxes[idx].session == nil || muxes[idx].session.IsClosed() ||
 				(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
-				muxes[idx].session = waitConn()
+				muxes[idx].session = waitConn(ridx)
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				if config.AutoExpire > 0 { // only when autoexpire set
 					chScavenger <- muxes[idx]
