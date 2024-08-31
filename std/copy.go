@@ -62,7 +62,7 @@ func Pipe(alice, bob io.ReadWriteCloser, isPassive bool) (errA, errB error) {
 		_, *err = Copy(dst, src)
 
 		// wait for a constant time before closing the streams
-		if !isPassive {
+		if isPassive {
 			<-time.After(closeWait * time.Second)
 		}
 
