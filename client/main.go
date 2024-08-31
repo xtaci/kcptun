@@ -202,6 +202,11 @@ func main() {
 			Value: 10, // nat keepalive interval in seconds
 			Usage: "seconds between heartbeats",
 		},
+		cli.IntFlag{
+			Name:  "closewait",
+			Value: 0,
+			Usage: "the seconds to wait before tearing down a connection",
+		},
 		cli.StringFlag{
 			Name:  "snmplog",
 			Value: "",
@@ -270,6 +275,7 @@ func main() {
 		config.Pprof = c.Bool("pprof")
 		config.QPP = c.Bool("QPP")
 		config.QPPCount = c.Int("QPPCount")
+		config.CloseWait = c.Int("closewait")
 
 		if c.String("c") != "" {
 			err := parseJSONConfig(&config, c.String("c"))
@@ -502,7 +508,7 @@ func main() {
 				}
 			}
 
-			go handleClient(_Q_, []byte(config.Key), muxes[idx].session, p1, config.Quiet)
+			go handleClient(_Q_, []byte(config.Key), muxes[idx].session, p1, config.Quiet, config.CloseWait)
 			rr++
 		}
 	}
@@ -510,7 +516,7 @@ func main() {
 }
 
 // handleClient aggregates connection p1 on mux
-func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool) {
+func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool, closeWait int) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -537,7 +543,7 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Ses
 	}
 
 	// stream layer
-	err1, err2 := std.Pipe(s1, s2, false)
+	err1, err2 := std.Pipe(s1, s2, closeWait)
 
 	// handles transport layer errors
 	if err1 != nil && err1 != io.EOF {

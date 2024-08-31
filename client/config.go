@@ -62,6 +62,7 @@ type Config struct {
 	Pprof        bool   `json:"pprof"`
 	QPP          bool   `json:"qpp"`
 	QPPCount     int    `json:"qpp-count"`
+	CloseWait    int    `json:"closewait"`
 }
 
 func parseJSONConfig(config *Config, path string) error {

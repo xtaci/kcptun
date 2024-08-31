@@ -192,6 +192,11 @@ func main() {
 			Value: 10, // nat keepalive interval in seconds
 			Usage: "seconds between heartbeats",
 		},
+		cli.IntFlag{
+			Name:  "closewait",
+			Value: 30,
+			Usage: "the seconds to wait before tearing down a connection",
+		},
 		cli.StringFlag{
 			Name:  "snmplog",
 			Value: "",
@@ -257,6 +262,7 @@ func main() {
 		config.TCP = c.Bool("tcp")
 		config.QPP = c.Bool("QPP")
 		config.QPPCount = c.Int("QPPCount")
+		config.CloseWait = c.Int("closewait")
 
 		if c.String("c") != "" {
 			//Now only support json config file
@@ -484,7 +490,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 					p1.Close()
 					return
 				}
-				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
+				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet, config.CloseWait)
 			case TGT_UNIX:
 				p2, err = net.Dial("unix", config.Target)
 				if err != nil {
@@ -492,7 +498,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 					p1.Close()
 					return
 				}
-				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet)
+				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet, config.CloseWait)
 			}
 
 		}(stream)
@@ -500,7 +506,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 }
 
 // handleClient pipes two streams
-func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool) {
+func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool, closeWait int) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -521,7 +527,7 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 	}
 
 	// stream layer
-	err1, err2 := std.Pipe(s1, s2, true)
+	err1, err2 := std.Pipe(s1, s2, closeWait)
 
 	// handles transport layer errors
 	if err1 != nil && err1 != io.EOF {

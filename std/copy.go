@@ -29,8 +29,7 @@ import (
 )
 
 const (
-	bufSize   = 4096
-	closeWait = 30 // secs
+	bufSize = 4096
 )
 
 // Memory optimized io.Copy function specified for this library
@@ -51,7 +50,7 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 }
 
 // Pipe create a general bidirectional pipe between two streams
-func Pipe(alice, bob io.ReadWriteCloser, isPassive bool) (errA, errB error) {
+func Pipe(alice, bob io.ReadWriteCloser, closeWait int) (errA, errB error) {
 	var closed sync.Once
 
 	var wg sync.WaitGroup
@@ -60,10 +59,8 @@ func Pipe(alice, bob io.ReadWriteCloser, isPassive bool) (errA, errB error) {
 	streamCopy := func(dst io.Writer, src io.ReadCloser, err *error) {
 		// write error directly to the *pointer
 		_, *err = Copy(dst, src)
-
-		// wait for a constant time before closing the streams
-		if isPassive {
-			<-time.After(closeWait * time.Second)
+		if closeWait > 0 {
+			<-time.After(time.Duration(closeWait) * time.Second)
 		}
 
 		// wg.Done() called
