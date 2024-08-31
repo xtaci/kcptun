@@ -51,7 +51,7 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 }
 
 // Pipe create a general bidirectional pipe between two streams
-func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
+func Pipe(alice, bob io.ReadWriteCloser, isPassive bool) (errA, errB error) {
 	var closed sync.Once
 
 	var wg sync.WaitGroup
@@ -62,7 +62,9 @@ func Pipe(alice, bob io.ReadWriteCloser) (errA, errB error) {
 		_, *err = Copy(dst, src)
 
 		// wait for a constant time before closing the streams
-		<-time.After(closeWait * time.Second)
+		if !isPassive {
+			<-time.After(closeWait * time.Second)
+		}
 
 		// wg.Done() called
 		wg.Done()
