@@ -521,7 +521,7 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 	}
 
 	// stream layer
-	err1, err2 := std.Pipe(s1, s2, false)
+	err1, err2 := std.Pipe(s1, s2, true)
 
 	// handles transport layer errors
 	if err1 != nil && err1 != io.EOF {
