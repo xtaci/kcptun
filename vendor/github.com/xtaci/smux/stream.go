@@ -219,6 +219,7 @@ func (s *Stream) WriteTo(w io.Writer) (n int64, err error) {
 
 		if buf != nil {
 			nw, ew := w.Write(buf)
+			// NOTE: WriteTo is a reader, so we need to return tokens here
 			s.sess.returnTokens(len(buf))
 			defaultAllocator.Put(buf)
 			if nw > 0 {
@@ -255,6 +256,7 @@ func (s *Stream) writeTov2(w io.Writer) (n int64, err error) {
 
 		if buf != nil {
 			nw, ew := w.Write(buf)
+			// NOTE: WriteTo is a reader, so we need to return tokens here
 			s.sess.returnTokens(len(buf))
 			defaultAllocator.Put(buf)
 			if nw > 0 {
@@ -484,7 +486,9 @@ func (s *Stream) Close() error {
 	})
 
 	if once {
-		_, err = s.sess.writeFrame(newFrame(byte(s.sess.config.Version), cmdFIN, s.id))
+		// send FIN in order
+		f := newFrame(byte(s.sess.config.Version), cmdFIN, s.id)
+		_, err = s.sess.writeFrameInternal(f, time.After(openCloseTimeout), CLSDATA)
 		s.sess.streamClosed(s.id)
 		return err
 	} else {

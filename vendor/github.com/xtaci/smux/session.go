@@ -178,7 +178,7 @@ func (s *Session) OpenStream() (*Stream, error) {
 
 	stream := newStream(sid, s.config.MaxFrameSize, s)
 
-	if _, err := s.writeFrame(newFrame(byte(s.config.Version), cmdSYN, sid)); err != nil {
+	if _, err := s.writeControlFrame(newFrame(byte(s.config.Version), cmdSYN, sid)); err != nil {
 		return nil, err
 	}
 
@@ -401,8 +401,12 @@ func (s *Session) recvLoop() {
 						s.streamLock.Lock()
 						if stream, ok := s.streams[sid]; ok {
 							stream.pushBytes(newbuf)
+							// a stream used some token
 							atomic.AddInt32(&s.bucket, -int32(written))
 							stream.notifyReadEvent()
+						} else {
+							// data directed to a missing/closed stream, recycle the buffer immediately.
+							defaultAllocator.Put(newbuf)
 						}
 						s.streamLock.Unlock()
 					} else {
@@ -559,9 +563,9 @@ func (s *Session) sendLoop() {
 	}
 }
 
-// writeFrame writes the frame to the underlying connection
+// writeControlFrame writes the control frame to the underlying connection
 // and returns the number of bytes written if successful
-func (s *Session) writeFrame(f Frame) (n int, err error) {
+func (s *Session) writeControlFrame(f Frame) (n int, err error) {
 	return s.writeFrameInternal(f, time.After(openCloseTimeout), CLSCTRL)
 }
 
