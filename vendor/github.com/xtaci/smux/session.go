@@ -28,6 +28,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -92,7 +93,7 @@ type Session struct {
 	bucket       int32         // token bucket
 	bucketNotify chan struct{} // used for waiting for tokens
 
-	streams    map[uint32]*Stream // all streams in this session
+	streams    map[uint32]*stream // all streams in this session
 	streamLock sync.Mutex         // locks streams
 
 	die     chan struct{} // flag session has died
@@ -111,7 +112,7 @@ type Session struct {
 	chProtoError   chan struct{}
 	protoErrorOnce sync.Once
 
-	chAccepts chan *Stream
+	chAccepts chan *stream
 
 	dataReady int32 // flag data has arrived
 
@@ -129,8 +130,8 @@ func newSession(config *Config, conn io.ReadWriteCloser, client bool) *Session {
 	s.die = make(chan struct{})
 	s.conn = conn
 	s.config = config
-	s.streams = make(map[uint32]*Stream)
-	s.chAccepts = make(chan *Stream, defaultAcceptBacklog)
+	s.streams = make(map[uint32]*stream)
+	s.chAccepts = make(chan *stream, defaultAcceptBacklog)
 	s.bucket = int32(config.MaxReceiveBuffer)
 	s.bucketNotify = make(chan struct{}, 1)
 	s.shaper = make(chan writeRequest)
@@ -193,7 +194,11 @@ func (s *Session) OpenStream() (*Stream, error) {
 		return nil, io.ErrClosedPipe
 	default:
 		s.streams[sid] = stream
-		return stream, nil
+		wrapper := &Stream{stream: stream}
+		runtime.SetFinalizer(wrapper, func(s *Stream) {
+			s.Close()
+		})
+		return wrapper, nil
 	}
 }
 
@@ -214,7 +219,11 @@ func (s *Session) AcceptStream() (*Stream, error) {
 
 	select {
 	case stream := <-s.chAccepts:
-		return stream, nil
+		wrapper := &Stream{stream: stream}
+		runtime.SetFinalizer(wrapper, func(s *Stream) {
+			s.Close()
+		})
+		return wrapper, nil
 	case <-deadline:
 		return nil, ErrTimeout
 	case <-s.chSocketReadError:
@@ -532,6 +541,7 @@ func (s *Session) sendLoop() {
 			binary.LittleEndian.PutUint16(buf[2:], uint16(len(request.frame.data)))
 			binary.LittleEndian.PutUint32(buf[4:], request.frame.sid)
 
+			// support for scatter-gather I/O
 			if len(vec) > 0 {
 				vec[0] = buf[:headerSize]
 				vec[1] = request.frame.data
