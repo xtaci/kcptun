@@ -50,7 +50,7 @@ func sigHandler() {
 		case syscall.SIGTERM, syscall.SIGINT:
 			postProcess()
 			signal.Stop(ch)
-			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+			syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 		}
 	}
 }
