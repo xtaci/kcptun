@@ -27,6 +27,16 @@ VERSION=`date -u +%Y%m%d`
 LDFLAGS="-X main.VERSION=$VERSION -s -w"
 GCFLAGS=""
 
+# LOONG64
+OSES=(linux)
+for os in ${OSES[@]}; do
+	env CGO_ENABLED=0 GOOS=$os GOARCH=loong64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o client_${os}_loong64${suffix} github.com/xtaci/kcptun/client
+	env CGO_ENABLED=0 GOOS=$os GOARCH=loong64 go build -mod=vendor -ldflags "$LDFLAGS" -gcflags "$GCFLAGS" -o server_${os}_loong64${suffix} github.com/xtaci/kcptun/server
+    if $UPX; then upx -9 client_${os}_loong64${suffix} server_${os}_loong64${suffix};fi
+	tar -zcf kcptun-${os}-loong64-$VERSION.tar.gz client_${os}_loong64${suffix} server_${os}_loong64${suffix}
+    $sum kcptun-${os}-loong64-$VERSION.tar.gz
+done
+
 # AMD64 
 OSES=(linux darwin windows freebsd)
 for os in ${OSES[@]}; do
