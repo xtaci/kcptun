@@ -13,6 +13,9 @@ TEXT ·mulSve_10x1_64(SB), $0-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd346fc00 // lsr x0, x0, #6                              
+    WORD $0xd37ae400 // lsl x0, x0, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x1_64_end
     MOVD in_base+24(FP), R3
@@ -55,7 +58,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 0 to 1 outputs
     WORD $0x85804026 // ldr z6, [x1]                                
     WORD $0x85804425 // ldr z5, [x1, #1, MUL VL]                    
-    WORD $0x91010021 // add x1, x1, #64                             
+    WORD $0x04215041 // addvl x1, x1, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -77,7 +80,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 1 to 1 outputs
     WORD $0x85804086 // ldr z6, [x4]                                
     WORD $0x85804485 // ldr z5, [x4, #1, MUL VL]                    
-    WORD $0x91010084 // add x4, x4, #64                             
+    WORD $0x04245044 // addvl x4, x4, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -101,7 +104,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 2 to 1 outputs
     WORD $0x858040a6 // ldr z6, [x5]                                
     WORD $0x858044a5 // ldr z5, [x5, #1, MUL VL]                    
-    WORD $0x910100a5 // add x5, x5, #64                             
+    WORD $0x04255045 // addvl x5, x5, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -125,7 +128,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 3 to 1 outputs
     WORD $0x85804106 // ldr z6, [x8]                                
     WORD $0x85804505 // ldr z5, [x8, #1, MUL VL]                    
-    WORD $0x91010108 // add x8, x8, #64                             
+    WORD $0x04285048 // addvl x8, x8, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -149,7 +152,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 4 to 1 outputs
     WORD $0x85804126 // ldr z6, [x9]                                
     WORD $0x85804525 // ldr z5, [x9, #1, MUL VL]                    
-    WORD $0x91010129 // add x9, x9, #64                             
+    WORD $0x04295049 // addvl x9, x9, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -173,7 +176,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 5 to 1 outputs
     WORD $0x85804146 // ldr z6, [x10]                               
     WORD $0x85804545 // ldr z5, [x10, #1, MUL VL]                   
-    WORD $0x9101014a // add x10, x10, #64                           
+    WORD $0x042a504a // addvl x10, x10, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -197,7 +200,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 6 to 1 outputs
     WORD $0x85804166 // ldr z6, [x11]                               
     WORD $0x85804565 // ldr z5, [x11, #1, MUL VL]                   
-    WORD $0x9101016b // add x11, x11, #64                           
+    WORD $0x042b504b // addvl x11, x11, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -221,7 +224,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 7 to 1 outputs
     WORD $0x85804186 // ldr z6, [x12]                               
     WORD $0x85804585 // ldr z5, [x12, #1, MUL VL]                   
-    WORD $0x9101018c // add x12, x12, #64                           
+    WORD $0x042c504c // addvl x12, x12, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -245,7 +248,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 8 to 1 outputs
     WORD $0x858041a6 // ldr z6, [x13]                               
     WORD $0x858045a5 // ldr z5, [x13, #1, MUL VL]                   
-    WORD $0x910101ad // add x13, x13, #64                           
+    WORD $0x042d504d // addvl x13, x13, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -269,7 +272,7 @@ mulSve_10x1_64_loop:
     // Load and process 64 bytes from input 9 to 1 outputs
     WORD $0x85804066 // ldr z6, [x3]                                
     WORD $0x85804465 // ldr z5, [x3, #1, MUL VL]                    
-    WORD $0x91010063 // add x3, x3, #64                             
+    WORD $0x04235043 // addvl x3, x3, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -291,7 +294,7 @@ mulSve_10x1_64_store:
     // Store 1 outputs
     WORD $0xe58041c0 // str z0, [x14]                               
     WORD $0xe58045c1 // str z1, [x14, #1, MUL VL]                   
-    WORD $0x910101ce // add x14, x14, #64                           
+    WORD $0x042e504e // addvl x14, x14, #2
 
     // Prepare for next loop
     WORD $0xf1000400 // subs x0, x0, #1                             
@@ -309,6 +312,9 @@ TEXT ·mulSve_10x1_64Xor(SB), $0-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd346fc00 // lsr x0, x0, #6                              
+    WORD $0xd37ae400 // lsl x0, x0, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x1_64Xor_end
     MOVD in_base+24(FP), R3
@@ -355,7 +361,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 0 to 1 outputs
     WORD $0x85804026 // ldr z6, [x1]                                
     WORD $0x85804425 // ldr z5, [x1, #1, MUL VL]                    
-    WORD $0x91010021 // add x1, x1, #64                             
+    WORD $0x04215041 // addvl x1, x1, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -379,7 +385,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 1 to 1 outputs
     WORD $0x85804086 // ldr z6, [x4]                                
     WORD $0x85804485 // ldr z5, [x4, #1, MUL VL]                    
-    WORD $0x91010084 // add x4, x4, #64                             
+    WORD $0x04245044 // addvl x4, x4, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -403,7 +409,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 2 to 1 outputs
     WORD $0x858040a6 // ldr z6, [x5]                                
     WORD $0x858044a5 // ldr z5, [x5, #1, MUL VL]                    
-    WORD $0x910100a5 // add x5, x5, #64                             
+    WORD $0x04255045 // addvl x5, x5, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -427,7 +433,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 3 to 1 outputs
     WORD $0x85804106 // ldr z6, [x8]                                
     WORD $0x85804505 // ldr z5, [x8, #1, MUL VL]                    
-    WORD $0x91010108 // add x8, x8, #64                             
+    WORD $0x04285048 // addvl x8, x8, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -451,7 +457,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 4 to 1 outputs
     WORD $0x85804126 // ldr z6, [x9]                                
     WORD $0x85804525 // ldr z5, [x9, #1, MUL VL]                    
-    WORD $0x91010129 // add x9, x9, #64                             
+    WORD $0x04295049 // addvl x9, x9, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -475,7 +481,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 5 to 1 outputs
     WORD $0x85804146 // ldr z6, [x10]                               
     WORD $0x85804545 // ldr z5, [x10, #1, MUL VL]                   
-    WORD $0x9101014a // add x10, x10, #64                           
+    WORD $0x042a504a // addvl x10, x10, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -499,7 +505,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 6 to 1 outputs
     WORD $0x85804166 // ldr z6, [x11]                               
     WORD $0x85804565 // ldr z5, [x11, #1, MUL VL]                   
-    WORD $0x9101016b // add x11, x11, #64                           
+    WORD $0x042b504b // addvl x11, x11, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -523,7 +529,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 7 to 1 outputs
     WORD $0x85804186 // ldr z6, [x12]                               
     WORD $0x85804585 // ldr z5, [x12, #1, MUL VL]                   
-    WORD $0x9101018c // add x12, x12, #64                           
+    WORD $0x042c504c // addvl x12, x12, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -547,7 +553,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 8 to 1 outputs
     WORD $0x858041a6 // ldr z6, [x13]                               
     WORD $0x858045a5 // ldr z5, [x13, #1, MUL VL]                   
-    WORD $0x910101ad // add x13, x13, #64                           
+    WORD $0x042d504d // addvl x13, x13, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -571,7 +577,7 @@ mulSve_10x1_64Xor_loop:
     // Load and process 64 bytes from input 9 to 1 outputs
     WORD $0x85804066 // ldr z6, [x3]                                
     WORD $0x85804465 // ldr z5, [x3, #1, MUL VL]                    
-    WORD $0x91010063 // add x3, x3, #64                             
+    WORD $0x04235043 // addvl x3, x3, #2
     WORD $0x04fc94c7 // lsr z7.d, z6.d, #4                          
     WORD $0x04fc94a8 // lsr z8.d, z5.d, #4                          
     WORD $0x042230c6 // and z6.d, z6.d, z2.d                        
@@ -593,7 +599,7 @@ mulSve_10x1_64Xor_store:
     // Store 1 outputs
     WORD $0xe58041c0 // str z0, [x14]                               
     WORD $0xe58045c1 // str z1, [x14, #1, MUL VL]                   
-    WORD $0x910101ce // add x14, x14, #64                           
+    WORD $0x042e504e // addvl x14, x14, #2
 
     // Prepare for next loop
     WORD $0xf1000400 // subs x0, x0, #1                             
@@ -611,6 +617,9 @@ TEXT ·mulSve_10x2_64(SB), $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd346fc00 // lsr x0, x0, #6                              
+    WORD $0xd37ae400 // lsl x0, x0, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x2_64_end
     MOVD in_base+24(FP), R3
@@ -655,7 +664,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 0 to 2 outputs
     WORD $0x85804029 // ldr z9, [x1]                                
     WORD $0x8580442b // ldr z11, [x1, #1, MUL VL]                   
-    WORD $0x91010021 // add x1, x1, #64                             
+    WORD $0x04215041 // addvl x1, x1, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -685,7 +694,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 1 to 2 outputs
     WORD $0x85804089 // ldr z9, [x4]                                
     WORD $0x8580448b // ldr z11, [x4, #1, MUL VL]                   
-    WORD $0x91010084 // add x4, x4, #64                             
+    WORD $0x04245044 // addvl x4, x4, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -719,7 +728,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 2 to 2 outputs
     WORD $0x858040a9 // ldr z9, [x5]                                
     WORD $0x858044ab // ldr z11, [x5, #1, MUL VL]                   
-    WORD $0x910100a5 // add x5, x5, #64                             
+    WORD $0x04255045 // addvl x5, x5, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -753,7 +762,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 3 to 2 outputs
     WORD $0x85804109 // ldr z9, [x8]                                
     WORD $0x8580450b // ldr z11, [x8, #1, MUL VL]                   
-    WORD $0x91010108 // add x8, x8, #64                             
+    WORD $0x04285048 // addvl x8, x8, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -787,7 +796,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 4 to 2 outputs
     WORD $0x85804129 // ldr z9, [x9]                                
     WORD $0x8580452b // ldr z11, [x9, #1, MUL VL]                   
-    WORD $0x91010129 // add x9, x9, #64                             
+    WORD $0x04295049 // addvl x9, x9, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -821,7 +830,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 5 to 2 outputs
     WORD $0x85804149 // ldr z9, [x10]                               
     WORD $0x8580454b // ldr z11, [x10, #1, MUL VL]                  
-    WORD $0x9101014a // add x10, x10, #64                           
+    WORD $0x042a504a // addvl x10, x10, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -855,7 +864,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 6 to 2 outputs
     WORD $0x85804169 // ldr z9, [x11]                               
     WORD $0x8580456b // ldr z11, [x11, #1, MUL VL]                  
-    WORD $0x9101016b // add x11, x11, #64                           
+    WORD $0x042b504b // addvl x11, x11, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -889,7 +898,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 7 to 2 outputs
     WORD $0x85804189 // ldr z9, [x12]                               
     WORD $0x8580458b // ldr z11, [x12, #1, MUL VL]                  
-    WORD $0x9101018c // add x12, x12, #64                           
+    WORD $0x042c504c // addvl x12, x12, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -923,7 +932,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 8 to 2 outputs
     WORD $0x858041a9 // ldr z9, [x13]                               
     WORD $0x858045ab // ldr z11, [x13, #1, MUL VL]                  
-    WORD $0x910101ad // add x13, x13, #64                           
+    WORD $0x042d504d // addvl x13, x13, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -957,7 +966,7 @@ mulSve_10x2_64_loop:
     // Load and process 64 bytes from input 9 to 2 outputs
     WORD $0x85804069 // ldr z9, [x3]                                
     WORD $0x8580446b // ldr z11, [x3, #1, MUL VL]                   
-    WORD $0x91010063 // add x3, x3, #64                             
+    WORD $0x04235043 // addvl x3, x3, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -989,10 +998,10 @@ mulSve_10x2_64_store:
     // Store 2 outputs
     WORD $0xe58041e0 // str z0, [x15]                               
     WORD $0xe58045e1 // str z1, [x15, #1, MUL VL]                   
-    WORD $0x910101ef // add x15, x15, #64                           
+    WORD $0x042f504f // addvl x15, x15, #2
     WORD $0xe58041c2 // str z2, [x14]                               
     WORD $0xe58045c3 // str z3, [x14, #1, MUL VL]                   
-    WORD $0x910101ce // add x14, x14, #64                           
+    WORD $0x042e504e // addvl x14, x14, #2
 
     // Prepare for next loop
     WORD $0xf1000400 // subs x0, x0, #1                             
@@ -1010,6 +1019,9 @@ TEXT ·mulSve_10x2_64Xor(SB), $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd346fc00 // lsr x0, x0, #6                              
+    WORD $0xd37ae400 // lsl x0, x0, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x2_64Xor_end
     MOVD in_base+24(FP), R3
@@ -1060,7 +1072,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 0 to 2 outputs
     WORD $0x85804029 // ldr z9, [x1]                                
     WORD $0x8580442b // ldr z11, [x1, #1, MUL VL]                   
-    WORD $0x91010021 // add x1, x1, #64                             
+    WORD $0x04215041 // addvl x1, x1, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1094,7 +1106,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 1 to 2 outputs
     WORD $0x85804089 // ldr z9, [x4]                                
     WORD $0x8580448b // ldr z11, [x4, #1, MUL VL]                   
-    WORD $0x91010084 // add x4, x4, #64                             
+    WORD $0x04245044 // addvl x4, x4, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1128,7 +1140,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 2 to 2 outputs
     WORD $0x858040a9 // ldr z9, [x5]                                
     WORD $0x858044ab // ldr z11, [x5, #1, MUL VL]                   
-    WORD $0x910100a5 // add x5, x5, #64                             
+    WORD $0x04255045 // addvl x5, x5, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1162,7 +1174,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 3 to 2 outputs
     WORD $0x85804109 // ldr z9, [x8]                                
     WORD $0x8580450b // ldr z11, [x8, #1, MUL VL]                   
-    WORD $0x91010108 // add x8, x8, #64                             
+    WORD $0x04285048 // addvl x8, x8, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1196,7 +1208,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 4 to 2 outputs
     WORD $0x85804129 // ldr z9, [x9]                                
     WORD $0x8580452b // ldr z11, [x9, #1, MUL VL]                   
-    WORD $0x91010129 // add x9, x9, #64                             
+    WORD $0x04295049 // addvl x9, x9, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1230,7 +1242,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 5 to 2 outputs
     WORD $0x85804149 // ldr z9, [x10]                               
     WORD $0x8580454b // ldr z11, [x10, #1, MUL VL]                  
-    WORD $0x9101014a // add x10, x10, #64                           
+    WORD $0x042a504a // addvl x10, x10, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1264,7 +1276,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 6 to 2 outputs
     WORD $0x85804169 // ldr z9, [x11]                               
     WORD $0x8580456b // ldr z11, [x11, #1, MUL VL]                  
-    WORD $0x9101016b // add x11, x11, #64                           
+    WORD $0x042b504b // addvl x11, x11, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1298,7 +1310,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 7 to 2 outputs
     WORD $0x85804189 // ldr z9, [x12]                               
     WORD $0x8580458b // ldr z11, [x12, #1, MUL VL]                  
-    WORD $0x9101018c // add x12, x12, #64                           
+    WORD $0x042c504c // addvl x12, x12, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1332,7 +1344,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 8 to 2 outputs
     WORD $0x858041a9 // ldr z9, [x13]                               
     WORD $0x858045ab // ldr z11, [x13, #1, MUL VL]                  
-    WORD $0x910101ad // add x13, x13, #64                           
+    WORD $0x042d504d // addvl x13, x13, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1366,7 +1378,7 @@ mulSve_10x2_64Xor_loop:
     // Load and process 64 bytes from input 9 to 2 outputs
     WORD $0x85804069 // ldr z9, [x3]                                
     WORD $0x8580446b // ldr z11, [x3, #1, MUL VL]                   
-    WORD $0x91010063 // add x3, x3, #64                             
+    WORD $0x04235043 // addvl x3, x3, #2
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04243129 // and z9.d, z9.d, z4.d                        
@@ -1398,10 +1410,10 @@ mulSve_10x2_64Xor_store:
     // Store 2 outputs
     WORD $0xe58041e0 // str z0, [x15]                               
     WORD $0xe58045e1 // str z1, [x15, #1, MUL VL]                   
-    WORD $0x910101ef // add x15, x15, #64                           
+    WORD $0x042f504f // addvl x15, x15, #2
     WORD $0xe58041c2 // str z2, [x14]                               
     WORD $0xe58045c3 // str z3, [x14, #1, MUL VL]                   
-    WORD $0x910101ce // add x14, x14, #64                           
+    WORD $0x042e504e // addvl x14, x14, #2
 
     // Prepare for next loop
     WORD $0xf1000400 // subs x0, x0, #1                             
@@ -1419,6 +1431,9 @@ TEXT ·mulSve_10x3_64(SB), $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd346fc00 // lsr x0, x0, #6                              
+    WORD $0xd37ae400 // lsl x0, x0, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x3_64_end
     MOVD in_base+24(FP), R0
@@ -1461,6 +1476,9 @@ TEXT ·mulSve_10x3_64(SB), $8-88
     // Reload length to save a register
     MOVD n+80(FP), R6
     WORD $0xd346fcc6 // lsr x6, x6, #6                              
+    WORD $0xd37ae4c6 // lsl x6, x6, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad008c6 // udiv x6, x6, x16
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
@@ -1469,7 +1487,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 0 to 3 outputs
     WORD $0x8580406b // ldr z11, [x3]                               
     WORD $0x8580446d // ldr z13, [x3, #1, MUL VL]                   
-    WORD $0x91010063 // add x3, x3, #64                             
+    WORD $0x04235043 // addvl x3, x3, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1507,7 +1525,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 1 to 3 outputs
     WORD $0x8580402b // ldr z11, [x1]                               
     WORD $0x8580442d // ldr z13, [x1, #1, MUL VL]                   
-    WORD $0x91010021 // add x1, x1, #64                             
+    WORD $0x04215041 // addvl x1, x1, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1551,7 +1569,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 2 to 3 outputs
     WORD $0x8580408b // ldr z11, [x4]                               
     WORD $0x8580448d // ldr z13, [x4, #1, MUL VL]                   
-    WORD $0x91010084 // add x4, x4, #64                             
+    WORD $0x04245044 // addvl x4, x4, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1595,7 +1613,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 3 to 3 outputs
     WORD $0x858040ab // ldr z11, [x5]                               
     WORD $0x858044ad // ldr z13, [x5, #1, MUL VL]                   
-    WORD $0x910100a5 // add x5, x5, #64                             
+    WORD $0x04255045 // addvl x5, x5, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1639,7 +1657,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 4 to 3 outputs
     WORD $0x8580410b // ldr z11, [x8]                               
     WORD $0x8580450d // ldr z13, [x8, #1, MUL VL]                   
-    WORD $0x91010108 // add x8, x8, #64                             
+    WORD $0x04285048 // addvl x8, x8, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1683,7 +1701,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 5 to 3 outputs
     WORD $0x8580412b // ldr z11, [x9]                               
     WORD $0x8580452d // ldr z13, [x9, #1, MUL VL]                   
-    WORD $0x91010129 // add x9, x9, #64                             
+    WORD $0x04295049 // addvl x9, x9, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1727,7 +1745,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 6 to 3 outputs
     WORD $0x8580414b // ldr z11, [x10]                              
     WORD $0x8580454d // ldr z13, [x10, #1, MUL VL]                  
-    WORD $0x9101014a // add x10, x10, #64                           
+    WORD $0x042a504a // addvl x10, x10, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1771,7 +1789,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 7 to 3 outputs
     WORD $0x8580416b // ldr z11, [x11]                              
     WORD $0x8580456d // ldr z13, [x11, #1, MUL VL]                  
-    WORD $0x9101016b // add x11, x11, #64                           
+    WORD $0x042b504b // addvl x11, x11, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1815,7 +1833,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 8 to 3 outputs
     WORD $0x8580418b // ldr z11, [x12]                              
     WORD $0x8580458d // ldr z13, [x12, #1, MUL VL]                  
-    WORD $0x9101018c // add x12, x12, #64                           
+    WORD $0x042c504c // addvl x12, x12, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1859,7 +1877,7 @@ mulSve_10x3_64_loop:
     // Load and process 64 bytes from input 9 to 3 outputs
     WORD $0x8580400b // ldr z11, [x0]                               
     WORD $0x8580440d // ldr z13, [x0, #1, MUL VL]                   
-    WORD $0x91010000 // add x0, x0, #64                             
+    WORD $0x04205040 // addvl x0, x0, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -1901,13 +1919,13 @@ mulSve_10x3_64_store:
     // Store 3 outputs
     WORD $0xe58041c0 // str z0, [x14]                               
     WORD $0xe58045c1 // str z1, [x14, #1, MUL VL]                   
-    WORD $0x910101ce // add x14, x14, #64                           
+    WORD $0x042e504e // addvl x14, x14, #2
     WORD $0xe58041e2 // str z2, [x15]                               
     WORD $0xe58045e3 // str z3, [x15, #1, MUL VL]                   
-    WORD $0x910101ef // add x15, x15, #64                           
+    WORD $0x042f504f // addvl x15, x15, #2
     WORD $0xe58041a4 // str z4, [x13]                               
     WORD $0xe58045a5 // str z5, [x13, #1, MUL VL]                   
-    WORD $0x910101ad // add x13, x13, #64                           
+    WORD $0x042d504d // addvl x13, x13, #2
 
     // Prepare for next loop
     WORD $0xf10004c6 // subs x6, x6, #1                             
@@ -1925,6 +1943,9 @@ TEXT ·mulSve_10x3_64Xor(SB), $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd346fc00 // lsr x0, x0, #6                              
+    WORD $0xd37ae400 // lsl x0, x0, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x3_64Xor_end
     MOVD in_base+24(FP), R0
@@ -1967,6 +1988,9 @@ TEXT ·mulSve_10x3_64Xor(SB), $8-88
     // Reload length to save a register
     MOVD n+80(FP), R6
     WORD $0xd346fcc6 // lsr x6, x6, #6                              
+    WORD $0xd37ae4c6 // lsl x6, x6, #6
+    WORD $0x04bf5050 // rdvl x16, #2
+    WORD $0x9ad008c6 // udiv x6, x6, x16
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
@@ -1983,7 +2007,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 0 to 3 outputs
     WORD $0x8580406b // ldr z11, [x3]                               
     WORD $0x8580446d // ldr z13, [x3, #1, MUL VL]                   
-    WORD $0x91010063 // add x3, x3, #64                             
+    WORD $0x04235043 // addvl x3, x3, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2027,7 +2051,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 1 to 3 outputs
     WORD $0x8580402b // ldr z11, [x1]                               
     WORD $0x8580442d // ldr z13, [x1, #1, MUL VL]                   
-    WORD $0x91010021 // add x1, x1, #64                             
+    WORD $0x04215041 // addvl x1, x1, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2071,7 +2095,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 2 to 3 outputs
     WORD $0x8580408b // ldr z11, [x4]                               
     WORD $0x8580448d // ldr z13, [x4, #1, MUL VL]                   
-    WORD $0x91010084 // add x4, x4, #64                             
+    WORD $0x04245044 // addvl x4, x4, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2115,7 +2139,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 3 to 3 outputs
     WORD $0x858040ab // ldr z11, [x5]                               
     WORD $0x858044ad // ldr z13, [x5, #1, MUL VL]                   
-    WORD $0x910100a5 // add x5, x5, #64                             
+    WORD $0x04255045 // addvl x5, x5, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2159,7 +2183,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 4 to 3 outputs
     WORD $0x8580410b // ldr z11, [x8]                               
     WORD $0x8580450d // ldr z13, [x8, #1, MUL VL]                   
-    WORD $0x91010108 // add x8, x8, #64                             
+    WORD $0x04285048 // addvl x8, x8, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2203,7 +2227,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 5 to 3 outputs
     WORD $0x8580412b // ldr z11, [x9]                               
     WORD $0x8580452d // ldr z13, [x9, #1, MUL VL]                   
-    WORD $0x91010129 // add x9, x9, #64                             
+    WORD $0x04295049 // addvl x9, x9, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2247,7 +2271,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 6 to 3 outputs
     WORD $0x8580414b // ldr z11, [x10]                              
     WORD $0x8580454d // ldr z13, [x10, #1, MUL VL]                  
-    WORD $0x9101014a // add x10, x10, #64                           
+    WORD $0x042a504a // addvl x10, x10, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2291,7 +2315,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 7 to 3 outputs
     WORD $0x8580416b // ldr z11, [x11]                              
     WORD $0x8580456d // ldr z13, [x11, #1, MUL VL]                  
-    WORD $0x9101016b // add x11, x11, #64                           
+    WORD $0x042b504b // addvl x11, x11, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2335,7 +2359,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 8 to 3 outputs
     WORD $0x8580418b // ldr z11, [x12]                              
     WORD $0x8580458d // ldr z13, [x12, #1, MUL VL]                  
-    WORD $0x9101018c // add x12, x12, #64                           
+    WORD $0x042c504c // addvl x12, x12, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2379,7 +2403,7 @@ mulSve_10x3_64Xor_loop:
     // Load and process 64 bytes from input 9 to 3 outputs
     WORD $0x8580400b // ldr z11, [x0]                               
     WORD $0x8580440d // ldr z13, [x0, #1, MUL VL]                   
-    WORD $0x91010000 // add x0, x0, #64                             
+    WORD $0x04205040 // addvl x0, x0, #2
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x0426316b // and z11.d, z11.d, z6.d                      
@@ -2421,13 +2445,13 @@ mulSve_10x3_64Xor_store:
     // Store 3 outputs
     WORD $0xe58041c0 // str z0, [x14]                               
     WORD $0xe58045c1 // str z1, [x14, #1, MUL VL]                   
-    WORD $0x910101ce // add x14, x14, #64                           
+    WORD $0x042e504e // addvl x14, x14, #2
     WORD $0xe58041e2 // str z2, [x15]                               
     WORD $0xe58045e3 // str z3, [x15, #1, MUL VL]                   
-    WORD $0x910101ef // add x15, x15, #64                           
+    WORD $0x042f504f // addvl x15, x15, #2
     WORD $0xe58041a4 // str z4, [x13]                               
     WORD $0xe58045a5 // str z5, [x13, #1, MUL VL]                   
-    WORD $0x910101ad // add x13, x13, #64                           
+    WORD $0x042d504d // addvl x13, x13, #2
 
     // Prepare for next loop
     WORD $0xf10004c6 // subs x6, x6, #1                             
@@ -2446,6 +2470,9 @@ TEXT ·mulSve_10x4(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x4_end
     MOVD in_base+24(FP), R3
@@ -2480,11 +2507,13 @@ TEXT ·mulSve_10x4(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x4_loop:
     // Load and process 32 bytes from input 0 to 4 outputs
     WORD $0x85804027 // ldr z7, [x1]                                
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2514,7 +2543,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 1 to 4 outputs
     WORD $0x85804087 // ldr z7, [x4]                                
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2548,7 +2577,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 2 to 4 outputs
     WORD $0x858040a7 // ldr z7, [x5]                                
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2582,7 +2611,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 3 to 4 outputs
     WORD $0x85804107 // ldr z7, [x8]                                
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2616,7 +2645,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 4 to 4 outputs
     WORD $0x85804127 // ldr z7, [x9]                                
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2650,7 +2679,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 5 to 4 outputs
     WORD $0x85804147 // ldr z7, [x10]                               
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2684,7 +2713,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 6 to 4 outputs
     WORD $0x85804167 // ldr z7, [x11]                               
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2718,7 +2747,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 7 to 4 outputs
     WORD $0x85804187 // ldr z7, [x12]                               
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2752,7 +2781,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 8 to 4 outputs
     WORD $0x858041a7 // ldr z7, [x13]                               
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2786,7 +2815,7 @@ mulSve_10x4_loop:
 
     // Load and process 32 bytes from input 9 to 4 outputs
     WORD $0x85804067 // ldr z7, [x3]                                
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2827,7 +2856,7 @@ mulSve_10x4_store:
     WORD $0xe5ef40c3 // st1d { z3.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x4_loop
 
@@ -2844,6 +2873,9 @@ TEXT ·mulSve_10x4Xor(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x4Xor_end
     MOVD in_base+24(FP), R3
@@ -2878,11 +2910,13 @@ TEXT ·mulSve_10x4Xor(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x4Xor_loop:
     // Load and process 32 bytes from input 0 to 4 outputs
     WORD $0x85804027 // ldr z7, [x1]                                
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2924,7 +2958,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 1 to 4 outputs
     WORD $0x85804087 // ldr z7, [x4]                                
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2958,7 +2992,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 2 to 4 outputs
     WORD $0x858040a7 // ldr z7, [x5]                                
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -2992,7 +3026,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 3 to 4 outputs
     WORD $0x85804107 // ldr z7, [x8]                                
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -3026,7 +3060,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 4 to 4 outputs
     WORD $0x85804127 // ldr z7, [x9]                                
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -3060,7 +3094,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 5 to 4 outputs
     WORD $0x85804147 // ldr z7, [x10]                               
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -3094,7 +3128,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 6 to 4 outputs
     WORD $0x85804167 // ldr z7, [x11]                               
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -3128,7 +3162,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 7 to 4 outputs
     WORD $0x85804187 // ldr z7, [x12]                               
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -3162,7 +3196,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 8 to 4 outputs
     WORD $0x858041a7 // ldr z7, [x13]                               
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -3196,7 +3230,7 @@ mulSve_10x4Xor_loop:
 
     // Load and process 32 bytes from input 9 to 4 outputs
     WORD $0x85804067 // ldr z7, [x3]                                
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc94e8 // lsr z8.d, z7.d, #4                          
     WORD $0x042430e7 // and z7.d, z7.d, z4.d                        
     WORD $0x04243108 // and z8.d, z8.d, z4.d                        
@@ -3237,7 +3271,7 @@ mulSve_10x4Xor_store:
     WORD $0xe5ef40c3 // st1d { z3.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x4Xor_loop
 
@@ -3254,6 +3288,9 @@ TEXT ·mulSve_10x5(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x5_end
     MOVD in_base+24(FP), R3
@@ -3288,11 +3325,13 @@ TEXT ·mulSve_10x5(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x5_loop:
     // Load and process 32 bytes from input 0 to 5 outputs
     WORD $0x85804028 // ldr z8, [x1]                                
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3327,7 +3366,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 1 to 5 outputs
     WORD $0x85804088 // ldr z8, [x4]                                
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3367,7 +3406,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 2 to 5 outputs
     WORD $0x858040a8 // ldr z8, [x5]                                
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3407,7 +3446,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 3 to 5 outputs
     WORD $0x85804108 // ldr z8, [x8]                                
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3447,7 +3486,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 4 to 5 outputs
     WORD $0x85804128 // ldr z8, [x9]                                
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3487,7 +3526,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 5 to 5 outputs
     WORD $0x85804148 // ldr z8, [x10]                               
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3527,7 +3566,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 6 to 5 outputs
     WORD $0x85804168 // ldr z8, [x11]                               
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3567,7 +3606,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 7 to 5 outputs
     WORD $0x85804188 // ldr z8, [x12]                               
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3607,7 +3646,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 8 to 5 outputs
     WORD $0x858041a8 // ldr z8, [x13]                               
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3647,7 +3686,7 @@ mulSve_10x5_loop:
 
     // Load and process 32 bytes from input 9 to 5 outputs
     WORD $0x85804068 // ldr z8, [x3]                                
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3696,7 +3735,7 @@ mulSve_10x5_store:
     WORD $0xe5ef40c4 // st1d { z4.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x5_loop
 
@@ -3713,6 +3752,9 @@ TEXT ·mulSve_10x5Xor(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x5Xor_end
     MOVD in_base+24(FP), R3
@@ -3747,11 +3789,13 @@ TEXT ·mulSve_10x5Xor(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x5Xor_loop:
     // Load and process 32 bytes from input 0 to 5 outputs
     WORD $0x85804028 // ldr z8, [x1]                                
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3801,7 +3845,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 1 to 5 outputs
     WORD $0x85804088 // ldr z8, [x4]                                
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3841,7 +3885,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 2 to 5 outputs
     WORD $0x858040a8 // ldr z8, [x5]                                
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3881,7 +3925,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 3 to 5 outputs
     WORD $0x85804108 // ldr z8, [x8]                                
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3921,7 +3965,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 4 to 5 outputs
     WORD $0x85804128 // ldr z8, [x9]                                
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -3961,7 +4005,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 5 to 5 outputs
     WORD $0x85804148 // ldr z8, [x10]                               
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -4001,7 +4045,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 6 to 5 outputs
     WORD $0x85804168 // ldr z8, [x11]                               
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -4041,7 +4085,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 7 to 5 outputs
     WORD $0x85804188 // ldr z8, [x12]                               
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -4081,7 +4125,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 8 to 5 outputs
     WORD $0x858041a8 // ldr z8, [x13]                               
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -4121,7 +4165,7 @@ mulSve_10x5Xor_loop:
 
     // Load and process 32 bytes from input 9 to 5 outputs
     WORD $0x85804068 // ldr z8, [x3]                                
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc9509 // lsr z9.d, z8.d, #4                          
     WORD $0x04253108 // and z8.d, z8.d, z5.d                        
     WORD $0x04253129 // and z9.d, z9.d, z5.d                        
@@ -4170,7 +4214,7 @@ mulSve_10x5Xor_store:
     WORD $0xe5ef40c4 // st1d { z4.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x5Xor_loop
 
@@ -4187,6 +4231,9 @@ TEXT ·mulSve_10x6(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x6_end
     MOVD in_base+24(FP), R3
@@ -4221,11 +4268,13 @@ TEXT ·mulSve_10x6(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x6_loop:
     // Load and process 32 bytes from input 0 to 6 outputs
     WORD $0x85804029 // ldr z9, [x1]                                
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4265,7 +4314,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 1 to 6 outputs
     WORD $0x85804089 // ldr z9, [x4]                                
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4311,7 +4360,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 2 to 6 outputs
     WORD $0x858040a9 // ldr z9, [x5]                                
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4357,7 +4406,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 3 to 6 outputs
     WORD $0x85804109 // ldr z9, [x8]                                
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4403,7 +4452,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 4 to 6 outputs
     WORD $0x85804129 // ldr z9, [x9]                                
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4449,7 +4498,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 5 to 6 outputs
     WORD $0x85804149 // ldr z9, [x10]                               
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4495,7 +4544,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 6 to 6 outputs
     WORD $0x85804169 // ldr z9, [x11]                               
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4541,7 +4590,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 7 to 6 outputs
     WORD $0x85804189 // ldr z9, [x12]                               
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4587,7 +4636,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 8 to 6 outputs
     WORD $0x858041a9 // ldr z9, [x13]                               
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4633,7 +4682,7 @@ mulSve_10x6_loop:
 
     // Load and process 32 bytes from input 9 to 6 outputs
     WORD $0x85804069 // ldr z9, [x3]                                
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4690,7 +4739,7 @@ mulSve_10x6_store:
     WORD $0xe5ef40c5 // st1d { z5.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x6_loop
 
@@ -4707,6 +4756,9 @@ TEXT ·mulSve_10x6Xor(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x6Xor_end
     MOVD in_base+24(FP), R3
@@ -4741,11 +4793,13 @@ TEXT ·mulSve_10x6Xor(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x6Xor_loop:
     // Load and process 32 bytes from input 0 to 6 outputs
     WORD $0x85804029 // ldr z9, [x1]                                
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4803,7 +4857,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 1 to 6 outputs
     WORD $0x85804089 // ldr z9, [x4]                                
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4849,7 +4903,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 2 to 6 outputs
     WORD $0x858040a9 // ldr z9, [x5]                                
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4895,7 +4949,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 3 to 6 outputs
     WORD $0x85804109 // ldr z9, [x8]                                
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4941,7 +4995,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 4 to 6 outputs
     WORD $0x85804129 // ldr z9, [x9]                                
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -4987,7 +5041,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 5 to 6 outputs
     WORD $0x85804149 // ldr z9, [x10]                               
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -5033,7 +5087,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 6 to 6 outputs
     WORD $0x85804169 // ldr z9, [x11]                               
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -5079,7 +5133,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 7 to 6 outputs
     WORD $0x85804189 // ldr z9, [x12]                               
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -5125,7 +5179,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 8 to 6 outputs
     WORD $0x858041a9 // ldr z9, [x13]                               
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -5171,7 +5225,7 @@ mulSve_10x6Xor_loop:
 
     // Load and process 32 bytes from input 9 to 6 outputs
     WORD $0x85804069 // ldr z9, [x3]                                
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc952a // lsr z10.d, z9.d, #4                         
     WORD $0x04263129 // and z9.d, z9.d, z6.d                        
     WORD $0x0426314a // and z10.d, z10.d, z6.d                      
@@ -5228,7 +5282,7 @@ mulSve_10x6Xor_store:
     WORD $0xe5ef40c5 // st1d { z5.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x6Xor_loop
 
@@ -5245,6 +5299,9 @@ TEXT ·mulSve_10x7(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x7_end
     MOVD in_base+24(FP), R3
@@ -5279,11 +5336,13 @@ TEXT ·mulSve_10x7(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x7_loop:
     // Load and process 32 bytes from input 0 to 7 outputs
     WORD $0x8580402a // ldr z10, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5328,7 +5387,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 1 to 7 outputs
     WORD $0x8580408a // ldr z10, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5380,7 +5439,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 2 to 7 outputs
     WORD $0x858040aa // ldr z10, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5432,7 +5491,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 3 to 7 outputs
     WORD $0x8580410a // ldr z10, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5484,7 +5543,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 4 to 7 outputs
     WORD $0x8580412a // ldr z10, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5536,7 +5595,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 5 to 7 outputs
     WORD $0x8580414a // ldr z10, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5588,7 +5647,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 6 to 7 outputs
     WORD $0x8580416a // ldr z10, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5640,7 +5699,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 7 to 7 outputs
     WORD $0x8580418a // ldr z10, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5692,7 +5751,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 8 to 7 outputs
     WORD $0x858041aa // ldr z10, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5744,7 +5803,7 @@ mulSve_10x7_loop:
 
     // Load and process 32 bytes from input 9 to 7 outputs
     WORD $0x8580406a // ldr z10, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5809,7 +5868,7 @@ mulSve_10x7_store:
     WORD $0xe5ef40c6 // st1d { z6.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x7_loop
 
@@ -5826,6 +5885,9 @@ TEXT ·mulSve_10x7Xor(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x7Xor_end
     MOVD in_base+24(FP), R3
@@ -5860,11 +5922,13 @@ TEXT ·mulSve_10x7Xor(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x7Xor_loop:
     // Load and process 32 bytes from input 0 to 7 outputs
     WORD $0x8580402a // ldr z10, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5930,7 +5994,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 1 to 7 outputs
     WORD $0x8580408a // ldr z10, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -5982,7 +6046,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 2 to 7 outputs
     WORD $0x858040aa // ldr z10, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6034,7 +6098,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 3 to 7 outputs
     WORD $0x8580410a // ldr z10, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6086,7 +6150,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 4 to 7 outputs
     WORD $0x8580412a // ldr z10, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6138,7 +6202,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 5 to 7 outputs
     WORD $0x8580414a // ldr z10, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6190,7 +6254,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 6 to 7 outputs
     WORD $0x8580416a // ldr z10, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6242,7 +6306,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 7 to 7 outputs
     WORD $0x8580418a // ldr z10, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6294,7 +6358,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 8 to 7 outputs
     WORD $0x858041aa // ldr z10, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6346,7 +6410,7 @@ mulSve_10x7Xor_loop:
 
     // Load and process 32 bytes from input 9 to 7 outputs
     WORD $0x8580406a // ldr z10, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc954b // lsr z11.d, z10.d, #4                        
     WORD $0x0427314a // and z10.d, z10.d, z7.d                      
     WORD $0x0427316b // and z11.d, z11.d, z7.d                      
@@ -6411,7 +6475,7 @@ mulSve_10x7Xor_store:
     WORD $0xe5ef40c6 // st1d { z6.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x7Xor_loop
 
@@ -6428,6 +6492,9 @@ TEXT ·mulSve_10x8(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x8_end
     MOVD in_base+24(FP), R3
@@ -6462,11 +6529,13 @@ TEXT ·mulSve_10x8(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x8_loop:
     // Load and process 32 bytes from input 0 to 8 outputs
     WORD $0x8580402b // ldr z11, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6516,7 +6585,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 1 to 8 outputs
     WORD $0x8580408b // ldr z11, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6574,7 +6643,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 2 to 8 outputs
     WORD $0x858040ab // ldr z11, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6632,7 +6701,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 3 to 8 outputs
     WORD $0x8580410b // ldr z11, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6690,7 +6759,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 4 to 8 outputs
     WORD $0x8580412b // ldr z11, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6748,7 +6817,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 5 to 8 outputs
     WORD $0x8580414b // ldr z11, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6806,7 +6875,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 6 to 8 outputs
     WORD $0x8580416b // ldr z11, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6864,7 +6933,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 7 to 8 outputs
     WORD $0x8580418b // ldr z11, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6922,7 +6991,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 8 to 8 outputs
     WORD $0x858041ab // ldr z11, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -6980,7 +7049,7 @@ mulSve_10x8_loop:
 
     // Load and process 32 bytes from input 9 to 8 outputs
     WORD $0x8580406b // ldr z11, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7053,7 +7122,7 @@ mulSve_10x8_store:
     WORD $0xe5ef40c7 // st1d { z7.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x8_loop
 
@@ -7070,6 +7139,9 @@ TEXT ·mulSve_10x8Xor(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x8Xor_end
     MOVD in_base+24(FP), R3
@@ -7104,11 +7176,13 @@ TEXT ·mulSve_10x8Xor(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x8Xor_loop:
     // Load and process 32 bytes from input 0 to 8 outputs
     WORD $0x8580402b // ldr z11, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7182,7 +7256,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 1 to 8 outputs
     WORD $0x8580408b // ldr z11, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7240,7 +7314,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 2 to 8 outputs
     WORD $0x858040ab // ldr z11, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7298,7 +7372,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 3 to 8 outputs
     WORD $0x8580410b // ldr z11, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7356,7 +7430,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 4 to 8 outputs
     WORD $0x8580412b // ldr z11, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7414,7 +7488,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 5 to 8 outputs
     WORD $0x8580414b // ldr z11, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7472,7 +7546,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 6 to 8 outputs
     WORD $0x8580416b // ldr z11, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7530,7 +7604,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 7 to 8 outputs
     WORD $0x8580418b // ldr z11, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7588,7 +7662,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 8 to 8 outputs
     WORD $0x858041ab // ldr z11, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7646,7 +7720,7 @@ mulSve_10x8Xor_loop:
 
     // Load and process 32 bytes from input 9 to 8 outputs
     WORD $0x8580406b // ldr z11, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc956c // lsr z12.d, z11.d, #4                        
     WORD $0x0428316b // and z11.d, z11.d, z8.d                      
     WORD $0x0428318c // and z12.d, z12.d, z8.d                      
@@ -7719,7 +7793,7 @@ mulSve_10x8Xor_store:
     WORD $0xe5ef40c7 // st1d { z7.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x8Xor_loop
 
@@ -7736,6 +7810,9 @@ TEXT ·mulSve_10x9(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x9_end
     MOVD in_base+24(FP), R3
@@ -7770,11 +7847,13 @@ TEXT ·mulSve_10x9(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x9_loop:
     // Load and process 32 bytes from input 0 to 9 outputs
     WORD $0x8580402c // ldr z12, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -7829,7 +7908,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 1 to 9 outputs
     WORD $0x8580408c // ldr z12, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -7893,7 +7972,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 2 to 9 outputs
     WORD $0x858040ac // ldr z12, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -7957,7 +8036,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 3 to 9 outputs
     WORD $0x8580410c // ldr z12, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8021,7 +8100,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 4 to 9 outputs
     WORD $0x8580412c // ldr z12, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8085,7 +8164,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 5 to 9 outputs
     WORD $0x8580414c // ldr z12, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8149,7 +8228,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 6 to 9 outputs
     WORD $0x8580416c // ldr z12, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8213,7 +8292,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 7 to 9 outputs
     WORD $0x8580418c // ldr z12, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8277,7 +8356,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 8 to 9 outputs
     WORD $0x858041ac // ldr z12, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8341,7 +8420,7 @@ mulSve_10x9_loop:
 
     // Load and process 32 bytes from input 9 to 9 outputs
     WORD $0x8580406c // ldr z12, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8422,7 +8501,7 @@ mulSve_10x9_store:
     WORD $0xe5ef40c8 // st1d { z8.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x9_loop
 
@@ -8439,6 +8518,9 @@ TEXT ·mulSve_10x9Xor(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x9Xor_end
     MOVD in_base+24(FP), R3
@@ -8473,11 +8555,13 @@ TEXT ·mulSve_10x9Xor(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x9Xor_loop:
     // Load and process 32 bytes from input 0 to 9 outputs
     WORD $0x8580402c // ldr z12, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8559,7 +8643,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 1 to 9 outputs
     WORD $0x8580408c // ldr z12, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8623,7 +8707,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 2 to 9 outputs
     WORD $0x858040ac // ldr z12, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8687,7 +8771,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 3 to 9 outputs
     WORD $0x8580410c // ldr z12, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8751,7 +8835,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 4 to 9 outputs
     WORD $0x8580412c // ldr z12, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8815,7 +8899,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 5 to 9 outputs
     WORD $0x8580414c // ldr z12, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8879,7 +8963,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 6 to 9 outputs
     WORD $0x8580416c // ldr z12, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -8943,7 +9027,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 7 to 9 outputs
     WORD $0x8580418c // ldr z12, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -9007,7 +9091,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 8 to 9 outputs
     WORD $0x858041ac // ldr z12, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -9071,7 +9155,7 @@ mulSve_10x9Xor_loop:
 
     // Load and process 32 bytes from input 9 to 9 outputs
     WORD $0x8580406c // ldr z12, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc958d // lsr z13.d, z12.d, #4                        
     WORD $0x0429318c // and z12.d, z12.d, z9.d                      
     WORD $0x042931ad // and z13.d, z13.d, z9.d                      
@@ -9152,7 +9236,7 @@ mulSve_10x9Xor_store:
     WORD $0xe5ef40c8 // st1d { z8.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x9Xor_loop
 
@@ -9169,6 +9253,9 @@ TEXT ·mulSve_10x10(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x10_end
     MOVD in_base+24(FP), R3
@@ -9203,11 +9290,13 @@ TEXT ·mulSve_10x10(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x10_loop:
     // Load and process 32 bytes from input 0 to 10 outputs
     WORD $0x8580402d // ldr z13, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9267,7 +9356,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 1 to 10 outputs
     WORD $0x8580408d // ldr z13, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9337,7 +9426,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 2 to 10 outputs
     WORD $0x858040ad // ldr z13, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9407,7 +9496,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 3 to 10 outputs
     WORD $0x8580410d // ldr z13, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9477,7 +9566,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 4 to 10 outputs
     WORD $0x8580412d // ldr z13, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9547,7 +9636,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 5 to 10 outputs
     WORD $0x8580414d // ldr z13, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9617,7 +9706,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 6 to 10 outputs
     WORD $0x8580416d // ldr z13, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9687,7 +9776,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 7 to 10 outputs
     WORD $0x8580418d // ldr z13, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9757,7 +9846,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 8 to 10 outputs
     WORD $0x858041ad // ldr z13, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9827,7 +9916,7 @@ mulSve_10x10_loop:
 
     // Load and process 32 bytes from input 9 to 10 outputs
     WORD $0x8580406d // ldr z13, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -9916,7 +10005,7 @@ mulSve_10x10_store:
     WORD $0xe5ef40c9 // st1d { z9.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x10_loop
 
@@ -9933,6 +10022,9 @@ TEXT ·mulSve_10x10Xor(SB), NOSPLIT, $8-88
     MOVD n+80(FP), R0
     MOVD matrix_base+0(FP), R2
     WORD $0xd345fc00 // lsr x0, x0, #5                              
+    WORD $0xd37be800 // lsl x0, x0, #5
+    WORD $0x04bf5030 // rdvl x16, #1
+    WORD $0x9ad00800 // udiv x0, x0, x16
     WORD $0xea00001f // tst x0, x0                                  
     BEQ    mulSve_10x10Xor_end
     MOVD in_base+24(FP), R3
@@ -9967,11 +10059,13 @@ TEXT ·mulSve_10x10Xor(SB), NOSPLIT, $8-88
 
     // Load number of input shards
     MOVD   in_len+32(FP), R16
+    WORD $0x04bf5031 // rdvl x17, #1
+    WORD $0xd343fe31 // lsr  x17, x17, #3
 
 mulSve_10x10Xor_loop:
     // Load and process 32 bytes from input 0 to 10 outputs
     WORD $0x8580402d // ldr z13, [x1]                               
-    WORD $0x91008021 // add x1, x1, #32                             
+    WORD $0x04215021 // addvl x1, x1, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10061,7 +10155,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 1 to 10 outputs
     WORD $0x8580408d // ldr z13, [x4]                               
-    WORD $0x91008084 // add x4, x4, #32                             
+    WORD $0x04245024 // addvl x4, x4, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10131,7 +10225,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 2 to 10 outputs
     WORD $0x858040ad // ldr z13, [x5]                               
-    WORD $0x910080a5 // add x5, x5, #32                             
+    WORD $0x04255025 // addvl x5, x5, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10201,7 +10295,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 3 to 10 outputs
     WORD $0x8580410d // ldr z13, [x8]                               
-    WORD $0x91008108 // add x8, x8, #32                             
+    WORD $0x04285028 // addvl x8, x8, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10271,7 +10365,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 4 to 10 outputs
     WORD $0x8580412d // ldr z13, [x9]                               
-    WORD $0x91008129 // add x9, x9, #32                             
+    WORD $0x04295029 // addvl x9, x9, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10341,7 +10435,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 5 to 10 outputs
     WORD $0x8580414d // ldr z13, [x10]                              
-    WORD $0x9100814a // add x10, x10, #32                           
+    WORD $0x042a502a // addvl x10, x10, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10411,7 +10505,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 6 to 10 outputs
     WORD $0x8580416d // ldr z13, [x11]                              
-    WORD $0x9100816b // add x11, x11, #32                           
+    WORD $0x042b502b // addvl x11, x11, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10481,7 +10575,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 7 to 10 outputs
     WORD $0x8580418d // ldr z13, [x12]                              
-    WORD $0x9100818c // add x12, x12, #32                           
+    WORD $0x042c502c // addvl x12, x12, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10551,7 +10645,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 8 to 10 outputs
     WORD $0x858041ad // ldr z13, [x13]                              
-    WORD $0x910081ad // add x13, x13, #32                           
+    WORD $0x042d502d // addvl x13, x13, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10621,7 +10715,7 @@ mulSve_10x10Xor_loop:
 
     // Load and process 32 bytes from input 9 to 10 outputs
     WORD $0x8580406d // ldr z13, [x3]                               
-    WORD $0x91008063 // add x3, x3, #32                             
+    WORD $0x04235023 // addvl x3, x3, #1
     WORD $0x04fc95ae // lsr z14.d, z13.d, #4                        
     WORD $0x042a31ad // and z13.d, z13.d, z10.d                     
     WORD $0x042a31ce // and z14.d, z14.d, z10.d                     
@@ -10710,7 +10804,7 @@ mulSve_10x10Xor_store:
     WORD $0xe5ef40c9 // st1d { z9.d }, p0, [x6, x15, lsl #3]        
 
     // Prepare for next loop
-    WORD $0x910011ef // add x15, x15, #4                            
+    WORD $0x8b1101ef // add x15, x15, x17
     WORD $0xf1000400 // subs x0, x0, #1                             
     BNE  mulSve_10x10Xor_loop
 

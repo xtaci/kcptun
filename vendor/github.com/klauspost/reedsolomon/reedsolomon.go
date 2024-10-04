@@ -833,7 +833,7 @@ func (r *reedSolomon) codeSomeShards(matrixRows, inputs, outputs [][]byte, byteC
 		start += (*galMulGFNI)(m, inputs, outputs, 0, byteCount)
 		end = len(inputs[0])
 	} else if galMulGen, _, ok := r.hasCodeGen(byteCount, len(inputs), len(outputs)); ok {
-		m := genCodeGenMatrix(matrixRows, len(inputs), 0, len(outputs), r.getTmpSlice())
+		m := genCodeGenMatrix(matrixRows, len(inputs), 0, len(outputs), r.o.vectorLength, r.getTmpSlice())
 		start += (*galMulGen)(m, inputs, outputs, 0, byteCount)
 		r.putTmpSlice(m)
 		end = len(inputs[0])
@@ -864,7 +864,7 @@ func (r *reedSolomon) codeSomeShards(matrixRows, inputs, outputs [][]byte, byteC
 						start = (*galMulGFNIXor)(m, inPer, outPer, 0, byteCount)
 					}
 				} else {
-					m = genCodeGenMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), m)
+					m = genCodeGenMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), r.o.vectorLength, m)
 					if inIdx == 0 {
 						start = (*galMulGen)(m, inPer, outPer, 0, byteCount)
 					} else {
@@ -914,7 +914,7 @@ func (r *reedSolomon) codeSomeShardsP(matrixRows, inputs, outputs [][]byte, byte
 		var tmp [codeGenMaxInputs * codeGenMaxOutputs]uint64
 		gfniMatrix = genGFNIMatrix(matrixRows, len(inputs), 0, len(outputs), tmp[:])
 	} else if useCodeGen {
-		genMatrix = genCodeGenMatrix(matrixRows, len(inputs), 0, len(outputs), r.getTmpSlice())
+		genMatrix = genCodeGenMatrix(matrixRows, len(inputs), 0, len(outputs), r.o.vectorLength, r.getTmpSlice())
 		defer r.putTmpSlice(genMatrix)
 	} else if galMulGFNI, galMulGFNIXor, useGFNI := r.canGFNI(byteCount/4, codeGenMaxInputs, codeGenMaxOutputs); useGFNI &&
 		byteCount < 10<<20 && len(inputs)+len(outputs) > codeGenMinShards {
@@ -1025,7 +1025,7 @@ func (r *reedSolomon) codeSomeShardsAVXP(matrixRows, inputs, outputs [][]byte, b
 					outPer = outPer[:codeGenMaxOutputs]
 				}
 				// Generate local matrix
-				m := genCodeGenMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), tmp)
+				m := genCodeGenMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), r.o.vectorLength, tmp)
 				tmp = tmp[len(m):]
 				plan = append(plan, state{
 					input:  inPer,
@@ -1056,7 +1056,7 @@ func (r *reedSolomon) codeSomeShardsAVXP(matrixRows, inputs, outputs [][]byte, b
 					inPer = inPer[:codeGenMaxInputs]
 				}
 				// Generate local matrix
-				m := genCodeGenMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), tmp)
+				m := genCodeGenMatrix(matrixRows[outIdx:], len(inPer), inIdx, len(outPer), r.o.vectorLength, tmp)
 				tmp = tmp[len(m):]
 				//fmt.Println("bytes:", len(inPer)*r.o.perRound, "out:", len(outPer)*r.o.perRound)
 				plan = append(plan, state{

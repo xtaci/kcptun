@@ -24,6 +24,7 @@ type options struct {
 	useSSE2,
 	useNEON,
 	useSVE bool
+	vectorLength int
 
 	useJerasureMatrix    bool
 	usePAR1Matrix        bool
@@ -55,6 +56,7 @@ var defaultOptions = options{
 	useAvxGNFI:    cpuid.CPU.Supports(cpuid.AVX, cpuid.GFNI),
 	useNEON:       cpuid.CPU.Supports(cpuid.ASIMD),
 	useSVE:        cpuid.CPU.Supports(cpuid.SVE),
+	vectorLength:  32, // default vector length is 32 bytes (256 bits) for AVX2 code gen
 }
 
 // leopardMode controls the use of leopard GF in encoding and decoding.

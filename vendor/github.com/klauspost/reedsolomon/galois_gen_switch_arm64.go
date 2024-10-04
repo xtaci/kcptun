@@ -38,9 +38,15 @@ func (r *reedSolomon) canGFNI(byteCount int, inputs, outputs int) (_, _ *func(ma
 }
 
 // galMulSlicesSve
-func galMulSlicesSve(matrix []byte, in, out [][]byte, start, stop int) int {
-	n := stop - start
+func galMulSlicesSve(matrix []byte, in, out [][]byte, start, stop int) (n int) {
+	n = stop - start
 
+	if raceEnabled {
+		defer func() {
+			raceReadSlices(in, start, n)
+			raceWriteSlices(out, start, n)
+		}()
+	}
 	// fmt.Println(len(in), len(out))
 	switch len(out) {
 	case 1:
@@ -78,8 +84,15 @@ func galMulSlicesSve(matrix []byte, in, out [][]byte, start, stop int) int {
 }
 
 // galMulSlicesSveXor
-func galMulSlicesSveXor(matrix []byte, in, out [][]byte, start, stop int) int {
-	n := (stop - start)
+func galMulSlicesSveXor(matrix []byte, in, out [][]byte, start, stop int) (n int) {
+	n = (stop - start)
+
+	if raceEnabled {
+		defer func() {
+			raceReadSlices(in, start, n)
+			raceWriteSlices(out, start, n)
+		}()
+	}
 
 	switch len(out) {
 	case 1:
@@ -117,8 +130,14 @@ func galMulSlicesSveXor(matrix []byte, in, out [][]byte, start, stop int) int {
 }
 
 // galMulSlicesNeon
-func galMulSlicesNeon(matrix []byte, in, out [][]byte, start, stop int) int {
-	n := stop - start
+func galMulSlicesNeon(matrix []byte, in, out [][]byte, start, stop int) (n int) {
+	n = stop - start
+	if raceEnabled {
+		defer func() {
+			raceReadSlices(in, start, n)
+			raceWriteSlices(out, start, n)
+		}()
+	}
 
 	switch len(out) {
 	case 1:
@@ -156,9 +175,14 @@ func galMulSlicesNeon(matrix []byte, in, out [][]byte, start, stop int) int {
 }
 
 // galMulSlicesNeonXor
-func galMulSlicesNeonXor(matrix []byte, in, out [][]byte, start, stop int) int {
-	n := (stop - start)
-
+func galMulSlicesNeonXor(matrix []byte, in, out [][]byte, start, stop int) (n int) {
+	n = (stop - start)
+	if raceEnabled {
+		defer func() {
+			raceReadSlices(in, start, n)
+			raceWriteSlices(out, start, n)
+		}()
+	}
 	switch len(out) {
 	case 1:
 		mulNeon_10x1_64Xor(matrix, in, out, start, n)

@@ -17,8 +17,8 @@ github.com/google/gopacket/layers
 # github.com/klauspost/cpuid/v2 v2.2.8
 ## explicit; go 1.15
 github.com/klauspost/cpuid/v2
-# github.com/klauspost/reedsolomon v1.12.3
-## explicit; go 1.18
+# github.com/klauspost/reedsolomon v1.12.4
+## explicit; go 1.21
 github.com/klauspost/reedsolomon
 # github.com/mattn/go-colorable v0.1.13
 ## explicit; go 1.15
@@ -44,13 +44,13 @@ github.com/tjfoc/gmsm/sm4
 # github.com/urfave/cli v1.22.15
 ## explicit; go 1.11
 github.com/urfave/cli
-# github.com/xtaci/kcp-go/v5 v5.6.17
+# github.com/xtaci/kcp-go/v5 v5.6.18
 ## explicit; go 1.21
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.17
 ## explicit; go 1.22.3
 github.com/xtaci/qpp
-# github.com/xtaci/smux v1.5.30
+# github.com/xtaci/smux v1.5.31
 ## explicit; go 1.13
 github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.31
@@ -67,7 +67,7 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/tea
 golang.org/x/crypto/twofish
 golang.org/x/crypto/xtea
-# golang.org/x/net v0.28.0
+# golang.org/x/net v0.29.0
 ## explicit; go 1.18
 golang.org/x/net/bpf
 golang.org/x/net/internal/iana

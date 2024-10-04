@@ -187,10 +187,13 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 	}
 
 	// shard range for current packet
+	// NOTE: the shard sequence number starts at 0, so we can use mod operation
+	// to find the beginning of the current shard.
+	// ALWAYS ALIGNED TO 0
 	shardBegin := pkt.seqid() - pkt.seqid()%uint32(dec.shardSize)
 	shardEnd := shardBegin + uint32(dec.shardSize) - 1
 
-	// max search range in ordered queue for current shard
+	// Define max search range in ordered queue for current shard
 	searchBegin := insertIdx - int(pkt.seqid()%uint32(dec.shardSize))
 	if searchBegin < 0 {
 		searchBegin = 0
@@ -200,11 +203,12 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 		searchEnd = len(dec.rx) - 1
 	}
 
-	// re-construct datashards
+	// check if we have enough shards to recover, if so, we can recover the data and free the shards
+	// if not, we can keep the shards in memory for future recovery.
 	if searchEnd-searchBegin+1 >= dec.dataShards {
 		var numshard, numDataShard, first, maxlen int
 
-		// zero caches
+		// zero working set for decoding
 		shards := dec.decodeCache
 		shardsflag := dec.flagCache
 		for k := range dec.decodeCache {
@@ -212,9 +216,10 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 			shardsflag[k] = false
 		}
 
-		// shard assembly
+		// lookup shards in range [searchBegin, searchEnd] to the working set
 		for i := searchBegin; i <= searchEnd; i++ {
 			seqid := dec.rx[i].seqid()
+			// the shard seqid must be in [shardBegin, shardEnd], i.e. the current FEC group
 			if _itimediff(seqid, shardEnd) > 0 {
 				break
 			} else if _itimediff(seqid, shardBegin) >= 0 {
@@ -233,20 +238,23 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 			}
 		}
 
+		// case 1: if there's no loss on data shards
 		if numDataShard == dec.dataShards {
-			// case 1: no loss on data shards
 			dec.rx = dec.freeRange(first, numshard, dec.rx)
-		} else if numshard >= dec.dataShards {
-			// case 2: loss on data shards, but it's recoverable from parity shards
+		} else if numshard >= dec.dataShards { // case 2: loss on data shards, but it's recoverable from parity shards
+			// make the bytes length of each shard equal
 			for k := range shards {
 				if shards[k] != nil {
 					dlen := len(shards[k])
 					shards[k] = shards[k][:maxlen]
 					clear(shards[k][dlen:])
 				} else if k < dec.dataShards {
+					// prepare memory for the data recovery
 					shards[k] = xmitBuf.Get().([]byte)[:0]
 				}
 			}
+
+			// Reed-Solomon recovery
 			if err := dec.codec.ReconstructData(shards); err == nil {
 				for k := range shards[:dec.dataShards] {
 					if !shardsflag[k] {
@@ -255,19 +263,22 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 					}
 				}
 			}
+
+			// Free the shards in FIFO immediately
 			dec.rx = dec.freeRange(first, numshard, dec.rx)
 		}
 	}
 
-	// keep rxlimit
+	// keep rxlimit in FIFO order
 	if len(dec.rx) > dec.rxlimit {
-		if dec.rx[0].flag() == typeData { // track the unrecoverable data
+		if dec.rx[0].flag() == typeData {
+			// track the effectiveness of FEC
 			atomic.AddUint64(&DefaultSnmp.FECShortShards, 1)
 		}
 		dec.rx = dec.freeRange(0, 1, dec.rx)
 	}
 
-	// timeout policy
+	// FIFO timeout policy
 	current := currentMs()
 	numExpired := 0
 	for k := range dec.rx {
@@ -289,9 +300,12 @@ func (dec *fecDecoder) freeRange(first, n int, q []fecElement) []fecElement {
 		xmitBuf.Put([]byte(q[i].fecPacket))
 	}
 
+	// if n is small, we can avoid the copy
 	if first == 0 && n < cap(q)/2 {
 		return q[n:]
 	}
+
+	// on the other hand, we shift the tail
 	copy(q[first:], q[first+n:])
 	return q[:len(q)-n]
 }
@@ -375,7 +389,7 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 		enc.maxSize = sz
 	}
 
-	//  Generation of Reed-Solomon Erasure Code
+	// Generation of Reed-Solomon Erasure Code
 	now := time.Now().UnixMilli()
 	if enc.shardCount == enc.dataShards {
 		// generate the rs-code only if the data is continuous.
@@ -400,6 +414,10 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 					enc.markParity(ps[k][enc.headerOffset:])
 					ps[k] = ps[k][:enc.maxSize]
 				}
+			} else {
+				// record the error, and still keep the seqid monotonic increasing
+				atomic.AddUint64(&DefaultSnmp.FECErrs, 1)
+				enc.next = (enc.next + uint32(enc.parityShards)) % enc.paws
 			}
 		} else {
 			// through we do not send non-continuous parity shard, we still increase the next value
@@ -417,6 +435,7 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 	return
 }
 
+// put a stamp on the FEC packet header with seqid and type
 func (enc *fecEncoder) markData(data []byte) {
 	binary.LittleEndian.PutUint32(data, enc.next)
 	binary.LittleEndian.PutUint16(data[4:], typeData)

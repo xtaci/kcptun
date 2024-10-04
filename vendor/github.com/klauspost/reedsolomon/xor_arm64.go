@@ -7,8 +7,12 @@ func xorSliceNEON(in, out []byte)
 
 // simple slice xor
 func sliceXor(in, out []byte, o *options) {
-	xorSliceNEON(in, out)
 	done := (len(in) >> 5) << 5
+	if raceEnabled {
+		raceWriteSlice(out[:done])
+		raceReadSlice(in[:done])
+	}
+	xorSliceNEON(in, out)
 
 	remain := len(in) - done
 	if remain > 0 {

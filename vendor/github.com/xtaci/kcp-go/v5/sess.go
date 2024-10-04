@@ -498,7 +498,7 @@ func (s *UDPSession) SetMtu(mtu int) bool {
 	return true
 }
 
-// SetStreamMode toggles the stream mode on/off
+// Deprecated: toggles the stream mode on/off
 func (s *UDPSession) SetStreamMode(enable bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1035,7 +1035,10 @@ func (l *Listener) Accept() (net.Conn, error) {
 func (l *Listener) AcceptKCP() (*UDPSession, error) {
 	var timeout <-chan time.Time
 	if tdeadline, ok := l.rd.Load().(time.Time); ok && !tdeadline.IsZero() {
-		timeout = time.After(time.Until(tdeadline))
+		timer := time.NewTimer(time.Until(tdeadline))
+		defer timer.Stop()
+
+		timeout = timer.C
 	}
 
 	select {

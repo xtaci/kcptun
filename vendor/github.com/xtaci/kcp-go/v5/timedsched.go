@@ -83,8 +83,10 @@ func NewTimedSched(parallel int) *TimedSched {
 
 // sched is a goroutine to schedule and execute timed tasks.
 func (ts *TimedSched) sched() {
-	var tasks timedFuncHeap
 	timer := time.NewTimer(0)
+	defer timer.Stop()
+
+	var tasks timedFuncHeap
 	drained := false
 	for {
 		select {

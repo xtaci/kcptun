@@ -576,7 +576,10 @@ func (s *Session) sendLoop() {
 // writeControlFrame writes the control frame to the underlying connection
 // and returns the number of bytes written if successful
 func (s *Session) writeControlFrame(f Frame) (n int, err error) {
-	return s.writeFrameInternal(f, time.After(openCloseTimeout), CLSCTRL)
+	timer := time.NewTimer(openCloseTimeout)
+	defer timer.Stop()
+
+	return s.writeFrameInternal(f, timer.C, CLSCTRL)
 }
 
 // internal writeFrame version to support deadline used in keepalive

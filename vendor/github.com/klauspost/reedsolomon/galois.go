@@ -910,14 +910,14 @@ func galExp(a byte, n int) byte {
 	return expTable[uint8(logResult)]
 }
 
-func genCodeGenMatrix(matrixRows [][]byte, inputs, inIdx, outputs int, dst []byte) []byte {
+func genCodeGenMatrix(matrixRows [][]byte, inputs, inIdx, outputs, vectorLength int, dst []byte) []byte {
 	if !codeGen {
 		panic("codegen not enabled")
 	}
 	total := inputs * outputs
 
 	// Duplicated in+out
-	wantBytes := total * 32 * 2
+	wantBytes := total * vectorLength * 2
 	if cap(dst) < wantBytes {
 		dst = AllocAligned(1, wantBytes)[0]
 	} else {
@@ -925,15 +925,16 @@ func genCodeGenMatrix(matrixRows [][]byte, inputs, inIdx, outputs int, dst []byt
 	}
 	for i, row := range matrixRows[:outputs] {
 		for j, idx := range row[inIdx : inIdx+inputs] {
-			dstIdx := (j*outputs + i) * 64
+			dstIdx := (j*outputs + i) * vectorLength * 2
 			dstPart := dst[dstIdx:]
-			dstPart = dstPart[:64]
+			dstPart = dstPart[:vectorLength*2]
 			lo := mulTableLow[idx][:]
 			hi := mulTableHigh[idx][:]
-			copy(dstPart[:16], lo)
-			copy(dstPart[16:32], lo)
-			copy(dstPart[32:48], hi)
-			copy(dstPart[48:64], hi)
+
+			for k := 0; k < vectorLength; k += 16 {
+				copy(dstPart[k:k+16], lo)
+				copy(dstPart[vectorLength*2-(k+16):vectorLength*2-k], hi)
+			}
 		}
 	}
 	return dst
