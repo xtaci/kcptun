@@ -39,10 +39,11 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	kcp "github.com/xtaci/kcp-go/v5"
-	"github.com/xtaci/kcptun/std"
+	"github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/qpp"
 	"github.com/xtaci/smux"
+
+	"github.com/xtaci/kcptun/std"
 )
 
 const (
@@ -310,6 +311,7 @@ func main() {
 		if isUnix {
 			addr, err := net.ResolveUnixAddr("unix", config.LocalAddr)
 			checkError(err)
+			_ = os.Remove(config.LocalAddr)
 			listener, err = net.ListenUnix("unix", addr)
 			checkError(err)
 		} else {
