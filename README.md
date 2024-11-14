@@ -81,7 +81,7 @@ $ ./build-release.sh
 $ cd build
 ```
 
-All precompiled releases are genereated from `build-release.sh` script.
+All precompiled releases are generated from `build-release.sh` script.
 
 ### Performance
 
@@ -261,7 +261,7 @@ kcptun is shipped with builtin packet encryption powered by various block encryp
 
 The contents of the packets are completely anonymous with encryption, including the headers(FEC,KCP), checksums and contents. Note that, no matter which encryption method you choose on you upper layer, if you disable encryption by specifying `-crypt none` to kcptun, the transmit will be insecure somehow, since the header is ***PLAINTEXT*** to everyone it would be susceptible to header tampering, such as jamming the *sliding window size*, *round-trip time*, *FEC property* and *checksums*. ```aes-128``` is suggested for minimal encryption since modern CPUs are shipped with [AES-NI](https://en.wikipedia.org/wiki/AES_instruction_set) instructions and performs even better than `salsa20`(check the table below).
 
-Other possible attacks to kcptun includes: a) [traffic analysis](https://en.wikipedia.org/wiki/Traffic_analysis), dataflow on specific websites may have pattern while interchanging data, but this type of eavesdropping has been mitigated by adapting [smux](https://github.com/xtaci/smux) to mix data streams so as to introduce noises, perfect solution to this has not appeared yet, theroretically by shuffling/mixing messages on larger scale network may mitigate this problem.  b) [replay attack](https://en.wikipedia.org/wiki/Replay_attack), since the asymmetrical encryption has not been introduced into kcptun for some reason, capturing the packets and replay them on a different machine is possible, (notice: hijacking the session and decrypting the contents is still *impossible*), so upper layers should contain a asymmetrical encryption system to guarantee the authenticity of each message(to process message exactly once), such as HTTPS/OpenSSL/LibreSSL, only by signing the requests with private keys can eliminate this type of attack. 
+Other possible attacks to kcptun includes: a) [traffic analysis](https://en.wikipedia.org/wiki/Traffic_analysis), dataflow on specific websites may have pattern while interchanging data, but this type of eavesdropping has been mitigated by adapting [smux](https://github.com/xtaci/smux) to mix data streams so as to introduce noises, perfect solution to this has not appeared yet, theoretically by shuffling/mixing messages on larger scale network may mitigate this problem.  b) [replay attack](https://en.wikipedia.org/wiki/Replay_attack), since the asymmetrical encryption has not been introduced into kcptun for some reason, capturing the packets and replay them on a different machine is possible, (notice: hijacking the session and decrypting the contents is still *impossible*), so upper layers should contain a asymmetrical encryption system to guarantee the authenticity of each message(to process message exactly once), such as HTTPS/OpenSSL/LibreSSL, only by signing the requests with private keys can eliminate this type of attack. 
 
 Important: 
 1. `-crypt` and `-key` must be the same on both KCP Client & KCP Server.
@@ -303,7 +303,7 @@ type             16 bytes     64 bytes    256 bytes   1024 bytes   8192 bytes
 aes-128-cfb     847216.79k   850770.86k   853712.05k   859912.39k   854565.80k
 ```
 
-The encrytion performance in kcptun is as fast as in openssl library(if not faster).
+The encryption performance in kcptun is as fast as in openssl library(if not faster).
 
 #### Quantum Resistance
 Quantum Resistance, also known as quantum-secure, post-quantum, or quantum-safe cryptography, refers to cryptographic algorithms that can withstand potential code-breaking attempts by quantum computer.
@@ -332,9 +332,9 @@ Routers, mobile devices are susceptible to memory consumption; by setting GOGC e
 Reference: https://blog.golang.org/go15gc
 
 Primary memory allocation are done from a global buffer pool *xmit.Buf*, in kcp-go, when we need to allocate some bytes, we can get from that pool, and a *fixed-capacity* 1500 bytes(mtuLimit) will be returned, the *rx queue*, *tx queue* and *fec queue* all receive bytes from there, and they will return the bytes to the pool after using to prevent *unnecessary zer0ing* of bytes. 
-The pool mechanism maintained a *high watermark* for slice objects, these *in-flight* objects from the pool will survive from the perodical garbage collection, meanwhile the pool kept the ability to return the memory to runtime if in idle, `-sndwnd`,`-rcvwnd`,`-ds`, `-ps`, these parameters affect this *high watermark*, the larger the value, the bigger the memory consumption will be.
+The pool mechanism maintained a *high watermark* for slice objects, these *in-flight* objects from the pool will survive from the periodical garbage collection, meanwhile the pool kept the ability to return the memory to runtime if in idle, `-sndwnd`,`-rcvwnd`,`-ds`, `-ps`, these parameters affect this *high watermark*, the larger the value, the bigger the memory consumption will be.
 
-`-smuxbuf` also affects the maximum memory consumption, this parameter maintains a subtle balance between *concurrency* and *resource*, you can increase this value(default 4MB) to boost concurrency if you have many clients to serve and you get a powerful server at the same time, and also you can decrease this value to serve only 1 or 2 clients and hope this program can run under some embedded SoC system with limited memory and only you can access. (Notice that the `-smuxbuf` value is not proprotional to concurrency, you need to test.)
+`-smuxbuf` also affects the maximum memory consumption, this parameter maintains a subtle balance between *concurrency* and *resource*, you can increase this value(default 4MB) to boost concurrency if you have many clients to serve and you get a powerful server at the same time, and also you can decrease this value to serve only 1 or 2 clients and hope this program can run under some embedded SoC system with limited memory and only you can access. (Notice that the `-smuxbuf` value is not proportional to concurrency, you need to test.)
 
 
 #### Compression
@@ -366,17 +366,17 @@ type Snmp struct {
     CurrEstab        uint64 // current number of established connections
     InErrs           uint64 // UDP read errors reported from net.PacketConn
     InCsumErrors     uint64 // checksum errors from CRC32
-    KCPInErrors      uint64 // packet iput errors reported from KCP
+    KCPInErrors      uint64 // packet input errors reported from KCP
     InPkts           uint64 // incoming packets count
     OutPkts          uint64 // outgoing packets count
     InSegs           uint64 // incoming KCP segments
     OutSegs          uint64 // outgoing KCP segments
     InBytes          uint64 // UDP bytes received
     OutBytes         uint64 // UDP bytes sent
-    RetransSegs      uint64 // accmulated retransmited segments
-    FastRetransSegs  uint64 // accmulated fast retransmitted segments
-    EarlyRetransSegs uint64 // accmulated early retransmitted segments
-    LostSegs         uint64 // number of segs infered as lost
+    RetransSegs      uint64 // accumulated retransmitted segments
+    FastRetransSegs  uint64 // accumulated fast retransmitted segments
+    EarlyRetransSegs uint64 // accumulated early retransmitted segments
+    LostSegs         uint64 // number of segs inferred as lost
     RepeatSegs       uint64 // number of segs duplicated
     FECRecovered     uint64 // correct packets recovered from FEC
     FECErrs          uint64 // incorrect packets recovered from FEC
@@ -396,7 +396,7 @@ https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configurati
 Low-level KCP configuration can be altered by using manual mode like above, make sure you really **UNDERSTAND** what these means before doing **ANY** manual settings.
 
 
-### Identical Parmeters
+### Identical parameters
 
 These parameters **MUST** be **IDENTICAL** on **BOTH** side:
 
