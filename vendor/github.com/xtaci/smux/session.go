@@ -195,9 +195,12 @@ func (s *Session) OpenStream() (*Stream, error) {
 	default:
 		s.streams[sid] = stream
 		wrapper := &Stream{stream: stream}
-		runtime.SetFinalizer(wrapper, func(s *Stream) {
-			s.Close()
-		})
+		// NOTE(x): disabled finalizer for issue #997
+		/*
+			runtime.SetFinalizer(wrapper, func(s *Stream) {
+				s.Close()
+			})
+		*/
 		return wrapper, nil
 	}
 }
