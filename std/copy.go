@@ -80,9 +80,5 @@ func Pipe(alice, bob io.ReadWriteCloser, closeWait int) (errA, errB error) {
 	// wait for both direction to close
 	wg.Wait()
 
-	// reference the object
-	alice.Close()
-	bob.Close()
-
 	return
 }
