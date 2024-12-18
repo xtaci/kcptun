@@ -26,7 +26,9 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	mrand "math/rand"
 	"net"
+	"strings"
 
 	"github.com/pkg/errors"
 	kcp "github.com/xtaci/kcp-go/v5"
@@ -36,18 +38,24 @@ import (
 
 // dial connects to the remote address
 func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
-	mp, err := std.ParseMultiPort(config.RemoteAddr)
-	if err != nil {
-		return nil, err
-	}
+	var remoteAddr string
+	if strings.Contains(config.RemoteAddr, ",") {
+		parts := strings.Split(config.RemoteAddr, ",")
+		remoteAddr = parts[mrand.Intn(len(parts))]
+	} else {
+		mp, err := std.ParseMultiPort(config.RemoteAddr)
+		if err != nil {
+			return nil, err
+		}
 
-	// generate a random port
-	var randport uint64
-	err = binary.Read(rand.Reader, binary.LittleEndian, &randport)
-	if err != nil {
-		return nil, err
+		// generate a random port
+		var randport uint64
+		err = binary.Read(rand.Reader, binary.LittleEndian, &randport)
+		if err != nil {
+			return nil, err
+		}
+		remoteAddr = fmt.Sprintf("%v:%v", mp.Host, uint64(mp.MinPort)+randport%uint64(mp.MaxPort-mp.MinPort+1))
 	}
-	remoteAddr := fmt.Sprintf("%v:%v", mp.Host, uint64(mp.MinPort)+randport%uint64(mp.MaxPort-mp.MinPort+1))
 
 	// emulate TCP connection
 	if config.TCP {
