@@ -1,17 +1,18 @@
-// Package qpp implements Quantum permutation pad
+// # Copyright (c) 2024 xtaci
 //
-// Quantum permutation pad or QPP is a quantum-safe symmetric cryptographic
-// algorithm proposed by Kuang and Bettenburg in 2020. The theoretical
-// foundation of QPP leverages the linear algebraic representations of
-// quantum gates which makes QPP realizable in both, quantum and classical
-// systems. By applying the QPP with 64 of 8-bit permutation gates, holding
-// respective entropy of over 100,000 bits, they accomplished quantum random
-// number distributions digitally over today’s classical internet. The QPP has
-// also been used to create pseudo quantum random numbers and served as a
-// foundation for quantum-safe lightweight block and streaming ciphers.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// This file implements QPP in 8-qubits, which is compatible with the classical
-// architecture. In 8-qubits, the overall permutation matrix reaches 256!.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 package qpp
 
 import (
@@ -38,16 +39,15 @@ const (
 	PBKDF2_LOOPS           = 128 // Number of iterations for PBKDF2
 	CHUNK_DERIVE_SALT      = "___QUANTUM_PERMUTATION_PAD_SEED_DERIVE___"
 	CHUNK_DERIVE_LOOPS     = 1024
-	MAGIC                  = 0x1A2B3C4D5E6F7890
 	PAD_SWITCH             = 8 // switch pad for every PAD_SWITCH bytes
 	QUBITS                 = 8 // number of quantum bits of this implementation
 )
 
 // Rand is a stateful random number generator
 type Rand struct {
-	xoshiro [4]uint64
-	seed64  uint64
-	count   uint8
+	xoshiro [4]uint64 // xoshiro state
+	seed64  uint64    // the latest random number
+	count   uint8     // number of bytes encrypted, counted in modular arithmetic
 }
 
 // QuantumPermutationPad represents the encryption/decryption structure using quantum permutation pads
@@ -98,8 +98,8 @@ func NewQPP(seed []byte, numPads uint16) *QuantumPermutationPad {
 		reverse(pad, rpad)
 	}
 
-	qpp.encRand = qpp.CreatePRNG(seed) // Create default PRNG for encryption
-	qpp.decRand = qpp.CreatePRNG(seed) // Create default PRNG for decryption
+	qpp.encRand = CreatePRNG(seed) // Create default PRNG for encryption
+	qpp.decRand = CreatePRNG(seed) // Create default PRNG for decryption
 
 	return qpp
 }
@@ -118,7 +118,7 @@ func (qpp *QuantumPermutationPad) Decrypt(data []byte) {
 
 // CreatePRNG creates a deterministic pseudo-random number generator based on the provided seed
 // It uses HMAC and PBKDF2 to derive a random seed for the PRNG
-func (qpp *QuantumPermutationPad) CreatePRNG(seed []byte) *Rand {
+func CreatePRNG(seed []byte) *Rand {
 	mac := hmac.New(sha256.New, seed)
 	mac.Write([]byte(PM_SELECTOR_IDENTIFIER))
 	sum := mac.Sum(nil)
@@ -131,6 +131,21 @@ func (qpp *QuantumPermutationPad) CreatePRNG(seed []byte) *Rand {
 	rd.xoshiro[1] = binary.LittleEndian.Uint64(xoshiro[8:16])
 	rd.xoshiro[2] = binary.LittleEndian.Uint64(xoshiro[16:24])
 	rd.xoshiro[3] = binary.LittleEndian.Uint64(xoshiro[24:32])
+	rd.seed64 = xoshiro256ss(&rd.xoshiro)
+	return rd
+}
+
+// FastPRNG creates a deterministic pseudo-random number generator based on the provided seed
+func FastPRNG(seed []byte) *Rand {
+	sha := sha256.New()
+	sum := sha.Sum(seed)
+
+	// Create and return PRNG
+	rd := &Rand{}
+	rd.xoshiro[0] = binary.LittleEndian.Uint64(sum[0:8])
+	rd.xoshiro[1] = binary.LittleEndian.Uint64(sum[8:16])
+	rd.xoshiro[2] = binary.LittleEndian.Uint64(sum[16:24])
+	rd.xoshiro[3] = binary.LittleEndian.Uint64(sum[24:32])
 	rd.seed64 = xoshiro256ss(&rd.xoshiro)
 	return rd
 }
@@ -167,7 +182,7 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 		data = data[offset:] // aligned bytes start from here
 	}
 
-	// handle 8-bytes aligned
+	// handle 8-bytes aligned, loop unrolling to improve performance(to mitigate data-dependency)
 	repeat := len(data) / 8
 	for i := 0; i < repeat; i++ {
 		d := data[i*8 : i*8+8]
@@ -303,8 +318,9 @@ func QPPMinimumPads(qubits uint8) int {
 // fill initializes the pad with sequential byte values
 // This sets up a standard permutation matrix before it is shuffled
 func fill(pad []byte) {
-	for i := 0; i < len(pad); i++ {
-		pad[i] = byte(i)
+	pad[0] = 0
+	for i := 1; i < len(pad); i++ {
+		pad[i] = pad[i-1] + 1
 	}
 }
 
