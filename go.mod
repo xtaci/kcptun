@@ -7,7 +7,7 @@ require (
 	github.com/urfave/cli v1.22.16
 	github.com/xtaci/kcp-go/v5 v5.6.18
 	github.com/xtaci/qpp v1.1.18
-	github.com/xtaci/smux v1.5.32
+	github.com/xtaci/smux v1.5.33
 	github.com/xtaci/tcpraw v1.2.31
 	golang.org/x/crypto v0.31.0
 )

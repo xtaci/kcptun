@@ -50,7 +50,7 @@ github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.18
 ## explicit; go 1.22.3
 github.com/xtaci/qpp
-# github.com/xtaci/smux v1.5.32
+# github.com/xtaci/smux v1.5.33
 ## explicit; go 1.13
 github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.31
