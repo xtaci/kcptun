@@ -38,6 +38,7 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/fatih/color"
+	"github.com/pires/go-proxyproto"
 	"github.com/urfave/cli"
 	kcp "github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/kcptun/std"
@@ -229,6 +230,11 @@ func main() {
 			Value: "", // when the value is not empty, the config path must exists
 			Usage: "config from json file, which will override the command from shell",
 		},
+		cli.IntFlag{
+			Name:  "proxyprotocol",
+			Value: 0,
+			Usage: "enable proxy protocol, 0 for disable, 1 for v1, 2 for v2",
+		},
 	}
 	myApp.Action = func(c *cli.Context) error {
 		config := Config{}
@@ -263,6 +269,7 @@ func main() {
 		config.QPP = c.Bool("QPP")
 		config.QPPCount = c.Int("QPPCount")
 		config.CloseWait = c.Int("closewait")
+		config.ProxyProtocol = c.Int("proxyprotocol")
 
 		if c.String("c") != "" {
 			//Now only support json config file
@@ -310,6 +317,7 @@ func main() {
 		log.Println("pprof:", config.Pprof)
 		log.Println("quiet:", config.Quiet)
 		log.Println("tcp:", config.TCP)
+		log.Println("proxyprotocol:", config.ProxyProtocol)
 
 		if config.QPP {
 			minSeedLength := qpp.QPPMinimumSeedLength(8)
@@ -329,6 +337,9 @@ func main() {
 		// parameters check
 		if config.SmuxVer > maxSmuxVer {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
+		}
+		if config.ProxyProtocol > 2 || config.ProxyProtocol < 0 {
+			log.Fatal("unsupported proxy protocol version:", config.ProxyProtocol)
 		}
 
 		log.Println("initiating key derivation")
@@ -454,6 +465,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	targetType := TGT_TCP
 	if _, _, err := net.SplitHostPort(config.Target); err != nil {
 		targetType = TGT_UNIX
+		log.Println("proxy protocol warning: UNIX domain socket is not supported") // proxy protocol requires src and dest has same family
 	}
 	log.Println("smux version:", config.SmuxVer, "on connection:", conn.LocalAddr(), "->", conn.RemoteAddr())
 
@@ -490,7 +502,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 					p1.Close()
 					return
 				}
-				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet, config.CloseWait)
+				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet, config.CloseWait, byte(config.ProxyProtocol))
 			case TGT_UNIX:
 				p2, err = net.Dial("unix", config.Target)
 				if err != nil {
@@ -498,7 +510,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 					p1.Close()
 					return
 				}
-				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet, config.CloseWait)
+				handleClient(_Q_, []byte(config.Key), p1, p2, config.Quiet, config.CloseWait, byte(config.ProxyProtocol))
 			}
 
 		}(stream)
@@ -506,7 +518,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 }
 
 // handleClient pipes two streams
-func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool, closeWait int) {
+func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool, closeWait int, proxyprotocol byte) {
 	logln := func(v ...interface{}) {
 		if !quiet {
 			log.Println(v...)
@@ -524,6 +536,27 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 	if _Q_ != nil {
 		// replace s1 with QPP port
 		s1 = std.NewQPPPort(p1, _Q_, seed)
+	}
+
+	// send proxy protocol header
+	if proxyprotocol > 0 {
+		r1 := p1.RemoteAddr()
+		if _, ok := r1.(*net.UDPAddr); ok {
+			// proxy protocol requires src and dest has same family
+			// p1 is udp, fake it as tcp addr
+			// p2 is tcp or unix, for unix just give up
+			r1 = &net.TCPAddr{
+				IP:   p1.RemoteAddr().(*net.UDPAddr).IP,
+				Port: p1.RemoteAddr().(*net.UDPAddr).Port,
+				Zone: p1.RemoteAddr().(*net.UDPAddr).Zone,
+			}
+		}
+		header := proxyproto.HeaderProxyFromAddrs(proxyprotocol, r1, p2.RemoteAddr())
+		log.Println("proxy protocol header:", header)
+		_, err := header.WriteTo(s2)
+		if err != nil {
+			logln("write proxy protocol header:", err, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
+		}
 	}
 
 	// stream layer
