@@ -411,17 +411,17 @@ func (s *Session) recvLoop() {
 				s.streamLock.Unlock()
 			case cmdPSH: // data frame
 				if hdr.Length() > 0 {
-					newbuf := defaultAllocator.Get(int(hdr.Length()))
-					if written, err := io.ReadFull(s.conn, newbuf); err == nil {
+					pNewbuf := defaultAllocator.Get(int(hdr.Length()))
+					if written, err := io.ReadFull(s.conn, *pNewbuf); err == nil {
 						s.streamLock.Lock()
 						if stream, ok := s.streams[sid]; ok {
-							stream.pushBytes(newbuf)
+							stream.pushBytes(pNewbuf)
 							// a stream used some token
 							atomic.AddInt32(&s.bucket, -int32(written))
 							stream.notifyReadEvent()
 						} else {
 							// data directed to a missing/closed stream, recycle the buffer immediately.
-							defaultAllocator.Put(newbuf)
+							defaultAllocator.Put(pNewbuf)
 						}
 						s.streamLock.Unlock()
 					} else {

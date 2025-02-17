@@ -50,34 +50,41 @@ func NewAllocator() *Allocator {
 	for k := range alloc.buffers {
 		i := k
 		alloc.buffers[k].New = func() interface{} {
-			return make([]byte, 1<<uint32(i))
+			b := make([]byte, 1<<uint32(i))
+			return &b
 		}
 	}
 	return alloc
 }
 
 // Get a []byte from pool with most appropriate cap
-func (alloc *Allocator) Get(size int) []byte {
+func (alloc *Allocator) Get(size int) *[]byte {
 	if size <= 0 || size > 65536 {
 		return nil
 	}
 
 	bits := msb(size)
 	if size == 1<<bits {
-		return alloc.buffers[bits].Get().([]byte)[:size]
-	} else {
-		return alloc.buffers[bits+1].Get().([]byte)[:size]
+		p := alloc.buffers[bits].Get().(*[]byte)
+		*p = (*p)[:size]
+		return p
 	}
+	p := alloc.buffers[bits+1].Get().(*[]byte)
+	*p = (*p)[:size]
+	return p
 }
 
 // Put returns a []byte to pool for future use,
 // which the cap must be exactly 2^n
-func (alloc *Allocator) Put(buf []byte) error {
-	bits := msb(cap(buf))
-	if cap(buf) == 0 || cap(buf) > 65536 || cap(buf) != 1<<bits {
+func (alloc *Allocator) Put(p *[]byte) error {
+	if p == nil {
 		return errors.New("allocator Put() incorrect buffer size")
 	}
-	alloc.buffers[bits].Put(buf)
+	bits := msb(cap(*p))
+	if cap(*p) == 0 || cap(*p) > 65536 || cap(*p) != 1<<bits {
+		return errors.New("allocator Put() incorrect buffer size")
+	}
+	alloc.buffers[bits].Put(p)
 	return nil
 }
 

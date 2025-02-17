@@ -41,8 +41,8 @@ type stream struct {
 	id   uint32 // Stream identifier
 	sess *Session
 
-	buffers [][]byte // the sequential buffers of stream
-	heads   [][]byte // slice heads of the buffers above, kept for recycle
+	buffers []*[]byte // the sequential buffers of stream
+	heads   []*[]byte // slice heads of the buffers above, kept for recycle
 
 	bufferLock sync.Mutex // Mutex to protect access to buffers
 	frameSize  int        // Maximum frame size for the stream
@@ -120,9 +120,10 @@ func (s *stream) tryRead(b []byte) (n int, err error) {
 	// A critical section to copy data from buffers to
 	s.bufferLock.Lock()
 	if len(s.buffers) > 0 {
-		n = copy(b, s.buffers[0])
-		s.buffers[0] = s.buffers[0][n:]
-		if len(s.buffers[0]) == 0 {
+		n = copy(b, *s.buffers[0])
+		s.buffers[0] = s.buffers[0]
+		*s.buffers[0] = (*s.buffers[0])[n:]
+		if len(*s.buffers[0]) == 0 {
 			s.buffers[0] = nil
 			s.buffers = s.buffers[1:]
 			// full recycle
@@ -154,9 +155,10 @@ func (s *stream) tryReadv2(b []byte) (n int, err error) {
 	var notifyConsumed uint32
 	s.bufferLock.Lock()
 	if len(s.buffers) > 0 {
-		n = copy(b, s.buffers[0])
-		s.buffers[0] = s.buffers[0][n:]
-		if len(s.buffers[0]) == 0 {
+		n = copy(b, *s.buffers[0])
+		s.buffers[0] = s.buffers[0]
+		*s.buffers[0] = (*s.buffers[0])[n:]
+		if len(*s.buffers[0]) == 0 {
 			s.buffers[0] = nil
 			s.buffers = s.buffers[1:]
 			// full recycle
@@ -214,20 +216,20 @@ func (s *stream) WriteTo(w io.Writer) (n int64, err error) {
 	}
 
 	for {
-		var buf []byte
+		var pbuf *[]byte
 		s.bufferLock.Lock()
 		if len(s.buffers) > 0 {
-			buf = s.buffers[0]
+			pbuf = s.buffers[0]
 			s.buffers = s.buffers[1:]
 			s.heads = s.heads[1:]
 		}
 		s.bufferLock.Unlock()
 
-		if buf != nil {
-			nw, ew := w.Write(buf)
+		if pbuf != nil {
+			nw, ew := w.Write(*pbuf)
 			// NOTE: WriteTo is a reader, so we need to return tokens here
-			s.sess.returnTokens(len(buf))
-			defaultAllocator.Put(buf)
+			s.sess.returnTokens(len(*pbuf))
+			defaultAllocator.Put(pbuf)
 			if nw > 0 {
 				n += int64(nw)
 			}
@@ -245,26 +247,30 @@ func (s *stream) WriteTo(w io.Writer) (n int64, err error) {
 func (s *stream) writeTov2(w io.Writer) (n int64, err error) {
 	for {
 		var notifyConsumed uint32
-		var buf []byte
+		var pbuf *[]byte
 		s.bufferLock.Lock()
 		if len(s.buffers) > 0 {
-			buf = s.buffers[0]
+			pbuf = s.buffers[0]
 			s.buffers = s.buffers[1:]
 			s.heads = s.heads[1:]
 		}
-		s.numRead += uint32(len(buf))
-		s.incr += uint32(len(buf))
-		if s.incr >= uint32(s.sess.config.MaxStreamBuffer/2) || s.numRead == uint32(len(buf)) {
+		var bufLen uint32
+		if pbuf != nil {
+			bufLen = uint32(len(*pbuf))
+		}
+		s.numRead += bufLen
+		s.incr += bufLen
+		if s.incr >= uint32(s.sess.config.MaxStreamBuffer/2) || s.numRead == bufLen {
 			notifyConsumed = s.numRead
 			s.incr = 0
 		}
 		s.bufferLock.Unlock()
 
-		if buf != nil {
-			nw, ew := w.Write(buf)
+		if pbuf != nil {
+			nw, ew := w.Write(*pbuf)
 			// NOTE: WriteTo is a reader, so we need to return tokens here
-			s.sess.returnTokens(len(buf))
-			defaultAllocator.Put(buf)
+			s.sess.returnTokens(len(*pbuf))
+			defaultAllocator.Put(pbuf)
 			if nw > 0 {
 				n += int64(nw)
 			}
@@ -566,10 +572,10 @@ func (s *stream) RemoteAddr() net.Addr {
 }
 
 // pushBytes append buf to buffers
-func (s *stream) pushBytes(buf []byte) (written int, err error) {
+func (s *stream) pushBytes(pbuf *[]byte) (written int, err error) {
 	s.bufferLock.Lock()
-	s.buffers = append(s.buffers, buf)
-	s.heads = append(s.heads, buf)
+	s.buffers = append(s.buffers, pbuf)
+	s.heads = append(s.heads, pbuf)
 	s.bufferLock.Unlock()
 	return
 }
@@ -578,7 +584,7 @@ func (s *stream) pushBytes(buf []byte) (written int, err error) {
 func (s *stream) recycleTokens() (n int) {
 	s.bufferLock.Lock()
 	for k := range s.buffers {
-		n += len(s.buffers[k])
+		n += len(*s.buffers[k])
 		defaultAllocator.Put(s.heads[k])
 	}
 	s.buffers = nil
