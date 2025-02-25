@@ -9,7 +9,7 @@ require (
 	github.com/xtaci/qpp v1.1.18
 	github.com/xtaci/smux v1.5.34
 	github.com/xtaci/tcpraw v1.2.31
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.34.0
 )
 
 require (
@@ -31,5 +31,3 @@ require (
 //replace github.com/xtaci/tcpraw => /home/xtaci/tcpraw
 
 go 1.22.3
-
-toolchain go1.23.0
