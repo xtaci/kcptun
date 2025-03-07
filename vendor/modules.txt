@@ -7,7 +7,7 @@ github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/fatih/color v1.18.0
 ## explicit; go 1.17
 github.com/fatih/color
-# github.com/golang/snappy v0.0.4
+# github.com/golang/snappy v1.0.0
 ## explicit
 github.com/golang/snappy
 # github.com/google/gopacket v1.1.19
