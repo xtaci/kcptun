@@ -52,6 +52,9 @@ func (s *UDPSession) readLoop() {
 
 	for {
 		if count, err := s.xconn.ReadBatch(msgs, 0); err == nil {
+			if s.isClosed() {
+				return
+			}
 			for i := 0; i < count; i++ {
 				msg := &msgs[i]
 				// make sure the packet is from the same source

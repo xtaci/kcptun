@@ -82,9 +82,16 @@ const (
 
 var (
 	errInvalidOperation = errors.New("invalid operation")
-	errTimeout          = errors.New("timeout")
+	errTimeout          = timeoutError{}
 	errNotOwner         = errors.New("not the owner of this connection")
 )
+
+// timeoutError implements net.Error
+type timeoutError struct{}
+
+func (timeoutError) Error() string   { return "timeout" }
+func (timeoutError) Timeout() bool   { return true }
+func (timeoutError) Temporary() bool { return true }
 
 var (
 	// a system-wide packet buffer shared among sending, receiving and FEC
@@ -399,6 +406,15 @@ RESET_TIMER:
 		case <-s.die:
 			return 0, errors.WithStack(io.ErrClosedPipe)
 		}
+	}
+}
+
+func (s *UDPSession) isClosed() bool {
+	select {
+	case <-s.die:
+		return true
+	default:
+		return false
 	}
 }
 
