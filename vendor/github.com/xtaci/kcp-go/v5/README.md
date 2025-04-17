@@ -1,7 +1,7 @@
 <img src="assets/kcp-go.png" alt="kcp-go" height="50px" />
 
 
-[![GoDoc][1]][2] [![Powered][9]][10] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Coverage Statusd][7]][8]
+[![GoDoc][1]][2] [![Powered][9]][10] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Coverage Status][7]][8]
 
 
 [1]: https://godoc.org/github.com/xtaci/kcp-go?status.svg
@@ -25,7 +25,7 @@
 
 This library is designed to provide **smooth, resilient, ordered, error-checked and anonymous** delivery of streams over **UDP** packets. It has been battle-tested with the open-source project [kcptun](https://github.com/xtaci/kcptun). Millions of devices, ranging from low-end MIPS routers to high-end servers, have deployed kcp-go-powered programs in various applications, including **online games, live broadcasting, file synchronization, and network acceleration**.
 
-[Lastest Release](https://github.com/xtaci/kcp-go/releases)
+[Latest Release](https://github.com/xtaci/kcp-go/releases)
 
 ## Features
 
@@ -115,7 +115,7 @@ KCP Header
 +-----------------+
 ```
 
-### Looing for a C++ client?
+### Looking for a C++ client?
 1. https://github.com/xtaci/libkcp -- FEC enhanced KCP session library for iOS/Android in C++
 
 ## Examples
