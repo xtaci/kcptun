@@ -375,7 +375,7 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 	// The header format:
 	// | FEC SEQID(4B) | FEC TYPE(2B) | SIZE (2B) | PAYLOAD(SIZE-2) |
 	// |<-headerOffset                |<-payloadOffset
-	enc.markData(b[enc.headerOffset:])
+	enc.sealData(b[enc.headerOffset:])
 	binary.LittleEndian.PutUint16(b[enc.payloadOffset:], uint16(len(b[enc.payloadOffset:])))
 
 	// copy data from payloadOffset to fec shard cache
@@ -389,7 +389,7 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 		enc.maxSize = sz
 	}
 
-	// Generation of Reed-Solomon Erasure Code
+	// Generation of Reed-Solomon Erasure Code when we have enough datashards
 	now := time.Now().UnixMilli()
 	if enc.shardCount == enc.dataShards {
 		// generate the rs-code only if the data is continuous.
@@ -411,39 +411,45 @@ func (enc *fecEncoder) encode(b []byte, rto uint32) (ps [][]byte) {
 			if err := enc.codec.Encode(cache); err == nil {
 				ps = enc.shardCache[enc.dataShards:]
 				for k := range ps {
-					enc.markParity(ps[k][enc.headerOffset:])
+					enc.sealParity(ps[k][enc.headerOffset:]) // NOTE(x): seal parity will increase the seqid by 1
 					ps[k] = ps[k][:enc.maxSize]
 				}
 			} else {
 				// record the error, and still keep the seqid monotonic increasing
 				atomic.AddUint64(&DefaultSnmp.FECErrs, 1)
-				enc.next = (enc.next + uint32(enc.parityShards)) % enc.paws
+				enc.skipParity()
 			}
 		} else {
 			// through we do not send non-continuous parity shard, we still increase the next value
 			// to keep the seqid aligned with 0 start
-			enc.next = (enc.next + uint32(enc.parityShards)) % enc.paws
+			enc.skipParity()
 		}
 
-		// counters resetting
+		// Resetting the shard count and max size
 		enc.shardCount = 0
 		enc.maxSize = 0
 	}
 
+	// record the time of the latest packet
 	enc.tsLatestPacket = now
 
 	return
 }
 
-// put a stamp on the FEC packet header with seqid and type
-func (enc *fecEncoder) markData(data []byte) {
+// sealData and sealParity write the sequence number and type into the header
+func (enc *fecEncoder) sealData(data []byte) {
 	binary.LittleEndian.PutUint32(data, enc.next)
 	binary.LittleEndian.PutUint16(data[4:], typeData)
 	enc.next = (enc.next + 1) % enc.paws
 }
 
-func (enc *fecEncoder) markParity(data []byte) {
+func (enc *fecEncoder) sealParity(data []byte) {
 	binary.LittleEndian.PutUint32(data, enc.next)
 	binary.LittleEndian.PutUint16(data[4:], typeParity)
 	enc.next = (enc.next + 1) % enc.paws
+}
+
+// skipParity skips the parity shards in the sequence
+func (enc *fecEncoder) skipParity() {
+	enc.next = (enc.next + uint32(enc.parityShards)) % enc.paws
 }
