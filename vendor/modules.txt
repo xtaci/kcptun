@@ -44,7 +44,7 @@ github.com/tjfoc/gmsm/sm4
 # github.com/urfave/cli v1.22.16
 ## explicit; go 1.11
 github.com/urfave/cli
-# github.com/xtaci/kcp-go/v5 v5.6.21
+# github.com/xtaci/kcp-go/v5 v5.6.22
 ## explicit; go 1.23.0
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.18
@@ -56,7 +56,7 @@ github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.31
 ## explicit; go 1.13
 github.com/xtaci/tcpraw
-# golang.org/x/crypto v0.38.0
+# golang.org/x/crypto v0.39.0
 ## explicit; go 1.23.0
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
@@ -67,7 +67,7 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/tea
 golang.org/x/crypto/twofish
 golang.org/x/crypto/xtea
-# golang.org/x/net v0.39.0
+# golang.org/x/net v0.41.0
 ## explicit; go 1.23.0
 golang.org/x/net/bpf
 golang.org/x/net/internal/iana

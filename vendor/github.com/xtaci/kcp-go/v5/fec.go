@@ -40,6 +40,7 @@
 package kcp
 
 import (
+	"container/heap"
 	"encoding/binary"
 	"sync/atomic"
 	"time"
@@ -52,8 +53,7 @@ const (
 	fecHeaderSizePlus2 = fecHeaderSize + 2 // plus 2B data size
 	typeData           = 0xf1
 	typeParity         = 0xf2
-	fecExpire          = 60000
-	rxFECMulti         = 3 // FEC keeps rxFECMulti* (dataShard+parityShard) ordered packets in memory
+	maxShardSets       = 3
 )
 
 // fecPacket is a decoded FEC packet
@@ -63,10 +63,43 @@ func (bts fecPacket) seqid() uint32 { return binary.LittleEndian.Uint32(bts) }
 func (bts fecPacket) flag() uint16  { return binary.LittleEndian.Uint16(bts[4:]) }
 func (bts fecPacket) data() []byte  { return bts[6:] }
 
-// fecElement has auxcilliary time field
-type fecElement struct {
-	fecPacket
-	ts uint32
+// shardHeap holds a corelated set of datashards from the peers
+type shardHeap struct {
+	elements []fecPacket
+	marks    map[uint32]struct{} // to avoid duplicates
+}
+
+func newShardHeap() *shardHeap {
+	h := &shardHeap{
+		marks: make(map[uint32]struct{}),
+	}
+	heap.Init(h)
+	return h
+}
+
+func (h *shardHeap) Len() int { return len(h.elements) }
+
+func (h *shardHeap) Less(i, j int) bool {
+	return _itimediff(h.elements[j].seqid(), h.elements[i].seqid()) > 0
+}
+
+func (h *shardHeap) Swap(i, j int) { h.elements[i], h.elements[j] = h.elements[j], h.elements[i] }
+func (h *shardHeap) Push(x interface{}) {
+	h.elements = append(h.elements, x.(fecPacket))
+	h.marks[x.(fecPacket).seqid()] = struct{}{}
+}
+
+func (h *shardHeap) Pop() interface{} {
+	n := len(h.elements)
+	x := h.elements[n-1]
+	h.elements = h.elements[0 : n-1]
+	delete(h.marks, x.seqid())
+	return x
+}
+
+func (h *shardHeap) Has(sn uint32) bool {
+	_, exists := h.marks[sn]
+	return exists
 }
 
 // fecDecoder for decoding incoming packets
@@ -75,7 +108,11 @@ type fecDecoder struct {
 	dataShards   int
 	parityShards int
 	shardSize    int
-	rx           []fecElement // ordered receive queue
+	shardSet     map[uint32]*shardHeap // shardMap[initial shard id] = shardHeap
+
+	// record the latest recovered shard id
+	// the shards smaller than this one will be discarded
+	minShardId uint32
 
 	// caches
 	decodeCache [][]byte
@@ -98,7 +135,7 @@ func newFECDecoder(dataShards, parityShards int) *fecDecoder {
 	dec.dataShards = dataShards
 	dec.parityShards = parityShards
 	dec.shardSize = dataShards + parityShards
-	dec.rxlimit = rxFECMulti * dec.shardSize
+	dec.shardSet = make(map[uint32]*shardHeap)
 	codec, err := reedsolomon.New(dataShards, parityShards)
 	if err != nil {
 		return nil
@@ -141,7 +178,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				dec.dataShards = autoDS
 				dec.parityShards = autoPS
 				dec.shardSize = autoDS + autoPS
-				dec.rxlimit = rxFECMulti * dec.shardSize
+				dec.shardSet = make(map[uint32]*shardHeap)
 				codec, err := reedsolomon.New(autoDS, autoPS)
 				if err != nil {
 					return nil
@@ -153,60 +190,40 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				//log.Println("autotune to :", dec.dataShards, dec.parityShards)
 			}
 		}
-	}
-
-	// parameters in tuning
-	if dec.shouldTune {
 		return nil
 	}
 
-	// insertion
-	n := len(dec.rx) - 1
-	insertIdx := 0
-	for i := n; i >= 0; i-- {
-		if in.seqid() == dec.rx[i].seqid() { // de-duplicate
-			return nil
-		} else if _itimediff(in.seqid(), dec.rx[i].seqid()) > 0 { // insertion
-			insertIdx = i + 1
-			break
-		}
+	// get shard
+	shardId := dec.getShardId(in.seqid())
+	if _itimediff(shardId, dec.minShardId) < 0 {
+		return nil
 	}
 
-	// make a copy
+	shard, ok := dec.shardSet[shardId]
+	if !ok {
+		shard = newShardHeap()
+		dec.shardSet[shardId] = shard
+		atomic.AddUint64(&DefaultSnmp.FECShardSet, 1)
+	}
+
+	// de-duplicate
+	if shard.Has(in.seqid()) {
+		return nil
+	}
+
+	// count
+	if in.flag() == typeParity {
+		atomic.AddUint64(&DefaultSnmp.FECParityShards, 1)
+	}
+
+	// insert the packet into the shard heap
 	pkt := fecPacket(xmitBuf.Get().([]byte)[:len(in)])
 	copy(pkt, in)
-	elem := fecElement{pkt, currentMs()}
+	shard.Push(pkt)
 
-	// insert into ordered rx queue
-	if insertIdx == n+1 {
-		dec.rx = append(dec.rx, elem)
-	} else {
-		dec.rx = append(dec.rx, fecElement{})
-		copy(dec.rx[insertIdx+1:], dec.rx[insertIdx:]) // shift right
-		dec.rx[insertIdx] = elem
-	}
-
-	// shard range for current packet
-	// NOTE: the shard sequence number starts at 0, so we can use mod operation
-	// to find the beginning of the current shard.
-	// ALWAYS ALIGNED TO 0
-	shardBegin := pkt.seqid() - pkt.seqid()%uint32(dec.shardSize)
-	shardEnd := shardBegin + uint32(dec.shardSize) - 1
-
-	// Define max search range in ordered queue for current shard
-	searchBegin := insertIdx - int(pkt.seqid()%uint32(dec.shardSize))
-	if searchBegin < 0 {
-		searchBegin = 0
-	}
-	searchEnd := searchBegin + dec.shardSize - 1
-	if searchEnd >= len(dec.rx) {
-		searchEnd = len(dec.rx) - 1
-	}
-
-	// check if we have enough shards to recover, if so, we can recover the data and free the shards
-	// if not, we can keep the shards in memory for future recovery.
-	if searchEnd-searchBegin+1 >= dec.dataShards {
-		var numshard, numDataShard, first, maxlen int
+	// collected enough shards
+	if shard.Len() >= dec.dataShards {
+		var numDataShard, maxlen int
 
 		// zero working set for decoding
 		shards := dec.decodeCache
@@ -216,32 +233,25 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 			shardsflag[k] = false
 		}
 
-		// lookup shards in range [searchBegin, searchEnd] to the working set
-		for i := searchBegin; i <= searchEnd; i++ {
-			seqid := dec.rx[i].seqid()
-			// the shard seqid must be in [shardBegin, shardEnd], i.e. the current FEC group
-			if _itimediff(seqid, shardEnd) > 0 {
-				break
-			} else if _itimediff(seqid, shardBegin) >= 0 {
-				shards[seqid%uint32(dec.shardSize)] = dec.rx[i].data()
-				shardsflag[seqid%uint32(dec.shardSize)] = true
-				numshard++
-				if dec.rx[i].flag() == typeData {
-					numDataShard++
-				}
-				if numshard == 1 {
-					first = i
-				}
-				if len(dec.rx[i].data()) > maxlen {
-					maxlen = len(dec.rx[i].data())
-				}
+		// pop all packets from the shard heap
+		for shard.Len() > 0 {
+			pkt := shard.Pop().(fecPacket)
+			seqid := pkt.seqid()
+			shards[seqid%uint32(dec.shardSize)] = pkt.data()
+			shardsflag[seqid%uint32(dec.shardSize)] = true
+			if pkt.flag() == typeData {
+				numDataShard++
+			}
+			if len(pkt.data()) > maxlen {
+				maxlen = len(pkt.data())
 			}
 		}
 
 		// case 1: if there's no loss on data shards
 		if numDataShard == dec.dataShards {
-			dec.rx = dec.freeRange(first, numshard, dec.rx)
-		} else if numshard >= dec.dataShards { // case 2: loss on data shards, but it's recoverable from parity shards
+			// do nothing if all shards are present
+			atomic.AddUint64(&DefaultSnmp.FECFullShardSet, 1)
+		} else { // case 2: loss on data shards, but it's recoverable from parity shards
 			// make the bytes length of each shard equal
 			for k := range shards {
 				if shards[k] != nil {
@@ -262,59 +272,44 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 						recovered = append(recovered, shards[k])
 					}
 				}
+			} else {
+				// record the error, and still keep the seqid monotonic increasing
+				atomic.AddUint64(&DefaultSnmp.FECErrs, 1)
 			}
 
-			// Free the shards in FIFO immediately
-			dec.rx = dec.freeRange(first, numshard, dec.rx)
+			atomic.AddUint64(&DefaultSnmp.FECRecovered, uint64(len(recovered)))
 		}
+
 	}
 
-	// keep rxlimit in FIFO order
-	if len(dec.rx) > dec.rxlimit {
-		if dec.rx[0].flag() == typeData {
-			// track the effectiveness of FEC
-			atomic.AddUint64(&DefaultSnmp.FECShortShards, 1)
-		}
-		dec.rx = dec.freeRange(0, 1, dec.rx)
+	// update the minimum shard id based on the current shard
+	if _itimediff(shardId, dec.minShardId) > 0 {
+		dec.minShardId = shardId
+		atomic.StoreUint64(&DefaultSnmp.FECShardMin, uint64(dec.minShardId))
 	}
 
-	// FIFO timeout policy
-	current := currentMs()
-	numExpired := 0
-	for k := range dec.rx {
-		if _itimediff(current, dec.rx[k].ts) > fecExpire {
-			numExpired++
-			continue
-		}
-		break
-	}
-	if numExpired > 0 {
-		dec.rx = dec.freeRange(0, numExpired, dec.rx)
-	}
+	// discard shards that are too old
+	dec.flushShards()
+
 	return
 }
 
-// free a range of fecPacket
-func (dec *fecDecoder) freeRange(first, n int, q []fecElement) []fecElement {
-	for i := first; i < first+n; i++ { // recycle buffer
-		xmitBuf.Put([]byte(q[i].fecPacket))
-	}
-
-	// if n is small, we can avoid the copy
-	if first == 0 && n < cap(q)/2 {
-		return q[n:]
-	}
-
-	// on the other hand, we shift the tail
-	copy(q[first:], q[first+n:])
-	return q[:len(q)-n]
+// getShardId calculates the shard id based on the sequence id
+func (dec *fecDecoder) getShardId(seqid uint32) uint32 {
+	return seqid / uint32(dec.shardSize)
 }
 
-// release all segments back to xmitBuf
-func (dec *fecDecoder) release() {
-	if n := len(dec.rx); n > 0 {
-		dec.rx = dec.freeRange(0, n, dec.rx)
+// flushShards removes shards that are too old from the shardSet
+func (dec *fecDecoder) flushShards() {
+	for shardId := range dec.shardSet {
+		// discard shards that are too old
+		if _itimediff(dec.minShardId, shardId) > maxShardSets {
+			//println("flushing shard", shardId, "minShardId", dec.minShardId, _itimediff(dec.minShardId, shardId))
+			delete(dec.shardSet, shardId)
+		}
 	}
+
+	atomic.StoreUint64(&DefaultSnmp.FECShardSet, uint64(len(dec.shardSet)))
 }
 
 type (
