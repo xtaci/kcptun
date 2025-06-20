@@ -23,9 +23,9 @@
 
 ### Requirements
 
-| Target | Minimum | Recommended |
+| Target | Supported | Recommended |
 | --- | --- | --- |
-| System | aix darwin dragonfly freebsd linux netbsd openbsd solaris windows | freebsd linux |
+| System | darwin freebsd linux windows | freebsd linux |
 | Memory | >32 MB | > 64 MB |
 | CPU | ANY | amd64 with AES-NI & AVX2 |
 
