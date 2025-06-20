@@ -25,8 +25,8 @@
 
 | Target | Minimum | Recommended |
 | --- | --- | --- |
-| System | aix darwin dragonfly freebsd linux netbsd openbsd solaris windows | linux |
-| Memory | >20MB | >32MB |
+| System | aix darwin dragonfly freebsd linux netbsd openbsd solaris windows | freebsd linux |
+| Memory | >32 MB | > 64 MB |
 | CPU | ANY | amd64 with AES-NI & AVX2 |
 
 *NOTE: if you are using kvm, make sure the guest os can do AES instructions*
