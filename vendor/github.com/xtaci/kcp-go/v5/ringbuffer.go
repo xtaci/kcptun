@@ -192,9 +192,9 @@ func (r *RingBuffer[T]) IsFull() bool {
 
 // grow increases the ring buffer's capacity when full.
 // Growth policy:
-//   - If current size < 8: grow to 8
-//   - If size <= 4096: double the size
-//   - If size > 4096: increase by 10% (rounded up)
+//   - If current size < RINGBUFFER_MIN : grow to RINGBUFFER_MIN
+//   - If size < RINGBUFFER_EXP: double the size
+//   - If size > RINGBUFFER_EXP: increase by 10% (rounded up)
 func (r *RingBuffer[T]) grow() {
 	currentLength := r.Len()
 	currentSize := len(r.elements)

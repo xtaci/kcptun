@@ -27,9 +27,9 @@ import (
 	"crypto/cipher"
 	"crypto/des"
 	"crypto/sha1"
+	"crypto/subtle"
 	"unsafe"
 
-	xor "github.com/templexxx/xorsimd"
 	"github.com/tjfoc/gmsm/sm4"
 
 	"golang.org/x/crypto/blowfish"
@@ -255,8 +255,8 @@ func NewSimpleXORBlockCrypt(key []byte) (BlockCrypt, error) {
 	return c, nil
 }
 
-func (c *simpleXORBlockCrypt) Encrypt(dst, src []byte) { xor.Bytes(dst, src, c.xortbl) }
-func (c *simpleXORBlockCrypt) Decrypt(dst, src []byte) { xor.Bytes(dst, src, c.xortbl) }
+func (c *simpleXORBlockCrypt) Encrypt(dst, src []byte) { subtle.XORBytes(dst, src, c.xortbl) }
+func (c *simpleXORBlockCrypt) Decrypt(dst, src []byte) { subtle.XORBytes(dst, src, c.xortbl) }
 
 type noneBlockCrypt struct{}
 
@@ -373,65 +373,65 @@ func encrypt16(block cipher.Block, dst, src, buf []byte) {
 		s := src[base:][0:128]
 		d := dst[base:][0:128]
 		// 1
-		xor.Bytes16Align(d[0:16], s[0:16], tbl)
+		subtle.XORBytes(d[0:16], s[0:16], tbl)
 		block.Encrypt(tbl, d[0:16])
 		// 2
-		xor.Bytes16Align(d[16:32], s[16:32], tbl)
+		subtle.XORBytes(d[16:32], s[16:32], tbl)
 		block.Encrypt(tbl, d[16:32])
 		// 3
-		xor.Bytes16Align(d[32:48], s[32:48], tbl)
+		subtle.XORBytes(d[32:48], s[32:48], tbl)
 		block.Encrypt(tbl, d[32:48])
 		// 4
-		xor.Bytes16Align(d[48:64], s[48:64], tbl)
+		subtle.XORBytes(d[48:64], s[48:64], tbl)
 		block.Encrypt(tbl, d[48:64])
 		// 5
-		xor.Bytes16Align(d[64:80], s[64:80], tbl)
+		subtle.XORBytes(d[64:80], s[64:80], tbl)
 		block.Encrypt(tbl, d[64:80])
 		// 6
-		xor.Bytes16Align(d[80:96], s[80:96], tbl)
+		subtle.XORBytes(d[80:96], s[80:96], tbl)
 		block.Encrypt(tbl, d[80:96])
 		// 7
-		xor.Bytes16Align(d[96:112], s[96:112], tbl)
+		subtle.XORBytes(d[96:112], s[96:112], tbl)
 		block.Encrypt(tbl, d[96:112])
 		// 8
-		xor.Bytes16Align(d[112:128], s[112:128], tbl)
+		subtle.XORBytes(d[112:128], s[112:128], tbl)
 		block.Encrypt(tbl, d[112:128])
 		base += 128
 	}
 
 	switch left {
 	case 7:
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		block.Encrypt(tbl, dst[base:])
 		base += 16
 		fallthrough
 	case 6:
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		block.Encrypt(tbl, dst[base:])
 		base += 16
 		fallthrough
 	case 5:
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		block.Encrypt(tbl, dst[base:])
 		base += 16
 		fallthrough
 	case 4:
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		block.Encrypt(tbl, dst[base:])
 		base += 16
 		fallthrough
 	case 3:
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		block.Encrypt(tbl, dst[base:])
 		base += 16
 		fallthrough
 	case 2:
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		block.Encrypt(tbl, dst[base:])
 		base += 16
 		fallthrough
 	case 1:
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		block.Encrypt(tbl, dst[base:])
 		base += 16
 		fallthrough
@@ -558,71 +558,71 @@ func decrypt16(block cipher.Block, dst, src, buf []byte) {
 		d := dst[base:][0:128]
 		// 1
 		block.Encrypt(next, s[0:16])
-		xor.Bytes16Align(d[0:16], s[0:16], tbl)
+		subtle.XORBytes(d[0:16], s[0:16], tbl)
 		// 2
 		block.Encrypt(tbl, s[16:32])
-		xor.Bytes16Align(d[16:32], s[16:32], next)
+		subtle.XORBytes(d[16:32], s[16:32], next)
 		// 3
 		block.Encrypt(next, s[32:48])
-		xor.Bytes16Align(d[32:48], s[32:48], tbl)
+		subtle.XORBytes(d[32:48], s[32:48], tbl)
 		// 4
 		block.Encrypt(tbl, s[48:64])
-		xor.Bytes16Align(d[48:64], s[48:64], next)
+		subtle.XORBytes(d[48:64], s[48:64], next)
 		// 5
 		block.Encrypt(next, s[64:80])
-		xor.Bytes16Align(d[64:80], s[64:80], tbl)
+		subtle.XORBytes(d[64:80], s[64:80], tbl)
 		// 6
 		block.Encrypt(tbl, s[80:96])
-		xor.Bytes16Align(d[80:96], s[80:96], next)
+		subtle.XORBytes(d[80:96], s[80:96], next)
 		// 7
 		block.Encrypt(next, s[96:112])
-		xor.Bytes16Align(d[96:112], s[96:112], tbl)
+		subtle.XORBytes(d[96:112], s[96:112], tbl)
 		// 8
 		block.Encrypt(tbl, s[112:128])
-		xor.Bytes16Align(d[112:128], s[112:128], next)
+		subtle.XORBytes(d[112:128], s[112:128], next)
 		base += 128
 	}
 
 	switch left {
 	case 7:
 		block.Encrypt(next, src[base:])
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		tbl, next = next, tbl
 		base += 16
 		fallthrough
 	case 6:
 		block.Encrypt(next, src[base:])
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		tbl, next = next, tbl
 		base += 16
 		fallthrough
 	case 5:
 		block.Encrypt(next, src[base:])
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		tbl, next = next, tbl
 		base += 16
 		fallthrough
 	case 4:
 		block.Encrypt(next, src[base:])
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		tbl, next = next, tbl
 		base += 16
 		fallthrough
 	case 3:
 		block.Encrypt(next, src[base:])
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		tbl, next = next, tbl
 		base += 16
 		fallthrough
 	case 2:
 		block.Encrypt(next, src[base:])
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		tbl, next = next, tbl
 		base += 16
 		fallthrough
 	case 1:
 		block.Encrypt(next, src[base:])
-		xor.Bytes16Align(dst[base:], src[base:], tbl)
+		subtle.XORBytes(dst[base:], src[base:], tbl)
 		tbl, next = next, tbl
 		base += 16
 		fallthrough
