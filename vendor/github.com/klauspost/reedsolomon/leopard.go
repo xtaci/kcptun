@@ -838,11 +838,12 @@ func mulLog(a, log_b ffe) ffe {
 	return expLUT[addMod(logLUT[a], log_b)]
 }
 
-// z = x + y (mod kModulus)
+// addMod returns the sum of a and b modulo modulus. This can return modulus but
+// it is expected that callers will convert modulus to 0.
 func addMod(a, b ffe) ffe {
 	sum := uint(a) + uint(b)
 
-	// Partial reduction step, allowing for kModulus to be returned
+	// Partial reduction step which allows for modulus to be returned.
 	return ffe(sum + sum>>bitwidth)
 }
 

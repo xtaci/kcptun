@@ -228,7 +228,7 @@ You might have a large slice of data.
 To help you split this, there are some helper functions that can split and join a single byte slice.
 
 ```Go
-   bigfile, _ := ioutil.Readfile("myfile.data")
+   bigfile, _ := os.Readfile("myfile.data")
    
    // Split the file
    split, err := enc.Split(bigfile)

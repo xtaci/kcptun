@@ -1411,10 +1411,10 @@ func (r *reedSolomon) ReconstructData(shards [][]byte) error {
 // As the reconstructed shard set may contain missing parity shards,
 // calling the Verify function is likely to fail.
 func (r *reedSolomon) ReconstructSome(shards [][]byte, required []bool) error {
-	if len(required) == r.totalShards {
-		return r.reconstruct(shards, false, required)
+	if len(required) != r.dataShards && len(required) != r.totalShards {
+		return ErrInvalidInput
 	}
-	return r.reconstruct(shards, true, required)
+	return r.reconstruct(shards, len(required) == r.dataShards, required)
 }
 
 // reconstruct will recreate the missing data totalShards, and unless
@@ -1442,14 +1442,20 @@ func (r *reedSolomon) reconstruct(shards [][]byte, dataOnly bool, required []boo
 	numberPresent := 0
 	dataPresent := 0
 	missingRequired := 0
+	needAllData := false
 	for i := 0; i < r.totalShards; i++ {
 		if len(shards[i]) != 0 {
 			numberPresent++
 			if i < r.dataShards {
 				dataPresent++
 			}
-		} else if required != nil && required[i] {
-			missingRequired++
+		} else if required != nil {
+			if !dataOnly && i >= r.dataShards {
+				needAllData = true
+			}
+			if required[i] {
+				missingRequired++
+			}
 		}
 	}
 	if numberPresent == r.totalShards || dataOnly && dataPresent == r.dataShards ||
@@ -1526,23 +1532,24 @@ func (r *reedSolomon) reconstruct(shards [][]byte, dataOnly bool, required []boo
 	// The input to the coding is all of the shards we actually
 	// have, and the output is the missing data shards.  The computation
 	// is done using the special decode matrix we just built.
+	outputCount := 0
 	outputs := make([][]byte, r.parityShards)
 	matrixRows := make([][]byte, r.parityShards)
-	outputCount := 0
-
-	for iShard := 0; iShard < r.dataShards; iShard++ {
-		if len(shards[iShard]) == 0 && (required == nil || required[iShard]) {
-			if cap(shards[iShard]) >= shardSize {
-				shards[iShard] = shards[iShard][0:shardSize]
-			} else {
-				shards[iShard] = AllocAligned(1, shardSize)[0]
+	if dataPresent != r.dataShards {
+		for iShard := 0; iShard < r.dataShards; iShard++ {
+			if len(shards[iShard]) == 0 && (needAllData || required == nil || required[iShard]) {
+				if cap(shards[iShard]) >= shardSize {
+					shards[iShard] = shards[iShard][0:shardSize]
+				} else {
+					shards[iShard] = AllocAligned(1, shardSize)[0]
+				}
+				outputs[outputCount] = shards[iShard]
+				matrixRows[outputCount] = dataDecodeMatrix[iShard]
+				outputCount++
 			}
-			outputs[outputCount] = shards[iShard]
-			matrixRows[outputCount] = dataDecodeMatrix[iShard]
-			outputCount++
 		}
+		r.codeSomeShards(matrixRows, subShards, outputs[:outputCount], shardSize)
 	}
-	r.codeSomeShards(matrixRows, subShards, outputs[:outputCount], shardSize)
 
 	if dataOnly {
 		// Exit out early if we are only interested in the data shards
@@ -1568,7 +1575,9 @@ func (r *reedSolomon) reconstruct(shards [][]byte, dataOnly bool, required []boo
 			outputCount++
 		}
 	}
-	r.codeSomeShards(matrixRows, shards[:r.dataShards], outputs[:outputCount], shardSize)
+	if outputCount > 0 {
+		r.codeSomeShards(matrixRows, shards[:r.dataShards], outputs[:outputCount], shardSize)
+	}
 	return nil
 }
 
