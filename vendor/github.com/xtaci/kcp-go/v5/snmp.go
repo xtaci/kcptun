@@ -91,7 +91,6 @@ func (s *Snmp) Header() []string {
 		"FECParityShards",
 		"FECErrs",
 		"FECRecovered",
-		"FECShortShards",
 		"FECShardSet",
 		"FECShardMin",
 		"RingBufferSndQueue",
