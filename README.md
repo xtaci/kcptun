@@ -72,6 +72,8 @@ which tunnels the original connection:
 
 > Application -> Target Server(8388/tcp) 
 
+Or you can find a complete configuration here: [Local](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example), [Server](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
+
 ### Build from source
 
 ```
@@ -405,6 +407,11 @@ These parameters **MUST** be **IDENTICAL** on **BOTH** side:
 1. -nocomp
 1. -smuxver
 
+### Example Configurations
+
+1. [Local](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example)
+1. [Server](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
+
 ### References
 
 1. https://github.com/skywind3000/kcp -- KCP - A Fast and Reliable ARQ Protocol.
@@ -423,6 +430,8 @@ These parameters **MUST** be **IDENTICAL** on **BOTH** side:
 1. http://www.lartc.org/ -- Linux Advanced Routing & Traffic Control
 1. https://en.wikipedia.org/wiki/Noisy-channel_coding_theorem -- Noisy channel coding theorem
 1. https://zhuanlan.zhihu.com/p/53849089 -- kcptun开发小记
+
+
 
 
 （注意：我没有任何社交网站的账号，请小心骗子。）
