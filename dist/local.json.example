@@ -23,7 +23,7 @@
     "smuxbuf": 16777217,
     "streambuf": 2097152,
     "keepalive": 10,
-    "autoexpire": 600,
+    "autoexpire": 300,
     "quiet": false,
     "tcp": false
 }
