@@ -72,7 +72,7 @@ which tunnels the original connection:
 
 > Application -> Target Server(8388/tcp) 
 
-Or you can find a complete configuration here: [Local](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example), [Server](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
+**_OR YOU CAN START WITH THIS COMPLETE CONFIGURATION:_** [local](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example) --> [server](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
 
 ### Build from source
 
