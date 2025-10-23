@@ -74,7 +74,7 @@ which tunnels the original connection:
 
 **_OR YOU CAN START WITH THIS COMPLETE CONFIGURATION:_** [local](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example) --> [server](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
 
-### Build from source
+### Building from source
 
 ```
 $ git clone https://github.com/xtaci/kcptun.git
@@ -99,13 +99,13 @@ All precompiled releases are generated from `build-release.sh` script.
 
 ### Basic Tuning Guide
 
-#### Improving Throughput
+#### To Improve Throughput
 
 > **Q: I have a high-speed network link. How can I maximize bandwidth?**
 
 > **A:** Increase `-rcvwnd` on the KCP Client and `-sndwnd` on the KCP Server **simultaneously and gradually**. The minimum of these values determines the maximum transfer rate of the link, as `wnd * mtu / rtt`. Then, try downloading something to see if it meets your requirements. (The MTU is adjustable with `-mtu`.)
 
-#### Improving Latency
+#### To Improve Latency
 
 > **Q: I'm using kcptun for gaming and want to avoid any lag.**
 
