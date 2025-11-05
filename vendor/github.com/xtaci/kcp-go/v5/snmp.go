@@ -55,9 +55,9 @@ type Snmp struct {
 	FECParityShards     uint64 // FEC segments received
 	FECShardSet         uint64 // number of parity shards that are not yet received
 	FECShardMin         uint64 // the minimum ID of FEC shards
-	RingBufferSndQueue  uint64 // MaxLen of segments in send queue ring buffer
-	RingBufferRcvQueue  uint64 // MaxLen of segments in receive queue ring buffer
-	RingBufferSndBuffer uint64 // MaxLen of segments in send buffer ring buffer
+	RingBufferSndQueue  uint64 // Len of segments in send queue ring buffer
+	RingBufferRcvQueue  uint64 // Len of segments in receive queue ring buffer
+	RingBufferSndBuffer uint64 // Len of segments in send buffer ring buffer
 }
 
 func newSnmp() *Snmp {

@@ -93,12 +93,10 @@ func (timeoutError) Error() string   { return "timeout" }
 func (timeoutError) Timeout() bool   { return true }
 func (timeoutError) Temporary() bool { return true }
 
-var (
-	// a system-wide packet buffer shared among sending, receiving and FEC
-	// to mitigate high-frequency memory allocation for packets, bytes from xmitBuf
-	// is aligned to 64bit
-	xmitBuf sync.Pool
-)
+// a system-wide packet buffer shared among sending, receiving and FEC
+// to mitigate high-frequency memory allocation for packets, bytes from xmitBuf
+// is aligned to 64bit
+var xmitBuf sync.Pool
 
 func init() {
 	xmitBuf.New = func() interface{} {
@@ -125,13 +123,13 @@ type (
 		fecEncoder *fecEncoder
 
 		// settings
-		remote     net.Addr  // remote peer address
-		rd         time.Time // read deadline
-		wd         time.Time // write deadline
-		headerSize int       // the header size additional to a KCP frame
-		ackNoDelay bool      // send ack immediately for each incoming packet(testing purpose)
-		writeDelay bool      // delay kcp.flush() for Write() for bulk transfer
-		dup        int       // duplicate udp packets(testing purpose)
+		remote     net.Addr     // remote peer address
+		rd         atomic.Value // read deadline
+		wd         atomic.Value // write deadline
+		headerSize int          // the header size additional to a KCP frame
+		ackNoDelay bool         // send ack immediately for each incoming packet(testing purpose)
+		writeDelay bool         // delay kcp.flush() for Write() for bulk transfer
+		dup        int          // duplicate udp packets(testing purpose)
 
 		// notifications
 		die          chan struct{} // notify current session has Closed
@@ -264,9 +262,8 @@ RESET_TIMER:
 	var timeout *time.Timer
 	// deadline for current reading operation
 	var c <-chan time.Time
-	if !s.rd.IsZero() {
-		delay := time.Until(s.rd)
-		timeout = time.NewTimer(delay)
+	if trd, ok := s.rd.Load().(time.Time); ok && !trd.IsZero() {
+		timeout = time.NewTimer(time.Until(trd))
 		c = timeout.C
 		defer timeout.Stop()
 	}
@@ -340,9 +337,8 @@ func (s *UDPSession) WriteBuffers(v [][]byte) (n int, err error) {
 RESET_TIMER:
 	var timeout *time.Timer
 	var c <-chan time.Time
-	if !s.wd.IsZero() {
-		delay := time.Until(s.wd)
-		timeout = time.NewTimer(delay)
+	if twd, ok := s.rd.Load().(time.Time); ok && !twd.IsZero() {
+		timeout = time.NewTimer(time.Until(twd))
 		c = timeout.C
 		defer timeout.Stop()
 	}
@@ -455,10 +451,8 @@ func (s *UDPSession) RemoteAddr() net.Addr { return s.remote }
 
 // SetDeadline sets the deadline associated with the listener. A zero time value disables the deadline.
 func (s *UDPSession) SetDeadline(t time.Time) error {
-	s.mu.Lock()
-	s.rd = t
-	s.wd = t
-	s.mu.Unlock()
+	s.rd.Store(t)
+	s.wd.Store(t)
 	s.notifyReadEvent()
 	s.notifyWriteEvent()
 	return nil
@@ -466,18 +460,14 @@ func (s *UDPSession) SetDeadline(t time.Time) error {
 
 // SetReadDeadline implements the Conn SetReadDeadline method.
 func (s *UDPSession) SetReadDeadline(t time.Time) error {
-	s.mu.Lock()
-	s.rd = t
-	s.mu.Unlock()
+	s.rd.Store(t)
 	s.notifyReadEvent()
 	return nil
 }
 
 // SetWriteDeadline implements the Conn SetWriteDeadline method.
 func (s *UDPSession) SetWriteDeadline(t time.Time) error {
-	s.mu.Lock()
-	s.wd = t
-	s.mu.Unlock()
+	s.wd.Store(t)
 	s.notifyWriteEvent()
 	return nil
 }
