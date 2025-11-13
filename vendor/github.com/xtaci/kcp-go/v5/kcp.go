@@ -606,7 +606,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 		} else if cmd == IKCP_CMD_PUSH {
 			repeat := true
 			if _itimediff(sn, kcp.rcv_nxt+kcp.rcv_wnd) < 0 {
-				if sn > una {
+				if sn > una || len(kcp.acklist) == 0 {
 					kcp.ack_push(sn, ts)
 				}
 
