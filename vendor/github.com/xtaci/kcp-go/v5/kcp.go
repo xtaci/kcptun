@@ -481,7 +481,9 @@ func (kcp *KCP) parse_fastack(sn, ts uint32) {
 		if _itimediff(sn, seg.sn) < 0 {
 			break
 		} else if sn != seg.sn && _itimediff(seg.ts, ts) <= 0 {
-			seg.fastack++
+			if seg.fastack != 0xFFFFFFFF {
+				seg.fastack++
+			}
 		}
 	}
 }
@@ -825,16 +827,16 @@ func (kcp *KCP) flush(ackOnly bool) uint32 {
 			needsend = true
 			segment.rto = kcp.rx_rto
 			segment.resendts = current + segment.rto
-		} else if segment.fastack >= resent { // fast retransmit
+		} else if segment.fastack >= resent && segment.fastack != 0xFFFFFFFF { // fast retransmit
 			needsend = true
-			segment.fastack = 0
+			segment.fastack = 0xFFFFFFFF // must wait until RTO to reset
 			segment.rto = kcp.rx_rto
 			segment.resendts = current + segment.rto
 			change++
 			fastRetransSegs++
-		} else if segment.fastack > 0 && newSegsCount == 0 { // early retransmit
+		} else if segment.fastack > 0 && segment.fastack != 0xFFFFFFFF && newSegsCount == 0 { // early retransmit
 			needsend = true
-			segment.fastack = 0
+			segment.fastack = 0xFFFFFFFF
 			segment.rto = kcp.rx_rto
 			segment.resendts = current + segment.rto
 			change++
