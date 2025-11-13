@@ -472,9 +472,10 @@ func (kcp *KCP) parse_ack(sn uint32) {
 	}
 }
 
-func (kcp *KCP) parse_fastack(sn, ts uint32) {
+func (kcp *KCP) parse_fastack(sn, ts uint32) bool {
+	shouldFastAck := false
 	if _itimediff(sn, kcp.snd_una) < 0 || _itimediff(sn, kcp.snd_nxt) >= 0 {
-		return
+		return false
 	}
 
 	for seg := range kcp.snd_buf.ForEach {
@@ -483,9 +484,14 @@ func (kcp *KCP) parse_fastack(sn, ts uint32) {
 		} else if sn != seg.sn && _itimediff(seg.ts, ts) <= 0 {
 			if seg.fastack != 0xFFFFFFFF {
 				seg.fastack++
+				if seg.fastack >= uint32(kcp.fastresend) {
+					shouldFastAck = true
+				}
 			}
 		}
 	}
+
+	return shouldFastAck
 }
 
 func (kcp *KCP) parse_una(una uint32) int {
@@ -558,6 +564,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 	var flag int
 	var inSegs uint64
 	var windowSlides bool
+	var shouldFastAck bool
 
 	for {
 		var ts, sn, length, una, conv uint32
@@ -600,7 +607,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 
 		if cmd == IKCP_CMD_ACK {
 			kcp.parse_ack(sn)
-			kcp.parse_fastack(sn, ts)
+			shouldFastAck = shouldFastAck || kcp.parse_fastack(sn, ts)
 			flag |= 1
 			latest = ts
 		} else if cmd == IKCP_CMD_PUSH {
@@ -676,11 +683,13 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 		}
 	}
 
-	if windowSlides { // if window has slided, flush
+	if windowSlides || shouldFastAck { // if window has slided
+		// if a fastack has triggered, flush immediately
 		kcp.flush(false)
-	} else if ackNoDelay && len(kcp.acklist) > 0 { // ack immediately
+	} else if len(kcp.acklist) >= int(kcp.mtu/IKCP_OVERHEAD) { // clocking
+		// this serves as the clock for low-latency network.(i.e. the latency is less than the interval.)
 		kcp.flush(true)
-	} else if len(kcp.acklist) >= int(kcp.mtu/IKCP_OVERHEAD) { // flash ack
+	} else if ackNoDelay && len(kcp.acklist) > 0 { // ack immediately
 		kcp.flush(true)
 	}
 	return 0
