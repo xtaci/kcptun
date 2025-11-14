@@ -563,8 +563,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 	var latest uint32 // the latest ack packet
 	var flag int
 	var inSegs uint64
-	var windowSlides bool
-	var shouldFastAck bool
+	var flushSegments bool // signal to flush segments
 
 	for {
 		var ts, sn, length, una, conv uint32
@@ -601,13 +600,13 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 			kcp.rmt_wnd = uint32(wnd)
 		}
 		if kcp.parse_una(una) > 0 {
-			windowSlides = true
+			flushSegments = true
 		}
 		kcp.shrink_buf()
 
 		if cmd == IKCP_CMD_ACK {
 			kcp.parse_ack(sn)
-			shouldFastAck = shouldFastAck || kcp.parse_fastack(sn, ts)
+			flushSegments = flushSegments || kcp.parse_fastack(sn, ts)
 			flag |= 1
 			latest = ts
 		} else if cmd == IKCP_CMD_PUSH {
@@ -683,13 +682,20 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 		}
 	}
 
-	if windowSlides || shouldFastAck { // if window has slided
-		// if a fastack has triggered, flush immediately
+	// Determine if we need to flush data segments or acks
+	if flushSegments {
+		// If window has slided or, a fastack should be triggered,
+		// Flush immediately. In previous implementations, we only
+		// send out fastacks when interval timeouts, so the resending packets
+		// have to wait until then. Now, we try to flush as soon as we can.
 		kcp.flush(false)
 	} else if len(kcp.acklist) >= int(kcp.mtu/IKCP_OVERHEAD) { // clocking
-		// this serves as the clock for low-latency network.(i.e. the latency is less than the interval.)
+		// This serves as the clock for low-latency network.(i.e. the latency is less than the interval.)
+		// If the other end is waiting for confirmations, it has to want until the interval timeouts then
+		// the flush() is triggered to send out the una & acks. In low-latency network, the interval time is too long to wait,
+		// so acks have to be sent out immediately when there are too many.
 		kcp.flush(true)
-	} else if ackNoDelay && len(kcp.acklist) > 0 { // ack immediately
+	} else if ackNoDelay && len(kcp.acklist) > 0 { // testing(xtaci): ack immediately if acNoDelay is set
 		kcp.flush(true)
 	}
 	return 0
