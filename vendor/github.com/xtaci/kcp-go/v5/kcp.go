@@ -54,6 +54,13 @@ const (
 	IKCP_SN_OFFSET   = 12
 )
 
+type FlushType int8
+
+const (
+	IFLUSH_ACKONLY FlushType = 1 << iota
+	IFLUSH_FULL
+)
+
 // monotonic reference time point
 var refTime time.Time = time.Now()
 
@@ -563,8 +570,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 	var latest uint32 // the latest ack packet
 	var flag int
 	var inSegs uint64
-	var windowSlides bool
-	var shouldFastAck bool
+	var flushSegments bool // signal to flush segments
 
 	for {
 		var ts, sn, length, una, conv uint32
@@ -601,13 +607,13 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 			kcp.rmt_wnd = uint32(wnd)
 		}
 		if kcp.parse_una(una) > 0 {
-			windowSlides = true
+			flushSegments = true
 		}
 		kcp.shrink_buf()
 
 		if cmd == IKCP_CMD_ACK {
 			kcp.parse_ack(sn)
-			shouldFastAck = shouldFastAck || kcp.parse_fastack(sn, ts)
+			flushSegments = flushSegments || kcp.parse_fastack(sn, ts)
 			flag |= 1
 			latest = ts
 		} else if cmd == IKCP_CMD_PUSH {
@@ -683,14 +689,21 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 		}
 	}
 
-	if windowSlides || shouldFastAck { // if window has slided
-		// if a fastack has triggered, flush immediately
-		kcp.flush(false)
+	// Determine if we need to flush data segments or acks
+	if flushSegments {
+		// If window has slided or, a fastack should be triggered,
+		// Flush immediately. In previous implementations, we only
+		// send out fastacks when interval timeouts, so the resending packets
+		// have to wait until then. Now, we try to flush as soon as we can.
+		kcp.flush(IFLUSH_FULL)
 	} else if len(kcp.acklist) >= int(kcp.mtu/IKCP_OVERHEAD) { // clocking
-		// this serves as the clock for low-latency network.(i.e. the latency is less than the interval.)
-		kcp.flush(true)
-	} else if ackNoDelay && len(kcp.acklist) > 0 { // ack immediately
-		kcp.flush(true)
+		// This serves as the clock for low-latency network.(i.e. the latency is less than the interval.)
+		// If the other end is waiting for confirmations, it has to want until the interval timeouts then
+		// the flush() is triggered to send out the una & acks. In low-latency network, the interval time is too long to wait,
+		// so acks have to be sent out immediately when there are too many.
+		kcp.flush(IFLUSH_ACKONLY)
+	} else if ackNoDelay && len(kcp.acklist) > 0 { // testing(xtaci): ack immediately if acNoDelay is set
+		kcp.flush(IFLUSH_ACKONLY)
 	}
 	return 0
 }
@@ -703,13 +716,7 @@ func (kcp *KCP) wnd_unused() uint16 {
 }
 
 // flush pending data
-func (kcp *KCP) flush(ackOnly bool) uint32 {
-	defer func() {
-		atomic.StoreUint64(&DefaultSnmp.RingBufferSndQueue, uint64(kcp.snd_queue.Len()))
-		atomic.StoreUint64(&DefaultSnmp.RingBufferRcvQueue, uint64(kcp.rcv_queue.Len()))
-		atomic.StoreUint64(&DefaultSnmp.RingBufferSndBuffer, uint64(kcp.snd_buf.Len()))
-	}()
-
+func (kcp *KCP) flush(flushType FlushType) uint32 {
 	var seg segment
 	seg.conv = kcp.conv
 	seg.cmd = IKCP_CMD_ACK
@@ -736,20 +743,26 @@ func (kcp *KCP) flush(ackOnly bool) uint32 {
 		}
 	}
 
-	// flush acknowledges
-	for i, ack := range kcp.acklist {
-		makeSpace(IKCP_OVERHEAD)
-		// filter jitters caused by bufferbloat
-		if _itimediff(ack.sn, kcp.rcv_nxt) >= 0 || len(kcp.acklist)-1 == i {
-			seg.sn, seg.ts = ack.sn, ack.ts
-			ptr = seg.encode(ptr)
-		}
-	}
-	kcp.acklist = kcp.acklist[0:0]
-
-	if ackOnly { // flash remain ack segments
+	defer func() {
 		flushBuffer()
-		return kcp.interval
+		atomic.StoreUint64(&DefaultSnmp.RingBufferSndQueue, uint64(kcp.snd_queue.Len()))
+		atomic.StoreUint64(&DefaultSnmp.RingBufferRcvQueue, uint64(kcp.rcv_queue.Len()))
+		atomic.StoreUint64(&DefaultSnmp.RingBufferSndBuffer, uint64(kcp.snd_buf.Len()))
+	}()
+
+	/*
+	 * flush acknowledges
+	 */
+	if flushType == IFLUSH_ACKONLY || flushType == IFLUSH_FULL {
+		for i, ack := range kcp.acklist {
+			makeSpace(IKCP_OVERHEAD)
+			// filter jitters caused by bufferbloat
+			if _itimediff(ack.sn, kcp.rcv_nxt) >= 0 || len(kcp.acklist)-1 == i {
+				seg.sn, seg.ts = ack.sn, ack.ts
+				ptr = seg.encode(ptr)
+			}
+		}
+		kcp.acklist = kcp.acklist[0:0]
 	}
 
 	// probe window size (if remote window size equals zero)
@@ -776,7 +789,9 @@ func (kcp *KCP) flush(ackOnly bool) uint32 {
 		kcp.probe_wait = 0
 	}
 
-	// flush window probing commands
+	/*
+	 * flush window probing commands
+	 */
 	if (kcp.probe & IKCP_ASK_SEND) != 0 {
 		seg.cmd = IKCP_CMD_WASK
 		makeSpace(IKCP_OVERHEAD)
@@ -824,72 +839,73 @@ func (kcp *KCP) flush(ackOnly bool) uint32 {
 		resent = 0xffffffff
 	}
 
-	// check for retransmissions
+	/*
+	 * flush segments
+	 */
 	current := currentMs()
 	var change, lostSegs, fastRetransSegs, earlyRetransSegs uint64
 	minrto := int32(kcp.interval)
 
-	for segment := range kcp.snd_buf.ForEach {
-		needsend := false
-		if segment.acked == 1 {
-			continue
-		}
-		if segment.xmit == 0 { // initial transmit
-			needsend = true
-			segment.rto = kcp.rx_rto
-			segment.resendts = current + segment.rto
-		} else if segment.fastack >= resent && segment.fastack != 0xFFFFFFFF { // fast retransmit
-			needsend = true
-			segment.fastack = 0xFFFFFFFF // must wait until RTO to reset
-			segment.rto = kcp.rx_rto
-			segment.resendts = current + segment.rto
-			change++
-			fastRetransSegs++
-		} else if segment.fastack > 0 && segment.fastack != 0xFFFFFFFF && newSegsCount == 0 { // early retransmit
-			needsend = true
-			segment.fastack = 0xFFFFFFFF
-			segment.rto = kcp.rx_rto
-			segment.resendts = current + segment.rto
-			change++
-			earlyRetransSegs++
-		} else if _itimediff(current, segment.resendts) >= 0 { // RTO
-			needsend = true
-			if kcp.nodelay == 0 {
-				segment.rto += kcp.rx_rto
-			} else {
-				segment.rto += kcp.rx_rto / 2
+	if flushType == IFLUSH_FULL {
+		for segment := range kcp.snd_buf.ForEach {
+			needsend := false
+			if segment.acked == 1 {
+				continue
 			}
-			segment.fastack = 0
-			segment.resendts = current + segment.rto
-			lostSegs++
-		}
-
-		if needsend {
-			current = currentMs()
-			segment.xmit++
-			segment.ts = current
-			segment.wnd = seg.wnd
-			segment.una = seg.una
-
-			need := IKCP_OVERHEAD + len(segment.data)
-			makeSpace(need)
-			ptr = segment.encode(ptr)
-			copy(ptr, segment.data)
-			ptr = ptr[len(segment.data):]
-
-			if segment.xmit >= kcp.dead_link {
-				kcp.state = 0xFFFFFFFF
+			if segment.xmit == 0 { // initial transmit
+				needsend = true
+				segment.rto = kcp.rx_rto
+				segment.resendts = current + segment.rto
+			} else if segment.fastack >= resent && segment.fastack != 0xFFFFFFFF { // fast retransmit
+				needsend = true
+				segment.fastack = 0xFFFFFFFF // must wait until RTO to reset
+				segment.rto = kcp.rx_rto
+				segment.resendts = current + segment.rto
+				change++
+				fastRetransSegs++
+			} else if segment.fastack > 0 && segment.fastack != 0xFFFFFFFF && newSegsCount == 0 { // early retransmit
+				needsend = true
+				segment.fastack = 0xFFFFFFFF
+				segment.rto = kcp.rx_rto
+				segment.resendts = current + segment.rto
+				change++
+				earlyRetransSegs++
+			} else if _itimediff(current, segment.resendts) >= 0 { // RTO
+				needsend = true
+				if kcp.nodelay == 0 {
+					segment.rto += kcp.rx_rto
+				} else {
+					segment.rto += kcp.rx_rto / 2
+				}
+				segment.fastack = 0
+				segment.resendts = current + segment.rto
+				lostSegs++
 			}
-		}
 
-		// get the nearest rto
-		if rto := _itimediff(segment.resendts, current); rto > 0 && rto < minrto {
-			minrto = rto
+			if needsend {
+				current = currentMs()
+				segment.xmit++
+				segment.ts = current
+				segment.wnd = seg.wnd
+				segment.una = seg.una
+
+				need := IKCP_OVERHEAD + len(segment.data)
+				makeSpace(need)
+				ptr = segment.encode(ptr)
+				copy(ptr, segment.data)
+				ptr = ptr[len(segment.data):]
+
+				if segment.xmit >= kcp.dead_link {
+					kcp.state = 0xFFFFFFFF
+				}
+			}
+
+			// get the nearest rto
+			if rto := _itimediff(segment.resendts, current); rto > 0 && rto < minrto {
+				minrto = rto
+			}
 		}
 	}
-
-	// flash remain segments
-	flushBuffer()
 
 	// counter updates
 	sum := lostSegs
@@ -967,7 +983,7 @@ func (kcp *KCP) Update() {
 		if _itimediff(current, kcp.ts_flush) >= 0 {
 			kcp.ts_flush = current + kcp.interval
 		}
-		kcp.flush(false)
+		kcp.flush(IFLUSH_FULL)
 	}
 }
 

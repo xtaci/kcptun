@@ -76,8 +76,14 @@ const (
 	// accept backlog
 	acceptBacklog = 128
 
+	// dev backlog
+	devBacklog = 2048
+
 	// max latency for consecutive FEC encoding, in millisecond
 	maxFECEncodeLatency = 500
+
+	// max batch size
+	maxBatchSize = 64
 )
 
 var (
@@ -180,7 +186,7 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 	sess.chWriteEvent = make(chan struct{}, 1)
 	sess.chSocketReadError = make(chan struct{})
 	sess.chSocketWriteError = make(chan struct{})
-	sess.chPostProcessing = make(chan []byte, acceptBacklog)
+	sess.chPostProcessing = make(chan []byte, devBacklog)
 	sess.remote = remote
 	sess.conn = conn
 	sess.ownConn = ownConn
@@ -378,7 +384,7 @@ RESET_TIMER:
 				// put the packets on wire immediately if the inflight window is full
 				// or if we've specified write no delay(NO merging of outgoing bytes)
 				// we don't have to wait until the periodical update() procedure uncorks.
-				s.kcp.flush(false)
+				s.kcp.flush(IFLUSH_FULL)
 			}
 			s.mu.Unlock()
 			atomic.AddUint64(&DefaultSnmp.BytesSent, uint64(n))
@@ -427,7 +433,7 @@ func (s *UDPSession) Close() error {
 
 		// try best to send all queued messages especially the data in txqueue
 		s.mu.Lock()
-		s.kcp.flush(false)
+		s.kcp.flush((IFLUSH_FULL))
 		s.mu.Unlock()
 
 		if s.l != nil { // belongs to listener
@@ -608,8 +614,7 @@ func (s *UDPSession) Control(f func(conn net.PacketConn) error) error {
 //
 //	KCP output -> FEC encoding -> CRC32 integrity -> Encryption -> TxQueue
 func (s *UDPSession) postProcess() {
-	txqueue := make([]ipv4.Message, 0, acceptBacklog)
-	chCork := make(chan struct{}, 1)
+	txqueue := make([]ipv4.Message, 0, devBacklog)
 	chDie := s.die
 
 	for {
@@ -662,18 +667,7 @@ func (s *UDPSession) postProcess() {
 			}
 
 			// notify chCork only when chPostProcessing is empty
-			if len(s.chPostProcessing) == 0 {
-				select {
-				case chCork <- struct{}{}:
-				default:
-				}
-			}
-
-			// re-enable die channel
-			chDie = s.die
-
-		case <-chCork: // emulate a corked socket
-			if len(txqueue) > 0 {
+			if len(s.chPostProcessing) == 0 || len(txqueue) >= maxBatchSize {
 				s.tx(txqueue)
 				// recycle
 				for k := range txqueue {
@@ -688,7 +682,7 @@ func (s *UDPSession) postProcess() {
 
 		case <-chDie:
 			// remaining packets in txqueue should be sent out
-			if len(chCork) > 0 || len(s.chPostProcessing) > 0 {
+			if len(s.chPostProcessing) > 0 {
 				chDie = nil // block chDie temporarily
 				continue
 			}
@@ -703,7 +697,7 @@ func (s *UDPSession) update() {
 	case <-s.die:
 	default:
 		s.mu.Lock()
-		interval := s.kcp.flush(false)
+		interval := s.kcp.flush(IFLUSH_FULL)
 		waitsnd := s.kcp.WaitSnd()
 		if waitsnd < int(s.kcp.snd_wnd) {
 			s.notifyWriteEvent()
