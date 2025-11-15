@@ -7,6 +7,7 @@
         "qpp-count":61,
         "mode": "fast3",
         "mtu": 1400,
+        "ratelimit": 104857600,
         "sndwnd": 2048,
         "rcvwnd": 2048,
         "datashard": 10,
