@@ -605,12 +605,13 @@ func (s *UDPSession) SetWriteBuffer(bytes int) error {
 // SetRateLimit sets the rate limit for this session in bytes per second,
 // by setting to 0 will disable rate limiting.
 func (s *UDPSession) SetRateLimit(bytesPerSecond uint32) {
+	var limiter *rate.Limiter
 	if bytesPerSecond == 0 {
-		s.rateLimiter.Store(nil)
-		return
+		limiter = rate.NewLimiter(rate.Inf, maxBatchSize*mtuLimit)
+	} else {
+		limiter = rate.NewLimiter(rate.Limit(bytesPerSecond), maxBatchSize*mtuLimit)
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(bytesPerSecond), maxBatchSize*mtuLimit)
 	s.rateLimiter.Store(limiter)
 }
 
