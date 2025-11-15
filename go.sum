@@ -76,6 +76,8 @@ github.com/xtaci/kcp-go/v5 v5.6.32 h1:5ax3OgxNKZ4ynsMfHC4GiOzLTokfn0mc6VTV/vxyVx
 github.com/xtaci/kcp-go/v5 v5.6.32/go.mod h1:f+PrIWU7XK/Rf+9KrK68muvRk67m6TK8D4tLHY6lh8o=
 github.com/xtaci/kcp-go/v5 v5.6.34 h1:tzE9AouuW4aqFBxZkgW7bG2DvN30e5Iq6x7Y5+ZuOKk=
 github.com/xtaci/kcp-go/v5 v5.6.34/go.mod h1:f+PrIWU7XK/Rf+9KrK68muvRk67m6TK8D4tLHY6lh8o=
+github.com/xtaci/kcp-go/v5 v5.6.35 h1:2CckeR1T75x1tsZsD+DvMxEL2B2gNgrS7nC2n865VK4=
+github.com/xtaci/kcp-go/v5 v5.6.35/go.mod h1:4kGdSJy7bNEBsekC5Q7O4jCpU/uKXqLled1cMsn9nkk=
 github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae h1:J0GxkO96kL4WF+AIT3M4mfUVinOCPgf2uUWYFUzN0sM=
 github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae/go.mod h1:gXtu8J62kEgmN++bm9BVICuT/e8yiLI2KFobd/TRFsE=
 github.com/xtaci/qpp v1.1.18 h1:FyULigD8/msXdxj9AjOFQg3/Z/tGz4574n21shZ6SZo=
@@ -119,6 +121,8 @@ golang.org/x/sys v0.38.0 h1:3yZWxaJjBmCWXqhN1qh02AkOnCQ1poK6oF+a7xWL6Gc=
 golang.org/x/sys v0.38.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
+golang.org/x/time v0.14.0 h1:MRx4UaLrDotUKUdCIqzPC48t1Y9hANFKIRpNx+Te8PI=
+golang.org/x/time v0.14.0/go.mod h1:eL/Oa2bBBK0TkX57Fyni+NgnyQQN4LitPmob2Hjnqw4=
 golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190114222345-bf090417da8b/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190226205152-f727befe758c/go.mod h1:9Yl7xja0Znq3iFh3HoIrodX9oNMXvdceNzlUR8zjMvY=

@@ -5,7 +5,7 @@ require (
 	github.com/golang/snappy v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli v1.22.17
-	github.com/xtaci/kcp-go/v5 v5.6.34
+	github.com/xtaci/kcp-go/v5 v5.6.35
 	github.com/xtaci/qpp v1.1.18
 	github.com/xtaci/smux v1.5.34
 	github.com/xtaci/tcpraw v1.2.31
@@ -24,6 +24,7 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 )
 
 //replace github.com/xtaci/tcpraw => /home/xtaci/tcpraw

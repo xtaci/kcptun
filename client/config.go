@@ -38,6 +38,7 @@ type Config struct {
 	AutoExpire   int    `json:"autoexpire"`
 	ScavengeTTL  int    `json:"scavengettl"`
 	MTU          int    `json:"mtu"`
+	RateLimit    int    `json:"ratelimit"`
 	SndWnd       int    `json:"sndwnd"`
 	RcvWnd       int    `json:"rcvwnd"`
 	DataShard    int    `json:"datashard"`

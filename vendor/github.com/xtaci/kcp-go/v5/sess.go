@@ -46,6 +46,7 @@
 package kcp
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"hash/crc32"
@@ -58,6 +59,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -159,6 +161,9 @@ type (
 
 		xconn           batchConn // for x/net
 		xconnWriteError error
+
+		// rate limiter (bytes per second)
+		rateLimiter atomic.Value
 
 		mu sync.Mutex
 	}
@@ -597,6 +602,18 @@ func (s *UDPSession) SetWriteBuffer(bytes int) error {
 	return errInvalidOperation
 }
 
+// SetRateLimit sets the rate limit for this session in bytes per second,
+// by setting to 0 will disable rate limiting.
+func (s *UDPSession) SetRateLimit(bytesPerSecond uint32) {
+	if bytesPerSecond == 0 {
+		s.rateLimiter.Store(nil)
+		return
+	}
+
+	limiter := rate.NewLimiter(rate.Limit(bytesPerSecond), maxBatchSize*mtuLimit)
+	s.rateLimiter.Store(limiter)
+}
+
 // Control applys a procedure to the underly socket fd.
 // CAUTION: BE VERY CAREFUL TO USE THIS FUNCTION, YOU MAY BREAK THE PROTOCOL.
 func (s *UDPSession) Control(f func(conn net.PacketConn) error) error {
@@ -617,6 +634,8 @@ func (s *UDPSession) postProcess() {
 	txqueue := make([]ipv4.Message, 0, devBacklog)
 	chDie := s.die
 
+	ctx := context.Background()
+	bytesToSend := 0
 	for {
 		select {
 		case buf := <-s.chPostProcessing: // dequeue from post processing
@@ -648,6 +667,7 @@ func (s *UDPSession) postProcess() {
 
 			// original copy, move buf to txqueue directly
 			msg.Buffers = [][]byte{buf}
+			bytesToSend += len(buf)
 			txqueue = append(txqueue, msg)
 
 			// dup copies for testing if set
@@ -655,6 +675,7 @@ func (s *UDPSession) postProcess() {
 				bts := xmitBuf.Get().([]byte)[:len(buf)]
 				copy(bts, buf)
 				msg.Buffers = [][]byte{bts}
+				bytesToSend += len(bts)
 				txqueue = append(txqueue, msg)
 			}
 
@@ -663,11 +684,18 @@ func (s *UDPSession) postProcess() {
 				bts := xmitBuf.Get().([]byte)[:len(ecc[k])]
 				copy(bts, ecc[k])
 				msg.Buffers = [][]byte{bts}
+				bytesToSend += len(bts)
 				txqueue = append(txqueue, msg)
 			}
 
-			// notify chCork only when chPostProcessing is empty
+			// transmit when chPostProcessing is empty or we've reached max batch size
 			if len(s.chPostProcessing) == 0 || len(txqueue) >= maxBatchSize {
+				if limiter, ok := s.rateLimiter.Load().(*rate.Limiter); ok {
+					err := limiter.WaitN(ctx, bytesToSend)
+					if err != nil {
+						panic(err)
+					}
+				}
 				s.tx(txqueue)
 				// recycle
 				for k := range txqueue {
@@ -675,6 +703,7 @@ func (s *UDPSession) postProcess() {
 					txqueue[k].Buffers = nil
 				}
 				txqueue = txqueue[:0]
+				bytesToSend = 0
 			}
 
 			// re-enable die channel

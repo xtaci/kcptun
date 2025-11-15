@@ -124,6 +124,11 @@ func main() {
 			Usage: "set maximum transmission unit for UDP packets",
 		},
 		cli.IntFlag{
+			Name:  "ratelimit",
+			Value: 0,
+			Usage: "set maximum outgoing speed (in bytes per second) for a single KCP connection, 0 to disable. Enabling this will improve the stability of connections under high speed.",
+		},
+		cli.IntFlag{
 			Name:  "sndwnd",
 			Value: 128,
 			Usage: "set send window size(num of packets)",
@@ -251,6 +256,7 @@ func main() {
 		config.AutoExpire = c.Int("autoexpire")
 		config.ScavengeTTL = c.Int("scavengettl")
 		config.MTU = c.Int("mtu")
+		config.RateLimit = c.Int("ratelimit")
 		config.SndWnd = c.Int("sndwnd")
 		config.RcvWnd = c.Int("rcvwnd")
 		config.DataShard = c.Int("datashard")
@@ -329,6 +335,7 @@ func main() {
 		log.Println("sndwnd:", config.SndWnd, "rcvwnd:", config.RcvWnd)
 		log.Println("compression:", !config.NoComp)
 		log.Println("mtu:", config.MTU)
+		log.Println("ratelimit:", config.RateLimit)
 		log.Println("datashard:", config.DataShard, "parityshard:", config.ParityShard)
 		log.Println("acknodelay:", config.AckNodelay)
 		log.Println("dscp:", config.DSCP)
@@ -420,6 +427,7 @@ func main() {
 			kcpconn.SetWindowSize(config.SndWnd, config.RcvWnd)
 			kcpconn.SetMtu(config.MTU)
 			kcpconn.SetACKNoDelay(config.AckNodelay)
+			kcpconn.SetRateLimit(uint32(config.RateLimit))
 
 			if err := kcpconn.SetDSCP(config.DSCP); err != nil {
 				log.Println("SetDSCP:", err)
