@@ -22,6 +22,12 @@
 
 package smux
 
+import (
+	"container/heap"
+	"sync"
+	"time"
+)
+
 // _itimediff returns the time difference between two uint32 values.
 // The result is a signed 32-bit integer representing the difference between 'later' and 'earlier'.
 func _itimediff(later, earlier uint32) int32 {
@@ -53,4 +59,94 @@ func (h *shaperHeap) Pop() interface{} {
 	x := old[n-1]
 	*h = old[0 : n-1]
 	return x
+}
+
+const (
+	streamExpireDuration = 1 * time.Minute
+)
+
+type shaperQueue struct {
+	streams    map[uint32]*shaperHeap
+	lastVisits map[uint32]time.Time
+	allSids    []uint32
+	nextIdx    uint32
+	count      uint32
+	mu         sync.Mutex
+}
+
+func NewShaperQueue() *shaperQueue {
+	return &shaperQueue{
+		streams:    make(map[uint32]*shaperHeap),
+		lastVisits: make(map[uint32]time.Time),
+	}
+}
+
+func (sq *shaperQueue) Push(req writeRequest) {
+	sq.mu.Lock()
+	defer sq.mu.Unlock()
+	sid := req.frame.sid
+	if _, ok := sq.streams[sid]; !ok {
+		sq.streams[sid] = new(shaperHeap)
+		sq.allSids = append(sq.allSids, sid)
+	}
+	h := sq.streams[sid]
+	heap.Push(h, req)
+	sq.lastVisits[sid] = time.Now()
+	sq.count++
+}
+
+// Pop uses Round Robin to pop writeRequests from the shaperQueue.
+func (sq *shaperQueue) Pop() (req writeRequest, ok bool) {
+	sq.mu.Lock()
+	defer sq.mu.Unlock()
+
+	if len(sq.allSids) == 0 {
+		return writeRequest{}, false
+	}
+
+	start := sq.nextIdx % uint32(len(sq.allSids))
+
+	// loop through all streams in a round-robin manner
+	for i := 0; i < len(sq.allSids); i++ {
+		idx := (int(start) + i) % len(sq.allSids)
+		sid := sq.allSids[idx]
+		h := sq.streams[sid]
+		if h == nil || h.Len() == 0 {
+			continue
+		}
+
+		// pop from the heap
+		req := heap.Pop(h).(writeRequest)
+		sq.count--
+
+		// If the heap is empty after popping, remove it from the map
+		if h.Len() == 0 && sq.lastVisits[sid].Add(streamExpireDuration).Before(time.Now()) {
+			delete(sq.streams, sid)
+			delete(sq.lastVisits, sid)
+			// copy the rest of allSids to overwrite the removed sid
+			sq.allSids = append(sq.allSids[:idx], sq.allSids[idx+1:]...)
+		}
+
+		// update nextSid for round-robin
+		if len(sq.allSids) == 0 {
+			sq.nextIdx = 0
+		} else {
+			sq.nextIdx = uint32((idx + 1) % len(sq.allSids))
+		}
+		return req, true
+	}
+
+	return writeRequest{}, false
+}
+
+func (sq *shaperQueue) IsEmpty() bool {
+	sq.mu.Lock()
+	defer sq.mu.Unlock()
+	return sq.count == 0
+}
+
+func (sq *shaperQueue) Len() int {
+	sq.mu.Lock()
+	defer sq.mu.Unlock()
+	return int(sq.count)
 }

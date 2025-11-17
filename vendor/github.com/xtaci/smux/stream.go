@@ -121,7 +121,6 @@ func (s *stream) tryRead(b []byte) (n int, err error) {
 	s.bufferLock.Lock()
 	if len(s.buffers) > 0 {
 		n = copy(b, *s.buffers[0])
-		s.buffers[0] = s.buffers[0]
 		*s.buffers[0] = (*s.buffers[0])[n:]
 		if len(*s.buffers[0]) == 0 {
 			s.buffers[0] = nil
@@ -156,7 +155,6 @@ func (s *stream) tryReadv2(b []byte) (n int, err error) {
 	s.bufferLock.Lock()
 	if len(s.buffers) > 0 {
 		n = copy(b, *s.buffers[0])
-		s.buffers[0] = s.buffers[0]
 		*s.buffers[0] = (*s.buffers[0])[n:]
 		if len(*s.buffers[0]) == 0 {
 			s.buffers[0] = nil

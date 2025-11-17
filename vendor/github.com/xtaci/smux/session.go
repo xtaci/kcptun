@@ -23,7 +23,6 @@
 package smux
 
 import (
-	"container/heap"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -480,22 +479,22 @@ func (s *Session) keepalive() {
 // shaperLoop implements a priority queue for write requests,
 // some control messages are prioritized over data messages
 func (s *Session) shaperLoop() {
-	var reqs shaperHeap
+	reqs := NewShaperQueue()
 	var next writeRequest
 	var chWrite chan writeRequest
 	var chShaper chan writeRequest
 
 	for {
 		// chWrite is not available until it has packet to send
-		if len(reqs) > 0 {
+		if !reqs.IsEmpty() {
 			chWrite = s.writes
-			next = heap.Pop(&reqs).(writeRequest)
+			next, _ = reqs.Pop()
 		} else {
 			chWrite = nil
 		}
 
 		// control heap size, chShaper is not available until packets are less than maximum allowed
-		if len(reqs) >= maxShaperSize {
+		if reqs.Len() >= maxShaperSize {
 			chShaper = nil
 		} else {
 			chShaper = s.shaper
@@ -510,10 +509,10 @@ func (s *Session) shaperLoop() {
 		case <-s.die:
 			return
 		case r := <-chShaper:
-			if chWrite != nil { // next is valid, reshape
-				heap.Push(&reqs, next)
+			if chWrite != nil { // re-enqueue the request if there is a pending write
+				reqs.Push(next)
 			}
-			heap.Push(&reqs, r)
+			reqs.Push(r)
 		case chWrite <- next:
 		}
 	}
