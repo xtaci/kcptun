@@ -24,6 +24,7 @@ package smux
 
 import (
 	"container/heap"
+	"container/list"
 	"sync"
 	"time"
 )
@@ -65,33 +66,40 @@ const (
 	streamExpireDuration = 1 * time.Minute
 )
 
+// shaperQueue manages multiple streams of writeRequests using a round-robin scheduling algorithm.
 type shaperQueue struct {
-	streams    map[uint32]*shaperHeap
-	lastVisits map[uint32]time.Time
-	allSids    []uint32
-	nextIdx    uint32
-	count      uint32
-	mu         sync.Mutex
+	streams map[uint32]*shaperHeap
+	rrList  *list.List    // list of sid (RR queue)
+	next    *list.Element // next node to pop
+	count   int
+	mu      sync.Mutex
 }
 
 func NewShaperQueue() *shaperQueue {
 	return &shaperQueue{
-		streams:    make(map[uint32]*shaperHeap),
-		lastVisits: make(map[uint32]time.Time),
+		streams: make(map[uint32]*shaperHeap),
+		rrList:  list.New(),
 	}
 }
 
+// Push adds a writeRequest to the shaperQueue.
 func (sq *shaperQueue) Push(req writeRequest) {
 	sq.mu.Lock()
 	defer sq.mu.Unlock()
+
+	// create heap for the stream if not exists.
 	sid := req.frame.sid
 	if _, ok := sq.streams[sid]; !ok {
 		sq.streams[sid] = new(shaperHeap)
-		sq.allSids = append(sq.allSids, sid)
+		elem := sq.rrList.PushBack(sid)
+		if sq.next == nil {
+			sq.next = elem
+		}
 	}
+
+	// push the request into the corresponding stream heap.
 	h := sq.streams[sid]
 	heap.Push(h, req)
-	sq.lastVisits[sid] = time.Now()
 	sq.count++
 }
 
@@ -100,53 +108,69 @@ func (sq *shaperQueue) Pop() (req writeRequest, ok bool) {
 	sq.mu.Lock()
 	defer sq.mu.Unlock()
 
-	if len(sq.allSids) == 0 {
+	// if there are no streams, return false
+	if sq.next == nil || sq.count == 0 {
 		return writeRequest{}, false
 	}
 
-	start := sq.nextIdx % uint32(len(sq.allSids))
+	// get the starting index for round-robin.
+	start := sq.next
+	current := start
 
 	// loop through all streams in a round-robin manner
-	for i := 0; i < len(sq.allSids); i++ {
-		idx := (int(start) + i) % len(sq.allSids)
-		sid := sq.allSids[idx]
+	for {
+		sid := current.Value.(uint32)
 		h := sq.streams[sid]
-		if h == nil || h.Len() == 0 {
-			continue
+
+		if h.Len() > 0 {
+			// pop the top request from the heap
+			req := heap.Pop(h).(writeRequest)
+			sq.count--
+
+			// update next pointer for round-robin
+			next := current.Next()
+			if next == nil {
+				next = sq.rrList.Front()
+			}
+			sq.next = next
+
+			// If the heap is empty after popping, delete it.
+			if h.Len() == 0 {
+				delete(sq.streams, sid)
+				sq.rrList.Remove(current)
+				// if a list has only one element, then current->next will point to itself,
+				// so after removing current, we need to set next to nil.
+				if sq.rrList.Len() == 0 {
+					sq.next = nil
+				}
+			}
+			return req, true
 		}
 
-		// pop from the heap
-		req := heap.Pop(h).(writeRequest)
-		sq.count--
-
-		// If the heap is empty after popping, remove it from the map
-		if h.Len() == 0 && sq.lastVisits[sid].Add(streamExpireDuration).Before(time.Now()) {
-			delete(sq.streams, sid)
-			delete(sq.lastVisits, sid)
-			// copy the rest of allSids to overwrite the removed sid
-			sq.allSids = append(sq.allSids[:idx], sq.allSids[idx+1:]...)
+		// move to next
+		current = current.Next()
+		if current == nil {
+			current = sq.rrList.Front()
 		}
-
-		// update nextSid for round-robin
-		if len(sq.allSids) == 0 {
-			sq.nextIdx = 0
-		} else {
-			sq.nextIdx = uint32((idx + 1) % len(sq.allSids))
+		if current == start { // full loop: no packets
+			break
 		}
-		return req, true
 	}
 
+	// no requests found in any stream
 	return writeRequest{}, false
 }
 
+// IsEmpty checks if the shaperQueue is empty.
 func (sq *shaperQueue) IsEmpty() bool {
 	sq.mu.Lock()
 	defer sq.mu.Unlock()
 	return sq.count == 0
 }
 
+// Len returns the total number of writeRequests in the shaperQueue.
 func (sq *shaperQueue) Len() int {
 	sq.mu.Lock()
 	defer sq.mu.Unlock()
-	return int(sq.count)
+	return sq.count
 }

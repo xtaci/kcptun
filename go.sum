@@ -90,6 +90,8 @@ github.com/xtaci/smux v1.5.36-0.20251117072057-f251456b934f h1:JhONL2UHRmtnA3aUz
 github.com/xtaci/smux v1.5.36-0.20251117072057-f251456b934f/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 github.com/xtaci/smux v1.5.36 h1:WIHeRPdIZEvRQoRx0W9bJoOWRsTkecC0ta2NrPhE57E=
 github.com/xtaci/smux v1.5.36/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
+github.com/xtaci/smux v1.5.38 h1:E8lFhhsMJs/zOM+JDVU4p0tgnsEGWKgLShHwvwQoweA=
+github.com/xtaci/smux v1.5.38/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 github.com/xtaci/tcpraw v1.2.31 h1:i9mXzejnGJdGi0DpVKUn19Hq202/sHOJt0kObEwuE/U=
 github.com/xtaci/tcpraw v1.2.31/go.mod h1:T1blYD2EDkLneb+HtxddnzX38SoC9BG537EhkXeaT2k=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
