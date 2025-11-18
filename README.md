@@ -240,6 +240,12 @@ server: --listen 0.0.0.0:3000-4000
 ```
 by specifying port-range, kcptun will automatically switch to next random port within port-range when establishing each new connection.
 
+#### Rate Limit and Pacing
+kcptun introduces userspace pacing for smoother data transmission: https://github.com/xtaci/kcp-go/releases/tag/v5.6.36.
+
+By setting `--ratelimit <value>`, you can specify the maximum outgoing speed (in bytes per second, including FEC packets) for a single KCP connection. Set the value to `0` to disable the limit. Enabling rate limiting improves connection stability at high speeds. (Default: 0)
+
+This parameter is also useful **for limiting upload speed** on asymmetric networks.
 
 #### Forward Error Correction
 
