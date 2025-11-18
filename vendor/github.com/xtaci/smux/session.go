@@ -554,7 +554,11 @@ EVENT_LOOP:
 					goto EVENT_LOOP
 				}
 
-				s.notifyShaperConsumed()
+				// notify shaperLoop to accept new requests
+				if s.sq.Len() < maxShaperSize {
+					s.notifyShaperConsumed()
+				}
+
 				buf[0] = request.frame.ver
 				buf[1] = request.frame.cmd
 				binary.LittleEndian.PutUint16(buf[2:], uint16(len(request.frame.data)))
