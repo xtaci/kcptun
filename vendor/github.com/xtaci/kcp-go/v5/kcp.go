@@ -260,14 +260,14 @@ func NewKCP(conv uint32, output output_callback) *KCP {
 
 // newSegment creates a KCP segment
 func (kcp *KCP) newSegment(size int) (seg segment) {
-	seg.data = xmitBuf.Get().([]byte)[:size]
+	seg.data = defaultBufferPool.Get()[:size]
 	return
 }
 
 // recycleSegment recycles a KCP segment
 func (kcp *KCP) recycleSegment(seg *segment) {
 	if seg.data != nil {
-		xmitBuf.Put(seg.data)
+		defaultBufferPool.Put(seg.data)
 		seg.data = nil
 	}
 }
@@ -531,7 +531,7 @@ func (kcp *KCP) parse_data(newseg segment) bool {
 	repeat := false
 	if !kcp.rcv_buf.Has(sn) {
 		// replicate the content if it's new
-		dataCopy := xmitBuf.Get().([]byte)[:len(newseg.data)]
+		dataCopy := defaultBufferPool.Get()[:len(newseg.data)]
 		copy(dataCopy, newseg.data)
 		newseg.data = dataCopy
 

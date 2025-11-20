@@ -101,15 +101,7 @@ func (timeoutError) Error() string   { return "timeout" }
 func (timeoutError) Timeout() bool   { return true }
 func (timeoutError) Temporary() bool { return true }
 
-// a system-wide packet buffer shared among sending, receiving and FEC
-// to mitigate high-frequency memory allocation for packets, bytes from xmitBuf
-// is aligned to 64bit
-var xmitBuf sync.Pool
-
 func init() {
-	xmitBuf.New = func() interface{} {
-		return make([]byte, mtuLimit)
-	}
 }
 
 type (
@@ -231,7 +223,7 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 		// A basic check for the minimum packet size
 		if size >= IKCP_OVERHEAD {
 			// make a copy
-			bts := xmitBuf.Get().([]byte)[:size+sess.headerSize]
+			bts := defaultBufferPool.Get()[:size+sess.headerSize]
 			// copy the data to a new buffer, and reserve header space
 			copy(bts[sess.headerSize:], buf)
 
@@ -673,7 +665,7 @@ func (s *UDPSession) postProcess() {
 
 			// dup copies for testing if set
 			for i := 0; i < s.dup; i++ {
-				bts := xmitBuf.Get().([]byte)[:len(buf)]
+				bts := defaultBufferPool.Get()[:len(buf)]
 				copy(bts, buf)
 				msg.Buffers = [][]byte{bts}
 				bytesToSend += len(bts)
@@ -682,7 +674,7 @@ func (s *UDPSession) postProcess() {
 
 			// parity
 			for k := range ecc {
-				bts := xmitBuf.Get().([]byte)[:len(ecc[k])]
+				bts := defaultBufferPool.Get()[:len(ecc[k])]
 				copy(bts, ecc[k])
 				msg.Buffers = [][]byte{bts}
 				bytesToSend += len(bts)
@@ -700,7 +692,7 @@ func (s *UDPSession) postProcess() {
 				s.tx(txqueue)
 				// recycle
 				for k := range txqueue {
-					xmitBuf.Put(txqueue[k].Buffers[0])
+					defaultBufferPool.Put(txqueue[k].Buffers[0])
 					txqueue[k].Buffers = nil
 				}
 				txqueue = txqueue[:0]
@@ -847,7 +839,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 					}
 				}
 				// recycle the buffer
-				xmitBuf.Put(r)
+				defaultBufferPool.Put(r)
 			}
 
 			// to notify the readers to receive the data if there's any

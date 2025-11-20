@@ -217,7 +217,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 	}
 
 	// insert the packet into the shard heap
-	pkt := fecPacket(xmitBuf.Get().([]byte)[:len(in)])
+	pkt := fecPacket(defaultBufferPool.Get()[:len(in)])
 	copy(pkt, in)
 	shard.Push(pkt)
 
@@ -260,7 +260,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 					clear(shards[k][dlen:])
 				} else if k < dec.dataShards {
 					// prepare memory for the data recovery
-					shards[k] = xmitBuf.Get().([]byte)[:0]
+					shards[k] = defaultBufferPool.Get()[:0]
 				}
 			}
 
