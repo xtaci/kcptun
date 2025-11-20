@@ -9,7 +9,7 @@ require (
 	github.com/xtaci/qpp v1.1.18
 	github.com/xtaci/smux v1.5.39
 	github.com/xtaci/tcpraw v1.2.31
-	golang.org/x/crypto v0.44.0
+	golang.org/x/crypto v0.45.0
 )
 
 require (
