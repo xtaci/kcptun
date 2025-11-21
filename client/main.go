@@ -533,7 +533,7 @@ func main() {
 
 // handleClient aggregates connection p1 on mux
 func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool, closeWait int) {
-	logln := func(v ...interface{}) {
+	logln := func(v ...any) {
 		if !quiet {
 			log.Println(v...)
 		}

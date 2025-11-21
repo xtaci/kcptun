@@ -523,7 +523,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 
 // handleClient pipes two streams
 func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool, closeWait int) {
-	logln := func(v ...interface{}) {
+	logln := func(v ...any) {
 		if !quiet {
 			log.Println(v...)
 		}
