@@ -188,7 +188,7 @@ func main() {
 			Usage: "the overall de-mux buffer in bytes",
 		},
 		cli.IntFlag{
-			Name:  "smuxframesize",
+			Name:  "framesize",
 			Value: 8192,
 			Usage: "smux max frame size",
 		},
@@ -262,7 +262,7 @@ func main() {
 		config.NoCongestion = c.Int("nc")
 		config.SockBuf = c.Int("sockbuf")
 		config.SmuxBuf = c.Int("smuxbuf")
-		config.SmuxFrameSize = c.Int("smuxframesize")
+		config.FrameSize = c.Int("framesize")
 		config.StreamBuf = c.Int("streambuf")
 		config.SmuxVer = c.Int("smuxver")
 		config.KeepAlive = c.Int("keepalive")
@@ -316,7 +316,7 @@ func main() {
 		log.Println("dscp:", config.DSCP)
 		log.Println("sockbuf:", config.SockBuf)
 		log.Println("smuxbuf:", config.SmuxBuf)
-		log.Println("smuxframesize:", config.SmuxFrameSize)
+		log.Println("framesize:", config.FrameSize)
 		log.Println("streambuf:", config.StreamBuf)
 		log.Println("keepalive:", config.KeepAlive)
 		log.Println("snmplog:", config.SnmpLog)
@@ -477,7 +477,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	smuxConfig.Version = config.SmuxVer
 	smuxConfig.MaxReceiveBuffer = config.SmuxBuf
 	smuxConfig.MaxStreamBuffer = config.StreamBuf
-	smuxConfig.MaxFrameSize = config.SmuxFrameSize
+	smuxConfig.MaxFrameSize = config.FrameSize
 	smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
 
 	mux, err := smux.Server(conn, smuxConfig)
