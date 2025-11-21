@@ -189,7 +189,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "smuxver",
-			Value: 1,
+			Value: 2,
 			Usage: "specify smux version, available 1,2",
 		},
 		cli.IntFlag{
