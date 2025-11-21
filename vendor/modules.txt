@@ -38,14 +38,14 @@ github.com/tjfoc/gmsm/sm4
 # github.com/urfave/cli v1.22.17
 ## explicit; go 1.11
 github.com/urfave/cli
-# github.com/xtaci/kcp-go/v5 v5.6.37
+# github.com/xtaci/kcp-go/v5 v5.6.38
 ## explicit; go 1.24.0
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.18
 ## explicit; go 1.22.3
 github.com/xtaci/qpp
-# github.com/xtaci/smux v1.5.39
-## explicit; go 1.13
+# github.com/xtaci/smux v1.5.40
+## explicit; go 1.18
 github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.31
 ## explicit; go 1.13

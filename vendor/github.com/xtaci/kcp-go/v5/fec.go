@@ -84,12 +84,12 @@ func (h *shardHeap) Less(i, j int) bool {
 }
 
 func (h *shardHeap) Swap(i, j int) { h.elements[i], h.elements[j] = h.elements[j], h.elements[i] }
-func (h *shardHeap) Push(x interface{}) {
+func (h *shardHeap) Push(x any) {
 	h.elements = append(h.elements, x.(fecPacket))
 	h.marks[x.(fecPacket).seqid()] = struct{}{}
 }
 
-func (h *shardHeap) Pop() interface{} {
+func (h *shardHeap) Pop() any {
 	n := len(h.elements)
 	x := h.elements[n-1]
 	h.elements = h.elements[0 : n-1]

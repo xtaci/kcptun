@@ -180,12 +180,12 @@ func (h *segmentHeap) Less(i, j int) bool {
 }
 
 func (h *segmentHeap) Swap(i, j int) { h.segments[i], h.segments[j] = h.segments[j], h.segments[i] }
-func (h *segmentHeap) Push(x interface{}) {
+func (h *segmentHeap) Push(x any) {
 	h.segments = append(h.segments, x.(segment))
 	h.marks[x.(segment).sn] = struct{}{}
 }
 
-func (h *segmentHeap) Pop() interface{} {
+func (h *segmentHeap) Pop() any {
 	n := len(h.segments)
 	x := h.segments[n-1]
 	h.segments = h.segments[0 : n-1]

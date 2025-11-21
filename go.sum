@@ -68,12 +68,16 @@ github.com/xtaci/kcp-go/v5 v5.6.36 h1:Rus+5N1EYd7utJHqEvePhcNx/K2/wgTh2SRC92ex8r
 github.com/xtaci/kcp-go/v5 v5.6.36/go.mod h1:4kGdSJy7bNEBsekC5Q7O4jCpU/uKXqLled1cMsn9nkk=
 github.com/xtaci/kcp-go/v5 v5.6.37 h1:FTD1xUjcg6cOlust4uYnVfukN7kMxFPvvV9j8dhWonw=
 github.com/xtaci/kcp-go/v5 v5.6.37/go.mod h1:4kGdSJy7bNEBsekC5Q7O4jCpU/uKXqLled1cMsn9nkk=
+github.com/xtaci/kcp-go/v5 v5.6.38 h1:a0zF730xx7hrESqMqKCYYzjVIhUWPhh0088oYUxv4GY=
+github.com/xtaci/kcp-go/v5 v5.6.38/go.mod h1:h7RBeE7Vm9xGLE0gK1JITz09q9rO2oFqDyciQhqlgfg=
 github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae h1:J0GxkO96kL4WF+AIT3M4mfUVinOCPgf2uUWYFUzN0sM=
 github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae/go.mod h1:gXtu8J62kEgmN++bm9BVICuT/e8yiLI2KFobd/TRFsE=
 github.com/xtaci/qpp v1.1.18 h1:FyULigD8/msXdxj9AjOFQg3/Z/tGz4574n21shZ6SZo=
 github.com/xtaci/qpp v1.1.18/go.mod h1:DI0dcoZ+qu4ze5C0hkt8grLfTVqBiZ3hXTimGyg5TTI=
 github.com/xtaci/smux v1.5.39 h1:cXfF+86x9HA9p7pCccAnemqmFwy/Y/jjZY10P6RYQB4=
 github.com/xtaci/smux v1.5.39/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
+github.com/xtaci/smux v1.5.40 h1:ErSfcUten1x+s+JcZdoDYPrdGXMPvFbRBjRPz3W9wBs=
+github.com/xtaci/smux v1.5.40/go.mod h1:IGQ9QYrBphmb/4aTnLEcJby0TNr3NV+OslIOMrX825Q=
 github.com/xtaci/tcpraw v1.2.31 h1:i9mXzejnGJdGi0DpVKUn19Hq202/sHOJt0kObEwuE/U=
 github.com/xtaci/tcpraw v1.2.31/go.mod h1:T1blYD2EDkLneb+HtxddnzX38SoC9BG537EhkXeaT2k=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
