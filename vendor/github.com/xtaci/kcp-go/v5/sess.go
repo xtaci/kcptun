@@ -607,6 +607,11 @@ func (s *UDPSession) SetRateLimit(bytesPerSecond uint32) {
 	s.rateLimiter.Store(limiter)
 }
 
+// SetLogger configures the kcp trace logger
+func (s *UDPSession) SetLogger(mask KCPLogType, logger logoutput_callback) {
+	s.kcp.SetLogger(mask, logger)
+}
+
 // Control applys a procedure to the underly socket fd.
 // CAUTION: BE VERY CAREFUL TO USE THIS FUNCTION, YOU MAY BREAK THE PROTOCOL.
 func (s *UDPSession) Control(f func(conn net.PacketConn) error) error {
@@ -690,6 +695,7 @@ func (s *UDPSession) postProcess() {
 					}
 				}
 				s.tx(txqueue)
+				s.kcp.debugLog(IKCP_LOG_OUTPUT, "conv", s.kcp.conv, "datalen", bytesToSend)
 				// recycle
 				for k := range txqueue {
 					defaultBufferPool.Put(txqueue[k].Buffers[0])
@@ -823,7 +829,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 			// FEC decoding
 			recovers := s.fecDecoder.decode(f)
 			if f.flag() == typeData {
-				if ret := s.kcp.Input(data[fecHeaderSizePlus2:], true, s.ackNoDelay); ret != 0 {
+				if ret := s.kcp.Input(data[fecHeaderSizePlus2:], IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
 					kcpInErrors++
 				}
 			}
@@ -833,7 +839,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 				if len(r) >= 2 { // must be larger than 2bytes
 					sz := binary.LittleEndian.Uint16(r)
 					if int(sz) <= len(r) && sz >= 2 {
-						if ret := s.kcp.Input(r[2:sz], false, s.ackNoDelay); ret != 0 {
+						if ret := s.kcp.Input(r[2:sz], IKCP_PACKET_FEC, s.ackNoDelay); ret != 0 {
 							kcpInErrors++
 						}
 					}
@@ -859,7 +865,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 		}
 	} else {
 		s.mu.Lock()
-		if ret := s.kcp.Input(data, true, s.ackNoDelay); ret != 0 {
+		if ret := s.kcp.Input(data, IKCP_PACKET_REGULAR, s.ackNoDelay); ret != 0 {
 			kcpInErrors++
 		}
 		if n := s.kcp.PeekSize(); n > 0 {

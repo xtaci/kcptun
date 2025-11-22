@@ -54,11 +54,41 @@ const (
 	IKCP_SN_OFFSET   = 12
 )
 
+type PacketType int8
+
+const (
+	IKCP_PACKET_REGULAR PacketType = iota
+	IKCP_PACKET_FEC
+)
+
 type FlushType int8
 
 const (
 	IFLUSH_ACKONLY FlushType = 1 << iota
 	IFLUSH_FULL
+)
+
+type KCPLogType int32
+
+const (
+	IKCP_LOG_OUTPUT KCPLogType = 1 << iota
+	IKCP_LOG_INPUT
+	IKCP_LOG_SEND
+	IKCP_LOG_RECV
+	IKCP_LOG_OUT_ACK
+	IKCP_LOG_OUT_PUSH
+	IKCP_LOG_OUT_WASK
+	IKCP_LOG_OUT_WINS
+	IKCP_LOG_IN_ACK
+	IKCP_LOG_IN_PUSH
+	IKCP_LOG_IN_WASK
+	IKCP_LOG_IN_WINS
+)
+
+const (
+	IKCP_LOG_OUTPUT_ALL = IKCP_LOG_OUTPUT | IKCP_LOG_OUT_ACK | IKCP_LOG_OUT_PUSH | IKCP_LOG_OUT_WASK | IKCP_LOG_OUT_WINS
+	IKCP_LOG_INPUT_ALL  = IKCP_LOG_INPUT | IKCP_LOG_IN_ACK | IKCP_LOG_IN_PUSH | IKCP_LOG_IN_WASK | IKCP_LOG_IN_WINS
+	IKCP_LOG_ALL        = IKCP_LOG_OUTPUT_ALL | IKCP_LOG_INPUT_ALL | IKCP_LOG_SEND | IKCP_LOG_RECV
 )
 
 // monotonic reference time point
@@ -69,6 +99,9 @@ func currentMs() uint32 { return uint32(time.Since(refTime) / time.Millisecond) 
 
 // output_callback is a prototype which ought capture conn and call conn.Write
 type output_callback func(buf []byte, size int)
+
+// logoutput_callback is a prototype which logging kcp trace output
+type logoutput_callback func(msg string, args ...any)
 
 /* encode 8 bits unsigned int */
 func ikcp_encode8u(p []byte, c byte) []byte {
@@ -214,6 +247,8 @@ type KCP struct {
 	fastresend     int32
 	nocwnd, stream int32
 
+	logmask KCPLogType
+
 	snd_queue *RingBuffer[segment]
 	rcv_queue *RingBuffer[segment]
 	snd_buf   *RingBuffer[segment]
@@ -223,6 +258,8 @@ type KCP struct {
 
 	buffer []byte
 	output output_callback
+
+	log logoutput_callback
 }
 
 type ackItem struct {
@@ -330,6 +367,7 @@ func (kcp *KCP) Recv(buffer []byte) (n int) {
 		n += len(seg.data)
 		kcp.recycleSegment(&seg)
 		if seg.frg == 0 {
+			kcp.debugLog(IKCP_LOG_RECV, "stream", kcp.stream, "conv", kcp.conv, "sn", seg.sn, "ts", seg.ts, "datalen", n)
 			break
 		}
 	}
@@ -362,6 +400,8 @@ func (kcp *KCP) Send(buffer []byte) int {
 	if len(buffer) == 0 {
 		return -1
 	}
+
+	kcp.debugLog(IKCP_LOG_SEND, "stream", kcp.stream, "conv", kcp.conv, "datalen", len(buffer))
 
 	// append to previous segment in streaming mode (if possible)
 	if kcp.stream != 0 {
@@ -561,7 +601,7 @@ func (kcp *KCP) parse_data(newseg segment) bool {
 // codecs.
 //
 // 'ackNoDelay' will trigger immediate ACK, but surely it will not be efficient in bandwidth
-func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
+func (kcp *KCP) Input(data []byte, pktType PacketType, ackNoDelay bool) int {
 	snd_una := kcp.snd_una
 	if len(data) < IKCP_OVERHEAD {
 		return -1
@@ -593,6 +633,9 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 		data = ikcp_decode32u(data, &sn)
 		data = ikcp_decode32u(data, &una)
 		data = ikcp_decode32u(data, &length)
+
+		kcp.debugLog(IKCP_LOG_INPUT, "conv", conv, "cmd", cmd, "frg", frg, "wnd", wnd, "ts", ts, "sn", sn, "una", una, "len", length, "datalen", len(data))
+
 		if len(data) < int(length) {
 			return -2
 		}
@@ -603,7 +646,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 		}
 
 		// only trust window updates from regular packets. i.e: latest update
-		if regular {
+		if pktType == IKCP_PACKET_REGULAR {
 			kcp.rmt_wnd = uint32(wnd)
 		}
 		if kcp.parse_una(una) > 0 {
@@ -612,6 +655,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 		kcp.shrink_buf()
 
 		if cmd == IKCP_CMD_ACK {
+			kcp.debugLog(IKCP_LOG_IN_ACK, "conv", conv, "sn", sn, "una", una, "ts", ts, "rto", kcp.rx_rto)
 			kcp.parse_ack(sn)
 			flushSegments = flushSegments || kcp.parse_fastack(sn, ts)
 			flag |= 1
@@ -633,15 +677,17 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 					repeat = kcp.parse_data(seg)
 				}
 			}
-			if regular && repeat {
+			if pktType == IKCP_PACKET_REGULAR && repeat {
 				atomic.AddUint64(&DefaultSnmp.RepeatSegs, 1)
 			}
+			kcp.debugLog(IKCP_LOG_IN_PUSH, "conv", conv, "sn", sn, "una", una, "ts", ts, "packettype", pktType, "repeat", repeat)
 		} else if cmd == IKCP_CMD_WASK {
 			// ready to send back IKCP_CMD_WINS in Ikcp_flush
 			// tell remote my window size
 			kcp.probe |= IKCP_ASK_TELL
+			kcp.debugLog(IKCP_LOG_IN_WASK, "conv", conv, "wnd", wnd, "ts", ts)
 		} else if cmd == IKCP_CMD_WINS {
-			// do nothing
+			kcp.debugLog(IKCP_LOG_IN_WINS, "conv", conv, "wnd", wnd, "ts", ts)
 		} else {
 			return -3
 		}
@@ -653,7 +699,7 @@ func (kcp *KCP) Input(data []byte, regular, ackNoDelay bool) int {
 
 	// update rtt with the latest ts
 	// ignore the FEC packet
-	if flag != 0 && regular {
+	if flag != 0 && pktType == IKCP_PACKET_REGULAR {
 		current := currentMs()
 		if _itimediff(current, latest) >= 0 {
 			kcp.update_ack(_itimediff(current, latest))
@@ -760,6 +806,7 @@ func (kcp *KCP) flush(flushType FlushType) uint32 {
 			if _itimediff(ack.sn, kcp.rcv_nxt) >= 0 || len(kcp.acklist)-1 == i {
 				seg.sn, seg.ts = ack.sn, ack.ts
 				ptr = seg.encode(ptr)
+				kcp.debugLog(IKCP_LOG_OUT_ACK, "conv", seg.conv, "sn", seg.sn, "una", seg.una, "ts", seg.ts)
 			}
 		}
 		kcp.acklist = kcp.acklist[0:0]
@@ -796,6 +843,7 @@ func (kcp *KCP) flush(flushType FlushType) uint32 {
 		seg.cmd = IKCP_CMD_WASK
 		makeSpace(IKCP_OVERHEAD)
 		ptr = seg.encode(ptr)
+		kcp.debugLog(IKCP_LOG_OUT_WASK, "conv", seg.conv, "wnd", seg.wnd, "ts", seg.ts)
 	}
 
 	// flush window probing commands
@@ -803,6 +851,7 @@ func (kcp *KCP) flush(flushType FlushType) uint32 {
 		seg.cmd = IKCP_CMD_WINS
 		makeSpace(IKCP_OVERHEAD)
 		ptr = seg.encode(ptr)
+		kcp.debugLog(IKCP_LOG_OUT_WINS, "conv", seg.conv, "wnd", seg.wnd, "ts", seg.ts)
 	}
 
 	kcp.probe = 0
@@ -894,6 +943,8 @@ func (kcp *KCP) flush(flushType FlushType) uint32 {
 				ptr = segment.encode(ptr)
 				copy(ptr, segment.data)
 				ptr = ptr[len(segment.data):]
+
+				kcp.debugLog(IKCP_LOG_OUT_PUSH, "conv", seg.conv, "sn", seg.sn, "una", seg.una, "ts", seg.ts)
 
 				if segment.xmit >= kcp.dead_link {
 					kcp.state = 0xFFFFFFFF
@@ -1101,4 +1152,14 @@ func (kcp *KCP) WndSize(sndwnd, rcvwnd int) int {
 // WaitSnd gets how many packet is waiting to be sent
 func (kcp *KCP) WaitSnd() int {
 	return kcp.snd_buf.Len() + kcp.snd_queue.Len()
+}
+
+// SetLogger configures the trace logger
+func (kcp *KCP) SetLogger(mask KCPLogType, logger logoutput_callback) {
+	if logger == nil {
+		kcp.logmask = 0
+		return
+	}
+	kcp.logmask = mask
+	kcp.log = logger
 }

@@ -70,6 +70,10 @@ github.com/xtaci/kcp-go/v5 v5.6.37 h1:FTD1xUjcg6cOlust4uYnVfukN7kMxFPvvV9j8dhWon
 github.com/xtaci/kcp-go/v5 v5.6.37/go.mod h1:4kGdSJy7bNEBsekC5Q7O4jCpU/uKXqLled1cMsn9nkk=
 github.com/xtaci/kcp-go/v5 v5.6.38 h1:a0zF730xx7hrESqMqKCYYzjVIhUWPhh0088oYUxv4GY=
 github.com/xtaci/kcp-go/v5 v5.6.38/go.mod h1:h7RBeE7Vm9xGLE0gK1JITz09q9rO2oFqDyciQhqlgfg=
+github.com/xtaci/kcp-go/v5 v5.6.39 h1:S7ho2zuJUD6EyxAO1EkDVR6pkI28raMSm3iJoHYfDgE=
+github.com/xtaci/kcp-go/v5 v5.6.39/go.mod h1:h7RBeE7Vm9xGLE0gK1JITz09q9rO2oFqDyciQhqlgfg=
+github.com/xtaci/kcp-go/v5 v5.6.40 h1:0zaO+ws+dXV3VpUfL7f8z0s5J075RFtjXYu9hK6UVUQ=
+github.com/xtaci/kcp-go/v5 v5.6.40/go.mod h1:h7RBeE7Vm9xGLE0gK1JITz09q9rO2oFqDyciQhqlgfg=
 github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae h1:J0GxkO96kL4WF+AIT3M4mfUVinOCPgf2uUWYFUzN0sM=
 github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae/go.mod h1:gXtu8J62kEgmN++bm9BVICuT/e8yiLI2KFobd/TRFsE=
 github.com/xtaci/qpp v1.1.18 h1:FyULigD8/msXdxj9AjOFQg3/Z/tGz4574n21shZ6SZo=
