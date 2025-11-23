@@ -551,6 +551,7 @@ EVENT_LOOP:
 			for {
 				request, ok := s.sq.Pop()
 				if !ok {
+					s.notifyShaperConsumed()
 					goto EVENT_LOOP
 				}
 
