@@ -552,6 +552,7 @@ EVENT_LOOP:
 			for {
 				request, ok := s.sq.Pop()
 				if !ok {
+					// notify shaperLoop to accept new requests
 					s.notifyShaperConsumed()
 					goto EVENT_LOOP
 				}
@@ -590,9 +591,6 @@ EVENT_LOOP:
 					return
 				}
 			}
-
-			// notify shaperLoop to accept new requests
-			s.notifyShaperConsumed()
 		}
 	}
 }
