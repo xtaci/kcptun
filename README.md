@@ -135,8 +135,8 @@ kcptun uses **Reed-Solomon Codes** to recover lost packets, which requires subst
 
 #### Usage
 
-```
-> ./client_freebsd_amd64 -h
+```bash 
+$ ./client_freebsd_amd64 -h
 NAME:
    kcptun - client(with SMUX)
 
@@ -185,7 +185,7 @@ GLOBAL OPTIONS:
    --help, -h                       show help
    --version, -v                    print the version
 
-> ./server_freebsd_amd64 -h
+$ ./server_freebsd_amd64 -h
 NAME:
    kcptun - server(with SMUX)
 
