@@ -123,7 +123,79 @@ KCP Header
 2. [kcptun client](https://github.com/xtaci/kcptun/blob/master/client/main.go)
 3. [kcptun server](https://github.com/xtaci/kcptun/blob/master/server/main.go)
 
-## Benchmark
+## Performance
+```
+2025/11/26 11:12:51 beginning tests, encryption:salsa20, fec:10/3
+goos: linux
+goarch: amd64
+pkg: github.com/xtaci/kcp-go/v5
+cpu: AMD Ryzen 9 5950X 16-Core Processor
+BenchmarkSM4
+BenchmarkSM4-32                            56077             21672 ns/op         138.43 MB/s           0 B/op          0 allocs/op
+BenchmarkAES128
+BenchmarkAES128-32                        525854              2228 ns/op        1346.69 MB/s           0 B/op          0 allocs/op
+BenchmarkAES192
+BenchmarkAES192-32                        473692              2429 ns/op        1234.95 MB/s           0 B/op          0 allocs/op
+BenchmarkAES256
+BenchmarkAES256-32                        427497              2725 ns/op        1101.06 MB/s           0 B/op          0 allocs/op
+BenchmarkTEA
+BenchmarkTEA-32                           149976              8085 ns/op         371.06 MB/s           0 B/op          0 allocs/op
+BenchmarkXOR
+BenchmarkXOR-32                         12333190                92.35 ns/op     32485.16 MB/s          0 B/op          0 allocs/op
+BenchmarkBlowfish
+BenchmarkBlowfish-32                       70762             16983 ns/op         176.65 MB/s           0 B/op          0 allocs/op
+BenchmarkNone
+BenchmarkNone-32                        47325206                24.49 ns/op     122482.39 MB/s         0 B/op          0 allocs/op
+BenchmarkCast5
+BenchmarkCast5-32                          66837             18035 ns/op         166.35 MB/s           0 B/op          0 allocs/op
+Benchmark3DES
+Benchmark3DES-32                           18402             64349 ns/op          46.62 MB/s           0 B/op          0 allocs/op
+BenchmarkTwofish
+BenchmarkTwofish-32                        56440             21380 ns/op         140.32 MB/s           0 B/op          0 allocs/op
+BenchmarkXTEA
+BenchmarkXTEA-32                           45616             26124 ns/op         114.84 MB/s           0 B/op          0 allocs/op
+BenchmarkSalsa20
+BenchmarkSalsa20-32                       525685              2199 ns/op        1363.97 MB/s           0 B/op          0 allocs/op
+BenchmarkCRC32
+BenchmarkCRC32-32                       19418395                59.05 ns/op     17341.83 MB/s
+BenchmarkCsprngSystem
+BenchmarkCsprngSystem-32                 2912889               404.3 ns/op        39.58 MB/s
+BenchmarkCsprngMD5
+BenchmarkCsprngMD5-32                   15063580                79.23 ns/op      201.95 MB/s
+BenchmarkCsprngSHA1
+BenchmarkCsprngSHA1-32                  20186407                60.04 ns/op      333.08 MB/s
+BenchmarkCsprngNonceMD5
+BenchmarkCsprngNonceMD5-32              13863704                85.11 ns/op      187.98 MB/s
+BenchmarkCsprngNonceAES128
+BenchmarkCsprngNonceAES128-32           97239751                12.56 ns/op     1274.09 MB/s
+BenchmarkFECDecode
+BenchmarkFECDecode-32                    1808791               679.1 ns/op      2208.94 MB/s        1641 B/op          3 allocs/op
+BenchmarkFECEncode
+BenchmarkFECEncode-32                    6671982               181.4 ns/op      8270.76 MB/s           2 B/op          0 allocs/op
+BenchmarkFlush
+BenchmarkFlush-32                         322982              3809 ns/op               0 B/op          0 allocs/op
+BenchmarkDebugLog
+BenchmarkDebugLog-32                    1000000000               0.2146 ns/op
+BenchmarkEchoSpeed4K
+BenchmarkEchoSpeed4K-32                    35583             32875 ns/op         124.59 MB/s       18223 B/op        148 allocs/op
+BenchmarkEchoSpeed64K
+BenchmarkEchoSpeed64K-32                    1995            510301 ns/op         128.43 MB/s      284233 B/op       2297 allocs/op
+BenchmarkEchoSpeed512K
+BenchmarkEchoSpeed512K-32                    259           4058131 ns/op         129.19 MB/s     2243058 B/op      18148 allocs/op
+BenchmarkEchoSpeed1M
+BenchmarkEchoSpeed1M-32                      145           8561996 ns/op         122.47 MB/s     4464227 B/op      36009 allocs/op
+BenchmarkSinkSpeed4K
+BenchmarkSinkSpeed4K-32                   194648             42136 ns/op          97.21 MB/s        2073 B/op         50 allocs/op
+BenchmarkSinkSpeed64K
+BenchmarkSinkSpeed64K-32                   10000            113038 ns/op         579.77 MB/s       29242 B/op        741 allocs/op
+BenchmarkSinkSpeed256K
+BenchmarkSinkSpeed256K-32                   1555            843724 ns/op         621.40 MB/s      229558 B/op       5850 allocs/op
+BenchmarkSinkSpeed1M
+BenchmarkSinkSpeed1M-32                      667           1783214 ns/op         588.03 MB/s      462691 B/op      11694 allocs/op
+PASS
+ok      github.com/xtaci/kcp-go/v5      49.978s
+```
+
 ```
 ===
 Model Name:	MacBook Pro

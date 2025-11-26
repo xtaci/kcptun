@@ -25,7 +25,7 @@ package kcp
 import "golang.org/x/net/ipv4"
 
 const (
-	batchSize = 16
+	batchSize = 256
 )
 
 // batchConn defines the interface used in batch IO
