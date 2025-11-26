@@ -381,7 +381,7 @@ RESET_TIMER:
 				// put the packets on wire immediately if the inflight window is full
 				// or if we've specified write no delay(NO merging of outgoing bytes)
 				// we don't have to wait until the periodical update() procedure uncorks.
-				s.kcp.flush(IFLUSH_FULL)
+				s.kcp.flush(IKCP_FLUSH_FULL)
 			}
 			s.mu.Unlock()
 			atomic.AddUint64(&DefaultSnmp.BytesSent, uint64(n))
@@ -430,7 +430,7 @@ func (s *UDPSession) Close() error {
 
 		// try best to send all queued messages especially the data in txqueue
 		s.mu.Lock()
-		s.kcp.flush((IFLUSH_FULL))
+		s.kcp.flush((IKCP_FLUSH_FULL))
 		s.mu.Unlock()
 
 		if s.l != nil { // belongs to listener
@@ -725,7 +725,7 @@ func (s *UDPSession) update() {
 	case <-s.die:
 	default:
 		s.mu.Lock()
-		interval := s.kcp.flush(IFLUSH_FULL)
+		interval := s.kcp.flush(IKCP_FLUSH_FULL)
 		waitsnd := s.kcp.WaitSnd()
 		if waitsnd < int(s.kcp.snd_wnd) {
 			s.notifyWriteEvent()

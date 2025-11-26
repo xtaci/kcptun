@@ -64,8 +64,8 @@ const (
 type FlushType int8
 
 const (
-	IFLUSH_ACKONLY FlushType = 1 << iota
-	IFLUSH_FULL
+	IKCP_FLUSH_ACKONLY FlushType = 1 << iota
+	IKCP_FLUSH_FULL
 )
 
 type KCPLogType int32
@@ -741,15 +741,15 @@ func (kcp *KCP) Input(data []byte, pktType PacketType, ackNoDelay bool) int {
 		// Flush immediately. In previous implementations, we only
 		// send out fastacks when interval timeouts, so the resending packets
 		// have to wait until then. Now, we try to flush as soon as we can.
-		kcp.flush(IFLUSH_FULL)
+		kcp.flush(IKCP_FLUSH_FULL)
 	} else if len(kcp.acklist) >= int(kcp.mtu/IKCP_OVERHEAD) { // clocking
 		// This serves as the clock for low-latency network.(i.e. the latency is less than the interval.)
 		// If the other end is waiting for confirmations, it has to want until the interval timeouts then
 		// the flush() is triggered to send out the una & acks. In low-latency network, the interval time is too long to wait,
 		// so acks have to be sent out immediately when there are too many.
-		kcp.flush(IFLUSH_ACKONLY)
+		kcp.flush(IKCP_FLUSH_ACKONLY)
 	} else if ackNoDelay && len(kcp.acklist) > 0 { // testing(xtaci): ack immediately if acNoDelay is set
-		kcp.flush(IFLUSH_ACKONLY)
+		kcp.flush(IKCP_FLUSH_ACKONLY)
 	}
 	return 0
 }
@@ -799,7 +799,7 @@ func (kcp *KCP) flush(flushType FlushType) uint32 {
 	/*
 	 * flush acknowledges
 	 */
-	if flushType == IFLUSH_ACKONLY || flushType == IFLUSH_FULL {
+	if flushType == IKCP_FLUSH_ACKONLY || flushType == IKCP_FLUSH_FULL {
 		for i, ack := range kcp.acklist {
 			makeSpace(IKCP_OVERHEAD)
 			// filter jitters caused by bufferbloat
@@ -895,7 +895,7 @@ func (kcp *KCP) flush(flushType FlushType) uint32 {
 	var change, lostSegs, fastRetransSegs, earlyRetransSegs uint64
 	minrto := int32(kcp.interval)
 
-	if flushType == IFLUSH_FULL {
+	if flushType == IKCP_FLUSH_FULL {
 		for segment := range kcp.snd_buf.ForEach {
 			needsend := false
 			if segment.acked == 1 {
@@ -1034,7 +1034,7 @@ func (kcp *KCP) Update() {
 		if _itimediff(current, kcp.ts_flush) >= 0 {
 			kcp.ts_flush = current + kcp.interval
 		}
-		kcp.flush(IFLUSH_FULL)
+		kcp.flush(IKCP_FLUSH_FULL)
 	}
 }
 
