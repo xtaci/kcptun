@@ -42,7 +42,7 @@ Increase the number of open files on your server, as:
 
 `ulimit -n 65535`, or write it in `~/.bashrc`.
 
-Suggested `sysctl.conf` parameters for better handling of UDP packets:
+Suggested [sysctl.conf](https://github.com/xtaci/kcptun/blob/master/dist/linux/sysctl_linux) under linux parameters for better handling of UDP packets:
 
 ```
 net.core.rmem_max=26214400 // BDP - bandwidth delay product
@@ -51,6 +51,7 @@ net.core.wmem_max=26214400
 net.core.wmem_default=26214400
 net.core.netdev_max_backlog=2048 // proportional to -rcvwnd
 ```
+FreeBSD related sysctl could be found here: https://github.com/xtaci/kcptun/blob/master/dist/freebsd/sysctl_freebsd
 
 You can also increase the per-socket buffer by adding parameter(default 4MB):
 ```
