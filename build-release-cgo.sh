@@ -1,139 +1,183 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# kcptun build-release.sh - Final Corrected Version (CGO ENABLED)
 
-BUILD_DIR=$(dirname "$0")/build
-mkdir -p $BUILD_DIR
-cd $BUILD_DIR
+# Exit immediately if a command exits with a non-zero status.
+set -e
 
-sum="sha1sum"
+# --- Configuration ---
+# Target platforms for cross-compilation. Format: OS/ARCH/GOARM/GOMIPS
+# All original 15 targets are preserved, even though CGO=1 makes complex 
+# cross-compilation (like MIPS/ARMv5) dependent on pre-configured C toolchains.
+TARGETS=(
+    "darwin/amd64//" 
+    "darwin/arm64//"
+    
+    "freebsd/amd64//"
+    
+    "linux/386//" 
+    "linux/amd64//" 
+    "linux/arm/5/"          # ARMv5
+    "linux/arm/6/"          # ARMv6
+    "linux/arm/7/"          # ARMv7
+    "linux/arm64//" 
+    "linux/loong64//"
+    "linux/mips//softfloat" 
+    "linux/mipsle//softfloat" 
+    
+    "windows/386//" 
+    "windows/amd64//" 
+    "windows/arm64//"
+)
 
-if [ "$GO111MODULE" != "on" ]; then
-	echo "GO111MODULE is off"
+# Full Go package import paths
+CLIENT_SRC="github.com/xtaci/kcptun/client"
+SERVER_SRC="github.com/xtaci/kcptun/server"
+
+# Build output directory
+BUILD_DIR="$(pwd)/build"
+
+# Version based on UTC date and linker flags
+VERSION=$(date -u +%Y%m%d)
+LDFLAGS="-X main.VERSION=${VERSION} -s -w"
+
+# --- Tool Check ---
+# Determine the SHA checksum utility (sha1sum or shasum)
+if command -v sha1sum &> /dev/null; then
+    SUM_TOOL="sha1sum"
+elif command -v shasum &> /dev/null; then
+    SUM_TOOL="shasum"
 else
-	echo "GO111MODULE is on"
-fi 
-
-echo "Prerequisites for cross-compiling were written in build-release.sh"
-
-# required library for cross-compiling
-# sudo apt-get install -y automake autogen build-essential ca-certificates   gcc-5-arm-linux-gnueabi g++-5-arm-linux-gnueabi libc6-dev-armel-cross   gcc-5-arm-linux-gnueabihf g++-5-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-5-aarch64-linux-gnu g++-5-aarch64-linux-gnu libc6-dev-arm64-cross  gcc-5-mips-linux-gnu g++-5-mips-linux-gnu libc6-dev-mips-cross gcc-5-mipsel-linux-gnu g++-5-mipsel-linux-gnu libc6-dev-mipsel-cross  gcc-5-mips64-linux-gnuabi64 g++-5-mips64-linux-gnuabi64 libc6-dev-mips64-cross  gcc-5-mips64el-linux-gnuabi64 g++-5-mips64el-linux-gnuabi64 libc6-dev-mips64el-cross  gcc-5-multilib g++-5-multilib gcc-mingw-w64 g++-mingw-w64 clang llvm-dev   libtool libxml2-dev uuid-dev libssl-dev swig openjdk-8-jdk pkg-config patch  make xz-utils cpio wget zip unzip p7zip git mercurial bzr texinfo help2man --no-install-recommends
-
-# if error message:
-#     /usr/include/linux/errno.h:1:23: fatal error: asm/errno.h: No such file or directory
-# try:
-#    ln -s /usr/include/asm-generic /usr/include/asm
-
-if ! hash sha1sum 2>/dev/null; then
-	if ! hash shasum 2>/dev/null; then
-		echo "I can't see 'sha1sum' or 'shasum'"
-		echo "Please install one of them!"
-		exit
-	fi
-	sum="shasum"
+    echo "Error: Neither 'sha1sum' nor 'shasum' tool found."
+    exit 1
 fi
 
-UPX=false
-if hash upx 2>/dev/null; then
-	UPX=true
+# Check for UPX compressor availability
+if command -v upx &> /dev/null; then
+    USE_UPX=true
+    echo "Info: UPX found. Binaries will be compressed."
+else
+    USE_UPX=false
+    echo "Info: UPX not found. Skipping compression step."
 fi
 
-VERSION=`date -u +%Y%m%d`
-LDFLAGS="-X main.VERSION=$VERSION -s -w"
-LDFLAGS_LINUX='-X main.VERSION='$VERSION' -s -w -linkmode "external" -extldflags "-static"'
-LDFLAGS_LINUX32='-X main.VERSION='$VERSION' -s -w -linkmode "external" -extldflags "-static -m32 -L/usr/lib32"'
-echo "-ldflag for linux/amd64:" $LDFLAGS_LINUX
-echo "-ldflag for linux/386:" $LDFLAGS_LINUX32
-echo "-ldflag for other:" $LDFLAGS
+# Enable Go module mode
+export GO111MODULE=on
 
-echo "=== Building ==="
+# --- Core Functions ---
 
-# 386
-OSES=(linux windows)
-for os in ${OSES[@]}; do
-	suffix=""
-	if [ "$os" == "windows" ]
-	then
-		suffix=".exe"
-	fi
+# Determines the unique file suffix (e.g., 'amd64', 'arm5').
+get_suffix() {
+    local arch=$1
+    local goarm=$2
+    
+    local suffix="${arch}"
+    if [ ! -z "${goarm}" ]; then
+        suffix="${arch}${goarm}" # Concatenate arch and GOARM (e.g., arm5)
+    fi
+    echo "${suffix}"
+}
 
-	if [ "$os" == "linux" ];then
-		CC=gcc-5 CGO_ENABLED=1 GOOS=$os GOARCH=386 CGO_CFLAGS="-m32 -L/usr/lib32" CGO_CXXFLAGS="-m32 -L/usr/lib32" go build -ldflags "$LDFLAGS_LINUX32" -o client_${os}_386${suffix} github.com/xtaci/kcptun/client
-		CC=gcc-5 CGO_ENABLED=1 GOOS=$os GOARCH=386 CGO_CFLAGS="-m32 -L/usr/lib32" CGO_CXXFLAGS="-m32 -L/usr/lib32" go build -ldflags "$LDFLAGS_LINUX32" -o server_${os}_386${suffix} github.com/xtaci/kcptun/server
-	else 
-		CGO_ENABLED=0 GOOS=$os GOARCH=386 go build -ldflags "$LDFLAGS" -o client_${os}_386${suffix} github.com/xtaci/kcptun/client
-		CGO_ENABLED=0 GOOS=$os GOARCH=386 go build -ldflags "$LDFLAGS" -o server_${os}_386${suffix} github.com/xtaci/kcptun/server
-	fi
+# Compiles binaries for the given target, applies UPX.
+build_target() {
+    local os=$1
+    local arch=$2
+    local goarm=$3
+    local gomips=$4
+    
+    # Add .exe extension for Windows targets
+    local ext=""
+    if [ "${os}" == "windows" ]; then
+        ext=".exe"
+    fi
 
-	if $UPX; then upx -9 client_${os}_386${suffix} server_${os}_386${suffix};fi
-	tar -zcf kcptun-${os}-386-$VERSION.tar.gz client_${os}_386${suffix} server_${os}_386${suffix}
-	$sum kcptun-${os}-386-$VERSION.tar.gz
+    local suffix=$(get_suffix "${arch}" "${goarm}")
+
+    local client_out="${BUILD_DIR}/client_${os}_${suffix}${ext}"
+    local server_out="${BUILD_DIR}/server_${os}_${suffix}${ext}"
+
+    echo "--- Building ${os}/${suffix} (CGO Enabled) ---"
+
+    # !!! The ONLY change: CGO_ENABLED is set to 1 (Enabled) !!!
+    export CGO_ENABLED=1 
+    export GOOS=${os}
+    export GOARCH=${arch}
+    export GOARM=${goarm}
+    export GOMIPS=${gomips}
+
+    # Execute Go build
+    go build -mod=vendor -ldflags "${LDFLAGS}" -o "${client_out}" "${CLIENT_SRC}" || { echo "Error: Client compilation failed for ${os}/${suffix}"; return 1; }
+    go build -mod=vendor -ldflags "${LDFLAGS}" -o "${server_out}" "${SERVER_SRC}" || { echo "Error: Server compilation failed for ${os}/${suffix}"; return 1; }
+
+    # UPX compression
+    if $USE_UPX; then
+        echo "Compressing binaries using UPX..."
+        upx "${client_out}" "${server_out}" || { echo "Warning: UPX compression failed."; }
+    fi
+}
+
+# Packages the compiled binaries into a tar.gz archive.
+# The archive directly contains the two binaries (client/server).
+package_target() {
+    local os=$1
+    local arch=$2
+    local goarm=$3
+    local gomips=$4
+
+    # Determine file extension and suffix
+    local ext=""
+    if [ "${os}" == "windows" ]; then
+        ext=".exe"
+    fi
+    local suffix=$(get_suffix "${arch}" "${goarm}") 
+
+    # Full filenames in the BUILD_DIR
+    local client_bin="client_${os}_${suffix}${ext}"
+    local server_bin="server_${os}_${suffix}${ext}"
+    
+    # Archive name format: kcptun-os-suffix-VERSION.tar.gz
+    local package_name="kcptun-${os}-${suffix}-${VERSION}"
+    local archive_file="${package_name}.tar.gz"
+
+    echo "--- Packaging ${package_name} ---"
+
+    # Create the tarball directly from the binaries (no intermediate directory inside the archive)
+    (
+        cd "${BUILD_DIR}" && \
+        tar -czf "${archive_file}" "${client_bin}" "${server_bin}"
+    )
+
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to create package ${archive_file}"
+        return 1
+    fi
+}
+
+# --- Main Execution ---
+
+# 1. Initialize the build directory
+mkdir -p "${BUILD_DIR}" || { echo "Error: Could not create build directory ${BUILD_DIR}"; exit 1; }
+
+# 2. Loop through targets for building and packaging
+for target in "${TARGETS[@]}"; do
+    # Split the target string: OS/ARCH/GOARM/GOMIPS
+    IFS='/' read -r OS ARCH GOARM GOMIPS <<< "$target"
+
+    build_target "$OS" "$ARCH" "$GOARM" "$GOMIPS" || exit 1
+    package_target "$OS" "$ARCH" "$GOARM" "$GOMIPS" || exit 1
 done
 
-# AMD64 
-OSES=(linux darwin windows freebsd)
-for os in ${OSES[@]}; do
-	suffix=""
-	if [ "$os" == "windows" ]
-	then
-		suffix=".exe"
-	fi
+# 3. Clean up intermediate binaries (client_* and server_* files)
+echo "--- Cleaning intermediate binaries ---"
+find "${BUILD_DIR}" -type f -regex "${BUILD_DIR}/\(client\|server\)_.*" -delete
 
-	if [ "$os" == "linux" ];then
-		CC=gcc-5 CGO_ENABLED=1 GOOS=$os GOARCH=amd64 go build -ldflags "$LDFLAGS_LINUX" -o client_${os}_amd64${suffix} github.com/xtaci/kcptun/client
-		CC=gcc-5 CGO_ENABLED=1 GOOS=$os GOARCH=amd64 go build -ldflags "$LDFLAGS_LINUX" -o server_${os}_amd64${suffix} github.com/xtaci/kcptun/server
-	else 
-		CGO_ENABLED=0 GOOS=$os GOARCH=amd64 go build -ldflags "$LDFLAGS" -o client_${os}_amd64${suffix} github.com/xtaci/kcptun/client
-		CGO_ENABLED=0 GOOS=$os GOARCH=amd64 go build -ldflags "$LDFLAGS" -o server_${os}_amd64${suffix} github.com/xtaci/kcptun/server
-	fi
+# 4. Generate SHA1 checksums file
+echo "--- Generating SHA1 Checksums ---"
+(cd "${BUILD_DIR}" && $SUM_TOOL *.tar.gz > SHA1SUMS)
 
-	if $UPX; then upx -9 client_${os}_amd64${suffix} server_${os}_amd64${suffix};fi
-	tar -zcf kcptun-${os}-amd64-$VERSION.tar.gz client_${os}_amd64${suffix} server_${os}_amd64${suffix}
-	$sum kcptun-${os}-amd64-$VERSION.tar.gz
-done
+# 5. Output checksums to console 
+echo "--- SHA1SUMS Output ---"
+cat "${BUILD_DIR}/SHA1SUMS"
+echo "---"
 
-# ARM-5
-#CC=arm-linux-gnueabi-gcc-5 GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CGO_CFLAGS="-march=armv5" CGO_CXXFLAGS="-march=armv5" go install std
-CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CGO_CFLAGS="-march=armv5" CGO_CXXFLAGS="-march=armv5" go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_arm5  github.com/xtaci/kcptun/client
-CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=5 CGO_ENABLED=1 CGO_CFLAGS="-march=armv5" CGO_CXXFLAGS="-march=armv5" go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_arm5  github.com/xtaci/kcptun/server
-if $UPX; then upx -9 client_linux_arm5 server_linux_arm5;fi
-tar -zcf kcptun-linux-arm5-$VERSION.tar.gz client_linux_arm5 server_linux_arm5
-$sum kcptun-linux-arm5-$VERSION.tar.gz
-
-# ARM-6
-#CC=arm-linux-gnueabi-gcc-5 GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="-march=armv6" CGO_CXXFLAGS="-march=armv6" go install std
-CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="-march=armv6" CGO_CXXFLAGS="-march=armv6" go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_arm6 github.com/xtaci/kcptun/client
-CC=arm-linux-gnueabi-gcc-5 CXX=arm-linux-gnueabi-g++-5 GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 CGO_CFLAGS="-march=armv6" CGO_CXXFLAGS="-march=armv6" go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_arm6 github.com/xtaci/kcptun/server
-if $UPX; then upx -9 client_linux_arm6 server_linux_arm6;fi
-tar -zcf kcptun-linux-arm6-$VERSION.tar.gz client_linux_arm6 server_linux_arm6
-$sum kcptun-linux-arm6-$VERSION.tar.gz
-
-# ARM-7
-ARMS=(7)
-#CC=arm-linux-gnueabihf-gcc-5 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CGO_CFLAGS="-march=armv7-a" CGO_CXXFLAGS="-march=armv7-a" go install std
-CC=arm-linux-gnueabihf-gcc-5 CXX=arm-linux-gnueabihf-g++-5 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CGO_CFLAGS="-march=armv7-a -fPIC" CGO_CXXFLAGS="-march=armv7-a -fPIC" go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_arm7  github.com/xtaci/kcptun/client
-CC=arm-linux-gnueabihf-gcc-5 CXX=arm-linux-gnueabihf-g++-5 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=1 CGO_CFLAGS="-march=armv7-a -fPIC" CGO_CXXFLAGS="-march=armv7-a -fPIC" go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_arm7  github.com/xtaci/kcptun/server
-if $UPX; then upx -9 client_linux_arm7 server_linux_arm7;fi
-tar -zcf kcptun-linux-arm7-$VERSION.tar.gz client_linux_arm7 server_linux_arm7
-$sum kcptun-linux-arm7-$VERSION.tar.gz
-
-# ARM64
-CC=aarch64-linux-gnu-gcc-5 CXX=aarch64-linux-gnu-g++-5 GOOS=linux GOARCH=arm64 CGO_ENABLED=1 go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_arm64  github.com/xtaci/kcptun/client
-CC=aarch64-linux-gnu-gcc-5 CXX=aarch64-linux-gnu-g++-5 GOOS=linux GOARCH=arm64 CGO_ENABLED=1 go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_arm64  github.com/xtaci/kcptun/server
-if $UPX; then upx -9 client_linux_arm64 server_linux_arm64*;fi
-tar -zcf kcptun-linux-arm64-$VERSION.tar.gz client_linux_arm64 server_linux_arm64
-$sum kcptun-linux-arm64-$VERSION.tar.gz
-
-#MIPS32LE
-CC=mipsel-linux-gnu-gcc-5 CXX=mipsel-linux-gnu-g++-5 GOOS=linux GOARCH=mipsle CGO_ENABLED=1 GOMIPS=softfloat go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_mipsle github.com/xtaci/kcptun/client
-CC=mipsel-linux-gnu-gcc-5 CXX=mipsel-linux-gnu-g++-5 GOOS=linux GOARCH=mipsle CGO_ENABLED=1 GOMIPS=softfloat go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_mipsle github.com/xtaci/kcptun/server
-
-#MIPS32
-CC=mips-linux-gnu-gcc-5 CXX=mips-linux-gnu-g++-5 GOOS=linux GOARCH=mips CGO_ENABLED=1 GOMIPS=softfloat go build -ldflags "$LDFLAGS_LINUX"  -o client_linux_mips github.com/xtaci/kcptun/client
-CC=mips-linux-gnu-gcc-5 CXX=mips-linux-gnu-g++-5 GOOS=linux GOARCH=mips CGO_ENABLED=1 GOMIPS=softfloat go build -ldflags "$LDFLAGS_LINUX"  -o server_linux_mips github.com/xtaci/kcptun/server
-
-if $UPX; then upx -9 client_linux_mips* server_linux_mips*;fi
-tar -zcf kcptun-linux-mipsle-$VERSION.tar.gz client_linux_mipsle server_linux_mipsle
-tar -zcf kcptun-linux-mips-$VERSION.tar.gz client_linux_mips server_linux_mips
-$sum kcptun-linux-mipsle-$VERSION.tar.gz
-$sum kcptun-linux-mips-$VERSION.tar.gz
-
-echo "=== Building Completed ==="
+echo "--- Build Complete ---"
+echo "All release packages are located in ${BUILD_DIR}/"
