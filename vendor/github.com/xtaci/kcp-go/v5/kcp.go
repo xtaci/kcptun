@@ -351,8 +351,7 @@ func (kcp *KCP) Recv(buffer []byte) (n int) {
 	}
 
 	var fast_recover bool
-	minwnd := _imin_(kcp.rcv_wnd, kcp.rmt_wnd)
-	if kcp.rcv_queue.Len() >= int(minwnd) {
+	if kcp.rcv_queue.Len() >= int(kcp.rcv_wnd) {
 		fast_recover = true
 	}
 
@@ -387,7 +386,7 @@ func (kcp *KCP) Recv(buffer []byte) (n int) {
 	}
 
 	// fast recover
-	if kcp.rcv_queue.Len() < int(minwnd) && fast_recover {
+	if kcp.rcv_queue.Len() < int(kcp.rcv_wnd) && fast_recover {
 		// ready to send back IKCP_CMD_WINS in ikcp_flush
 		// tell remote my window size
 		kcp.probe |= IKCP_ASK_TELL
