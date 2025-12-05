@@ -81,6 +81,17 @@ func galMulSlice(c byte, in, out []byte, o *options) {
 		galMulSSSE3(mulTableLow[c][:], mulTableHigh[c][:], in, out)
 		in = in[done:]
 		out = out[done:]
+	} else if !o.skip2B {
+		mt16 := getMulTable16(c)
+		for len(in) >= 8 {
+			store16(out, mt16[load16(in, 0)], 0)
+			store16(out, mt16[load16(in, 2)], 2)
+			store16(out, mt16[load16(in, 4)], 4)
+			store16(out, mt16[load16(in, 6)], 6)
+
+			in = in[8:]
+			out = out[8:]
+		}
 	}
 	out = out[:len(in)]
 	mt := mulTable[c][:256]
@@ -125,6 +136,17 @@ func galMulSliceXor(c byte, in, out []byte, o *options) {
 		galMulSSSE3Xor(mulTableLow[c][:], mulTableHigh[c][:], in, out)
 		in = in[done:]
 		out = out[done:]
+	} else if !o.skip2B {
+		mt16 := getMulTable16(c)
+		for len(in) >= 8 {
+			store16(out, load16(out, 0)^mt16[load16(in, 0)], 0)
+			store16(out, load16(out, 2)^mt16[load16(in, 2)], 2)
+			store16(out, load16(out, 4)^mt16[load16(in, 4)], 4)
+			store16(out, load16(out, 6)^mt16[load16(in, 6)], 6)
+
+			in = in[8:]
+			out = out[8:]
+		}
 	}
 	if len(in) == 0 {
 		return

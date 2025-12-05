@@ -48,16 +48,19 @@ func galMulSlice(c byte, in, out []byte, o *options) {
 		return
 	}
 	mt := mulTable[c][:256]
-	for len(in) >= 4 {
-		ii := (*[4]byte)(in)
-		oo := (*[4]byte)(out)
-		oo[0] = mt[ii[0]]
-		oo[1] = mt[ii[1]]
-		oo[2] = mt[ii[2]]
-		oo[3] = mt[ii[3]]
-		in = in[4:]
-		out = out[4:]
+	if !o.skip2B {
+		mt16 := getMulTable16(c)
+		for len(in) >= 8 {
+			store16(out, mt16[load16(in, 0)], 0)
+			store16(out, mt16[load16(in, 2)], 2)
+			store16(out, mt16[load16(in, 4)], 4)
+			store16(out, mt16[load16(in, 6)], 6)
+
+			in = in[8:]
+			out = out[8:]
+		}
 	}
+
 	for n, input := range in {
 		out[n] = mt[input]
 	}
@@ -70,15 +73,17 @@ func galMulSliceXor(c byte, in, out []byte, o *options) {
 		return
 	}
 	mt := mulTable[c][:256]
-	for len(in) >= 4 {
-		ii := (*[4]byte)(in)
-		oo := (*[4]byte)(out)
-		oo[0] ^= mt[ii[0]]
-		oo[1] ^= mt[ii[1]]
-		oo[2] ^= mt[ii[2]]
-		oo[3] ^= mt[ii[3]]
-		in = in[4:]
-		out = out[4:]
+	if !o.skip2B {
+		mt16 := getMulTable16(c)
+		for len(in) >= 8 {
+			store16(out, load16(out, 0)^mt16[load16(in, 0)], 0)
+			store16(out, load16(out, 2)^mt16[load16(in, 2)], 2)
+			store16(out, load16(out, 4)^mt16[load16(in, 4)], 4)
+			store16(out, load16(out, 6)^mt16[load16(in, 6)], 6)
+
+			in = in[8:]
+			out = out[8:]
+		}
 	}
 	for n, input := range in {
 		out[n] ^= mt[input]

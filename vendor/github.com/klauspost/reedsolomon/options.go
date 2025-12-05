@@ -25,6 +25,7 @@ type options struct {
 	useNEON,
 	useSVE bool
 	vectorLength int
+	skip2B       bool
 
 	useJerasureMatrix    bool
 	usePAR1Matrix        bool

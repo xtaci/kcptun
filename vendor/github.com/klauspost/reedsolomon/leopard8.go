@@ -161,10 +161,7 @@ func (r *leopardFF8) encode(shards [][]byte) error {
 
 	defer r.workPool.Put(work)
 
-	mtrunc := m
-	if r.dataShards < mtrunc {
-		mtrunc = r.dataShards
-	}
+	mtrunc := min(r.dataShards, m)
 
 	skewLUT := fftSkew8[m-1:]
 
@@ -511,7 +508,7 @@ func (r *leopardFF8) reconstruct(shards [][]byte, recoverAll bool) error {
 		// Evaluate error locator polynomial8
 		fwht8(&errLocs, m+r.dataShards)
 
-		for i := 0; i < order8; i++ {
+		for i := range order8 {
 			errLocs[i] = ffe8((uint(errLocs[i]) * uint(logWalsh8[i])) % modulus8)
 		}
 
@@ -793,7 +790,7 @@ func ifftDITEncoder8(data [][]byte, mtrunc int, work [][]byte, xorRes [][]byte, 
 	// I tried rolling the memcpy/memset into the first layer of the FFT and
 	// found that it only yields a 4% performance improvement, which is not
 	// worth the extra complexity.
-	for i := 0; i < mtrunc; i++ {
+	for i := range mtrunc {
 		copy(work[i], data[i])
 	}
 	for i := mtrunc; i < m; i++ {
@@ -955,7 +952,7 @@ func fwht8(data *[order8]ffe8, mtrunc int) {
 			// Use 16 bit indices to avoid bounds check on [65536]ffe8.
 			dist := uint16(dist)
 			off := uint16(r)
-			for i := uint16(0); i < dist; i++ {
+			for range dist {
 				// fwht48(data[i:], dist) inlined...
 				// Reading values appear faster than updating pointers.
 				// Casting to uint is not faster.
@@ -1029,7 +1026,7 @@ func initLUTs8() {
 
 	// LFSR table generation:
 	state := 1
-	for i := ffe8(0); i < modulus8; i++ {
+	for i := range ffe8(modulus8) {
 		expLUT8[state] = i
 		state <<= 1
 		if state >= order8 {
@@ -1041,20 +1038,20 @@ func initLUTs8() {
 	// Conversion to Cantor basis:
 
 	logLUT8[0] = 0
-	for i := 0; i < bitwidth8; i++ {
+	for i := range bitwidth8 {
 		basis := cantorBasis[i]
 		width := 1 << i
 
-		for j := 0; j < width; j++ {
+		for j := range width {
 			logLUT8[j+width] = logLUT8[j] ^ basis
 		}
 	}
 
-	for i := 0; i < order8; i++ {
+	for i := range order8 {
 		logLUT8[i] = expLUT8[logLUT8[i]]
 	}
 
-	for i := 0; i < order8; i++ {
+	for i := range order8 {
 		expLUT8[logLUT8[i]] = ffe8(i)
 	}
 
@@ -1074,7 +1071,7 @@ func initFFTSkew8() {
 	fftSkew8 = &[modulus8]ffe8{}
 	logWalsh8 = &[order8]ffe8{}
 
-	for m := 0; m < bitwidth8-1; m++ {
+	for m := range bitwidth8 - 1 {
 		step := 1 << (m + 1)
 
 		fftSkew8[1<<m-1] = 0
@@ -1095,13 +1092,13 @@ func initFFTSkew8() {
 		}
 	}
 
-	for i := 0; i < modulus8; i++ {
+	for i := range modulus8 {
 		fftSkew8[i] = logLUT8[fftSkew8[i]]
 	}
 
 	// Precalculate FWHT(Log[i]):
 
-	for i := 0; i < order8; i++ {
+	for i := range order8 {
 		logWalsh8[i] = logLUT8[i]
 	}
 	logWalsh8[0] = 0
@@ -1113,12 +1110,12 @@ func initMul8LUT() {
 	mul8LUTs = &[order8]mul8LUT{}
 
 	// For each log_m multiplicand:
-	for log_m := 0; log_m < order8; log_m++ {
+	for log_m := range order8 {
 		var tmp [64]ffe8
 		for nibble, shift := 0, 0; nibble < 4; {
 			nibble_lut := tmp[nibble*16:]
 
-			for xnibble := 0; xnibble < 16; xnibble++ {
+			for xnibble := range 16 {
 				prod := mulLog8(ffe8(xnibble<<shift), ffe8(log_m))
 				nibble_lut[xnibble] = prod
 			}
@@ -1138,7 +1135,7 @@ func initMul8LUT() {
 		for logM := range multiply256LUT8[:] {
 			// For each 4 bits of the finite field width in bits:
 			shift := 0
-			for i := 0; i < 2; i++ {
+			for i := range 2 {
 				// Construct 16 entry LUT for PSHUFB
 				prod := multiply256LUT8[logM][i*16 : i*16+16]
 				for x := range prod[:] {
@@ -1180,7 +1177,7 @@ func (e *errorBitfield8) isNeeded(mipLevel, bit int) bool {
 
 func (e *errorBitfield8) prepare() {
 	// First mip level is for final layer of FFT: pairs of data
-	for i := 0; i < kWords8; i++ {
+	for i := range kWords8 {
 		w_i := e.Words[0][i]
 		hi2lo0 := w_i | ((w_i & kHiMasks[0]) >> 1)
 		lo2hi0 := (w_i & (kHiMasks[0] >> 1)) << 1
@@ -1197,7 +1194,7 @@ func (e *errorBitfield8) prepare() {
 		}
 	}
 
-	for i := 0; i < kWords8; i++ {
+	for i := range kWords8 {
 		w := e.Words[4][i]
 		w |= w >> 32
 		w |= w << 32

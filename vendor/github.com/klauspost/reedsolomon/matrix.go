@@ -211,7 +211,7 @@ func (m matrix) gaussianElimination() error {
 	columns := len(m[0])
 	// Clear out the part below the main diagonal and scale the main
 	// diagonal to be 1.
-	for r := 0; r < rows; r++ {
+	for r := range rows {
 		// If the element on the diagonal is 0, find a row below
 		// that has a non-zero and swap them.
 		if m[r][r] == 0 {
@@ -232,7 +232,7 @@ func (m matrix) gaussianElimination() error {
 		// Scale to 1.
 		if m[r][r] != 1 {
 			scale := galOneOver(m[r][r])
-			for c := 0; c < columns; c++ {
+			for c := range columns {
 				m[r][c] = galMultiply(m[r][c], scale)
 			}
 		}
@@ -242,7 +242,7 @@ func (m matrix) gaussianElimination() error {
 		for rowBelow := r + 1; rowBelow < rows; rowBelow++ {
 			if m[rowBelow][r] != 0 {
 				scale := m[rowBelow][r]
-				for c := 0; c < columns; c++ {
+				for c := range columns {
 					m[rowBelow][c] ^= galMultiply(scale, m[r][c])
 				}
 			}
@@ -250,11 +250,11 @@ func (m matrix) gaussianElimination() error {
 	}
 
 	// Now clear the part above the main diagonal.
-	for d := 0; d < rows; d++ {
+	for d := range rows {
 		for rowAbove := 0; rowAbove < d; rowAbove++ {
 			if m[rowAbove][d] != 0 {
 				scale := m[rowAbove][d]
-				for c := 0; c < columns; c++ {
+				for c := range columns {
 					m[rowAbove][c] ^= galMultiply(scale, m[d][c])
 				}
 
