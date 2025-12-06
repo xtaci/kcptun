@@ -114,7 +114,7 @@ func main() {
 			Usage: "set maximum transmission unit for UDP packets",
 		},
 		cli.IntFlag{
-			Name:  "maxspeed",
+			Name:  "ratelimit",
 			Value: 0,
 			Usage: "set maximum outgoing speed (in bytes per second) for a single KCP connection, 0 to disable. Enabling this will improve the stability of connections under high speed.",
 		},
