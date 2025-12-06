@@ -31,5 +31,3 @@ require (
 replace github.com/xtaci/kcp-go/v5 => /home/xtaci/go/src/github.com/xtaci/kcp-go
 
 go 1.24.0
-
-toolchain go1.24.2
