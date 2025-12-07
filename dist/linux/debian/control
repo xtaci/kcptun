@@ -1,8 +1,8 @@
 Source: kcptun
 Section: net
 Priority: optional
-Maintainer: FULI <imap@live.com>
-Uploaders: FULI <imap@live.com>
+Maintainer: FULI <daniel820313@gmail.com>
+Uploaders: FULI <daniel820313@gmail.com>
 Build-Depends: debhelper-compat (= 13), golang-go
 Standards-Version: 4.5.0
 Homepage: https://github.com/xtaci/kcptun
