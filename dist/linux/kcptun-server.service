@@ -8,7 +8,7 @@ After=syslog.target network-online.target
 Type=simple
 Environment="GOGC=20"
 Environment="GOEXPERIMENT=greenteagc"
-ExecStart=/home/user/client_linux_amd64 -c /home/user/local.json
+ExecStart=/usr/bin/kcptun-server -c /etc/kcptun-server.json
 Restart=on-failure
 RestartSec=10
 KillMode=process

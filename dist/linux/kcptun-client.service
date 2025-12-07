@@ -1,0 +1,18 @@
+[unit]
+Description=kcptun
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+Environment="GOGC=20"
+Environment="GOEXPERIMENT=greenteagc"
+ExecStart=/usr/bin/kcptun-client -c /etc/kcptun-client.json
+Restart=on-failure
+RestartSec=10
+KillMode=process
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

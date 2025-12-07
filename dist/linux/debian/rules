@@ -1,17 +1,18 @@
 #!/usr/bin/make -f
 
+VERSION := $(shell dpkg-parsechangelog --show-field Version)
+LDFLAGS := -X main.VERSION=$(VERSION) -s -w
+
 override_dh_auto_build:
-        # build
-        go build -mod=vendor -o kcptun-client ./client
-        go build -mod=vendor -o kcptun-server ./server
-
-override_dh_auto_install:
-        install -d $(DESTDIR)/usr/bin
-        install -m 755 kcptun-client $(DESTDIR)/usr/bin/kcptun-client
-        install -m 755 kcptun-server $(DESTDIR)/usr/bin/kcptun-server
-
-        #install -d $(DESTDIR)/lib/systemd/system
-        #install -m 644 debian/kcptun-server.service $(DESTDIR)/lib/systemd/system/
+	# build client
+	go build -mod=vendor -o kcptun-client \
+		-ldflags "$(LDFLAGS)" \
+		./client
+		
+	# build server
+	go build -mod=vendor -o kcptun-server \
+		-ldflags "$(LDFLAGS)" \
+		./server
 
 %::
-        dh $@
+	dh $@
