@@ -1,0 +1,202 @@
+diff --git a/net/kcptun/Makefile b/net/kcptun/Makefile
+new file mode 100644
+index 000000000000..ee2c4a2c59b1
+--- /dev/null
++++ b/net/kcptun/Makefile
+@@ -0,0 +1,47 @@
++PORTNAME=	kcptun
++DISTVERSIONPREFIX=	v
++DISTVERSION=	20251206
++CATEGORIES=	net
++
++MAINTAINER=	imap@live.com
++COMMENT=	Quantum-safe UDP tunnel using QPP, KCP, FEC and multiplexing
++WWW=		https://github.com/xtaci/kcptun
++
++LICENSE=	MIT
++LICENSE_FILE=	${WRKSRC}/LICENSE.md
++
++USES=	go:1.24,modules
++
++USE_GITHUB=	yes
++GH_ACCOUNT=	xtaci
++
++GO_BUILDFLAGS=	-ldflags "-s -w -X main.VERSION=${DISTVERSION}"
++
++GO_TARGET=	./client:kcptun-client \
++		./server:kcptun-server
++
++USE_RC_SUBR=	kcptun_client kcptun_server
++
++PLIST_FILES=	\
++	bin/kcptun-client \
++	bin/kcptun-server \
++	etc/kcptun/client.json.sample \
++	etc/kcptun/server.json.sample
++
++PORTDOCS=	README.md
++
++OPTIONS_DEFINE=	DOCS
++
++post-install:
++	${MKDIR} ${STAGEDIR}${PREFIX}/etc/kcptun
++	${INSTALL_DATA} ${FILESDIR}/kcptun-client.json.sample \
++		${STAGEDIR}${PREFIX}/etc/kcptun/client.json.sample
++	${INSTALL_DATA} ${FILESDIR}/kcptun-server.json.sample \
++		${STAGEDIR}${PREFIX}/etc/kcptun/server.json.sample
++
++post-install-DOCS-on:
++	${MKDIR} ${STAGEDIR}${DOCSDIR}
++	${INSTALL_DATA} ${WRKSRC}/README.md \
++		${STAGEDIR}${DOCSDIR}/README.md
++
++.include <bsd.port.mk>
+diff --git a/net/kcptun/distinfo b/net/kcptun/distinfo
+new file mode 100644
+index 000000000000..f96a59051c87
+--- /dev/null
++++ b/net/kcptun/distinfo
+@@ -0,0 +1,3 @@
++TIMESTAMP = 1765004957
++SHA256 (xtaci-kcptun-v20251206_GH0.tar.gz) = 102b15df11637df6d840b9096883d69b98c8b775f9c4d2ef85ab77db7a69ff1a
++SIZE (xtaci-kcptun-v20251206_GH0.tar.gz) = 2715979
+diff --git a/net/kcptun/files/kcptun-client.json.sample b/net/kcptun/files/kcptun-client.json.sample
+new file mode 100644
+index 000000000000..383a44bceb47
+--- /dev/null
++++ b/net/kcptun/files/kcptun-client.json.sample
+@@ -0,0 +1,30 @@
++{
++    "localaddr": ":2000",
++    "remoteaddr": "127.0.0.1:29900",
++    "key": "PASSWORD",
++    "crypt": "aes-128",
++    "qpp":true,
++    "qpp-count":61,
++    "mode": "fast3",
++    "mtu": 1400,
++    "ratelimit": 1048576,
++    "sndwnd": 128,
++    "rcvwnd": 1024,
++    "datashard": 10,
++    "parityshard": 3,
++    "dscp": 46,
++    "nocomp": true,
++    "acknodelay": false,
++    "nodelay": 1,
++    "interval": 40,
++    "resend": 2,
++    "nc": 1,
++    "sockbuf": 16777217,
++    "smuxver": 2,
++    "smuxbuf": 16777217,
++    "streambuf": 2097152,
++    "keepalive": 10,
++    "autoexpire": 300,
++    "quiet": false,
++    "tcp": false
++}
+diff --git a/net/kcptun/files/kcptun-server.json.sample b/net/kcptun/files/kcptun-server.json.sample
+new file mode 100644
+index 000000000000..b18eea471148
+--- /dev/null
++++ b/net/kcptun/files/kcptun-server.json.sample
+@@ -0,0 +1,30 @@
++{
++        "listen": ":29900",
++        "target": "127.0.0.1:9999",
++        "key": "PASSWORD",
++        "crypt": "aes-128",
++        "qpp":true,
++        "qpp-count":61,
++        "mode": "fast3",
++        "mtu": 1400,
++        "ratelimit": 104857600,
++        "sndwnd": 2048,
++        "rcvwnd": 2048,
++        "datashard": 10,
++        "parityshard": 3,
++        "dscp": 46,
++        "nocomp": true,
++        "acknodelay": false,
++        "nodelay": 1,
++        "interval": 40,
++        "resend": 2,
++        "nc": 1,
++        "sockbuf": 16777217,
++        "smuxver": 2,
++        "smuxbuf": 16777217,
++        "streambuf": 2097152,
++        "keepalive": 10,
++        "pprof":false,
++        "quiet":false,
++        "tcp":false
++}
+diff --git a/net/kcptun/files/kcptun_client.in b/net/kcptun/files/kcptun_client.in
+new file mode 100644
+index 000000000000..8bfe85891c15
+--- /dev/null
++++ b/net/kcptun/files/kcptun_client.in
+@@ -0,0 +1,22 @@
++#!/bin/sh
++#
++# PROVIDE: kcptun_client
++# REQUIRE: NETWORKING
++
++. /etc/rc.subr
++
++name="kcptun_client"
++desc="kcptun client service"
++rcvar="${name}_enable"
++
++load_rc_config $name
++
++: ${kcptun_client_enable:="NO"}
++: ${kcptun_client_config:="/usr/local/etc/kcptun/client.json"}
++: ${kcptun_client_bin:="/usr/local/bin/kcptun-client"}
++
++pidfile="/var/run/${name}.pid"
++command="/usr/sbin/daemon"
++command_args="-u nobody -c -f -S -P ${pidfile} -r ${kcptun_client_bin} -c ${kcptun_client_config}"
++
++run_rc_command "$1"
+diff --git a/net/kcptun/files/kcptun_server.in b/net/kcptun/files/kcptun_server.in
+new file mode 100644
+index 000000000000..2d47f04a69d1
+--- /dev/null
++++ b/net/kcptun/files/kcptun_server.in
+@@ -0,0 +1,22 @@
++#!/bin/sh
++#
++# PROVIDE: kcptun_server
++# REQUIRE: NETWORKING
++
++. /etc/rc.subr
++
++name="kcptun_server"
++desc="kcptun server service"
++rcvar="${name}_enable"
++
++load_rc_config $name
++
++: ${kcptun_server_enable:="NO"}
++: ${kcptun_server_config:="/usr/local/etc/kcptun/server.json"}
++: ${kcptun_server_bin:="/usr/local/bin/kcptun-server"}
++
++pidfile="/var/run/${name}.pid"
++command="/usr/sbin/daemon"
++command_args="-u nobody -c -f -S -P ${pidfile} -r ${kcptun_server_bin} -c ${kcptun_server_config}"
++
++run_rc_command "$1"
+diff --git a/net/kcptun/pkg-descr b/net/kcptun/pkg-descr
+new file mode 100644
+index 000000000000..139e914428c4
+--- /dev/null
++++ b/net/kcptun/pkg-descr
+@@ -0,0 +1,6 @@
++KCPTun is an extremely fast, reliable, and secure UDP tunnel based on
++KCP protocol. It is designed to reduce latency and packet loss for
++TCP traffic over unstable networks.
++
++It consists of a client and a server, and can be used to accelerate
++any TCP traffic.
