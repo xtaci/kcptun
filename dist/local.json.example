@@ -1,6 +1,6 @@
 {
-    "localaddr": ":2000",
-    "remoteaddr": "11.22.33.44:2000",
+    "localaddr": ":3000",
+    "remoteaddr": "127.0.0.1:29900",
     "key": "PASSWORD",
     "crypt": "aes-128",
     "qpp":true,

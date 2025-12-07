@@ -1,6 +1,6 @@
 {
-        "listen": ":2000",
-        "target": "127.0.0.1:9999",
+        "listen": ":29900",
+        "target": "127.0.0.1:2000",
         "key": "PASSWORD",
         "crypt": "aes-128",
         "qpp":true,
