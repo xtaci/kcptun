@@ -1,0 +1,15 @@
+Source: kcptun
+Section: net
+Priority: optional
+Maintainer: FULI <imap@live.com>
+Uploaders: FULI <imap@live.com>
+Build-Depends: debhelper-compat (= 13), golang-go
+Standards-Version: 4.5.0
+Homepage: https://github.com/xtaci/kcptun
+
+Package: kcptun
+Architecture: any
+Depends: ${misc:Depends}
+Description: A Secure, Fast and Reliable KCP based Tunnel
+ kcptun is a general-purpose, high-performance, and secure tunnel program
+ based on the KCP protocol. It's designed to accelerate network connections.
