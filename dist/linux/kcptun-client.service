@@ -1,4 +1,4 @@
-[unit]
+[Unit]
 Description=kcptun
 
 Wants=network.target
