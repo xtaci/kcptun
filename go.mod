@@ -28,6 +28,6 @@ require (
 )
 
 //replace github.com/xtaci/tcpraw => /home/xtaci/tcpraw
-replace github.com/xtaci/kcp-go/v5 => /home/xtaci/go/src/github.com/xtaci/kcp-go
+//replace github.com/xtaci/kcp-go/v5 => /home/xtaci/go/src/github.com/xtaci/kcp-go
 
 go 1.24.0
