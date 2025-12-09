@@ -104,7 +104,6 @@ func (h *shardHeap) Has(sn uint32) bool {
 
 // fecDecoder for decoding incoming packets
 type fecDecoder struct {
-	rxlimit      int // queue size limit
 	dataShards   int
 	parityShards int
 	shardSize    int

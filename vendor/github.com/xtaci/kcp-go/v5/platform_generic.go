@@ -20,16 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//go:build !linux
+
 package kcp
 
-import "golang.org/x/net/ipv4"
+type platform struct{}
 
-const (
-	batchSize = 256
-)
-
-// batchConn defines the interface used in batch IO
-type batchConn interface {
-	WriteBatch(ms []ipv4.Message, flags int) (int, error)
-	ReadBatch(ms []ipv4.Message, flags int) (int, error)
-}
+func (sess *UDPSession) initPlatform() {}

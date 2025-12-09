@@ -25,37 +25,52 @@
 package kcp
 
 import (
-	"sync/atomic"
+	"net"
+	"syscall"
 
-	"github.com/pkg/errors"
 	"golang.org/x/net/ipv4"
+	"golang.org/x/net/ipv6"
 )
 
-// tx is the optimized procedure to transmit packets utilizing the linux sendmmsg system call
-func (s *UDPSession) tx(txqueue []ipv4.Message) {
-	// default version
-	if s.platform.batchConn == nil {
-		s.defaultTx(txqueue)
-		return
+type (
+	platform struct {
+		batchConn batchConn
 	}
 
-	// x/net version
-	nbytes := 0
-	npkts := 0
-	for len(txqueue) > 0 {
-		n, err := s.platform.batchConn.WriteBatch(txqueue, 0)
-		if err != nil {
-			s.notifyWriteError(errors.WithStack(err))
-			break
-		}
-
-		for k := range txqueue[:n] {
-			nbytes += len(txqueue[k].Buffers[0])
-		}
-		npkts += n
-		txqueue = txqueue[n:]
+	// udpConn is an interface implemented by net.UDPConn.
+	// It can be used for interface assertions to check if a net.Conn is a UDP connection.
+	udpConn interface {
+		SyscallConn() (syscall.RawConn, error)
+		ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAddr, err error)
 	}
 
-	atomic.AddUint64(&DefaultSnmp.OutPkts, uint64(npkts))
-	atomic.AddUint64(&DefaultSnmp.OutBytes, uint64(nbytes))
+	// batchConn defines the interface used in batch IO
+	batchConn interface {
+		WriteBatch(ms []ipv4.Message, flags int) (int, error)
+		ReadBatch(ms []ipv4.Message, flags int) (int, error)
+	}
+)
+
+// newBatchConn creates a batchConn based on the IP version of the provided net.PacketConn.
+func newBatchConn(conn net.PacketConn) batchConn {
+	if _, ok := conn.(udpConn); !ok {
+		return nil
+	}
+
+	// Resolve the local UDP address to determine IP version
+	addr, err := net.ResolveUDPAddr("udp", conn.LocalAddr().String())
+	if err != nil {
+		return nil
+	}
+
+	// Determine if the connection is IPv4 or IPv6 based on the local address
+	if addr.IP.To4() != nil {
+		return ipv4.NewPacketConn(conn)
+	}
+
+	return ipv6.NewPacketConn(conn)
+}
+
+func (sess *UDPSession) initPlatform() {
+	sess.platform.batchConn = newBatchConn(sess.conn)
 }

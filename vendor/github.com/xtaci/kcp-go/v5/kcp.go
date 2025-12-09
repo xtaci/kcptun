@@ -944,7 +944,7 @@ func (kcp *KCP) flush(flushType FlushType) (nextUpdate uint32) {
 				copy(ptr, segment.data)
 				ptr = ptr[len(segment.data):]
 
-				kcp.debugLog(IKCP_LOG_OUT_PUSH, "conv", segment.conv, "sn", segment.sn, "una", segment.una, "ts", segment.ts, "xmit", segment.xmit)
+				kcp.debugLog(IKCP_LOG_OUT_PUSH, "conv", segment.conv, "sn", segment.sn, "frg", segment.frg, "una", segment.una, "ts", segment.ts, "xmit", segment.xmit, "datalen", len(segment.data))
 
 				if segment.xmit >= kcp.dead_link {
 					kcp.state = 0xFFFFFFFF
@@ -1095,14 +1095,9 @@ func (kcp *KCP) SetMtu(mtu int) int {
 		return -1
 	}
 
-	buffer := make([]byte, mtu)
-	if buffer == nil {
-		return -2
-	}
-
 	kcp.mtu = uint32(mtu)
 	kcp.mss = kcp.mtu - IKCP_OVERHEAD
-	kcp.buffer = buffer
+	kcp.buffer = make([]byte, mtu)
 	return 0
 }
 

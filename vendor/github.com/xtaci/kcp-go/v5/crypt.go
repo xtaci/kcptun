@@ -28,6 +28,7 @@ import (
 	"crypto/des"
 	"crypto/sha1"
 	"crypto/subtle"
+	"sync"
 	"unsafe"
 
 	"github.com/tjfoc/gmsm/sm4"
@@ -64,6 +65,35 @@ type BlockCrypt interface {
 	Decrypt(dst, src []byte)
 }
 
+type blockCrypt struct {
+	enc, dec       sync.Mutex
+	encbuf, decbuf []byte // 64bit alignment enc/dec buffer
+	block          cipher.Block
+}
+
+func newBlockCrypt(block cipher.Block) BlockCrypt {
+	blockSize := block.BlockSize()
+	return &blockCrypt{
+		block:  block,
+		encbuf: make([]byte, blockSize),
+		decbuf: make([]byte, 2*blockSize),
+	}
+}
+
+func (c *blockCrypt) Encrypt(dst, src []byte) {
+	c.enc.Lock()
+	defer c.enc.Unlock()
+
+	encrypt(c.block, dst, src, c.encbuf)
+}
+
+func (c *blockCrypt) Decrypt(dst, src []byte) {
+	c.dec.Lock()
+	defer c.dec.Unlock()
+
+	decrypt(c.block, dst, src, c.decbuf)
+}
+
 type salsa20BlockCrypt struct {
 	key [32]byte
 }
@@ -84,165 +114,77 @@ func (c *salsa20BlockCrypt) Decrypt(dst, src []byte) {
 	copy(dst[:8], src[:8])
 }
 
-type sm4BlockCrypt struct {
-	encbuf [sm4.BlockSize]byte // 64bit alignment enc/dec buffer
-	decbuf [2 * sm4.BlockSize]byte
-	block  cipher.Block
-}
-
 // NewSM4BlockCrypt https://github.com/tjfoc/gmsm/tree/master/sm4
 func NewSM4BlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(sm4BlockCrypt)
 	block, err := sm4.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
-}
-
-func (c *sm4BlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *sm4BlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
-
-type twofishBlockCrypt struct {
-	encbuf [twofish.BlockSize]byte
-	decbuf [2 * twofish.BlockSize]byte
-	block  cipher.Block
+	return newBlockCrypt(block), nil
 }
 
 // NewTwofishBlockCrypt https://en.wikipedia.org/wiki/Twofish
 func NewTwofishBlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(twofishBlockCrypt)
 	block, err := twofish.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
-}
-
-func (c *twofishBlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *twofishBlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
-
-type tripleDESBlockCrypt struct {
-	encbuf [des.BlockSize]byte
-	decbuf [2 * des.BlockSize]byte
-	block  cipher.Block
+	return newBlockCrypt(block), nil
 }
 
 // NewTripleDESBlockCrypt https://en.wikipedia.org/wiki/Triple_DES
 func NewTripleDESBlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(tripleDESBlockCrypt)
 	block, err := des.NewTripleDESCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
-}
-
-func (c *tripleDESBlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *tripleDESBlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
-
-type cast5BlockCrypt struct {
-	encbuf [cast5.BlockSize]byte
-	decbuf [2 * cast5.BlockSize]byte
-	block  cipher.Block
+	return newBlockCrypt(block), nil
 }
 
 // NewCast5BlockCrypt https://en.wikipedia.org/wiki/CAST-128
 func NewCast5BlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(cast5BlockCrypt)
 	block, err := cast5.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
-}
-
-func (c *cast5BlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *cast5BlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
-
-type blowfishBlockCrypt struct {
-	encbuf [blowfish.BlockSize]byte
-	decbuf [2 * blowfish.BlockSize]byte
-	block  cipher.Block
+	return newBlockCrypt(block), nil
 }
 
 // NewBlowfishBlockCrypt https://en.wikipedia.org/wiki/Blowfish_(cipher)
 func NewBlowfishBlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(blowfishBlockCrypt)
 	block, err := blowfish.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
-}
-
-func (c *blowfishBlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *blowfishBlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
-
-type aesBlockCrypt struct {
-	encbuf [aes.BlockSize]byte
-	decbuf [2 * aes.BlockSize]byte
-	block  cipher.Block
+	return newBlockCrypt(block), nil
 }
 
 // NewAESBlockCrypt https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 func NewAESBlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(aesBlockCrypt)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
-}
-
-func (c *aesBlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *aesBlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
-
-type teaBlockCrypt struct {
-	encbuf [tea.BlockSize]byte
-	decbuf [2 * tea.BlockSize]byte
-	block  cipher.Block
+	return newBlockCrypt(block), nil
 }
 
 // NewTEABlockCrypt https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm
 func NewTEABlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(teaBlockCrypt)
 	block, err := tea.NewCipherWithRounds(key, 16)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
-}
-
-func (c *teaBlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *teaBlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
-
-type xteaBlockCrypt struct {
-	encbuf [xtea.BlockSize]byte
-	decbuf [2 * xtea.BlockSize]byte
-	block  cipher.Block
+	return newBlockCrypt(block), nil
 }
 
 // NewXTEABlockCrypt https://en.wikipedia.org/wiki/XTEA
 func NewXTEABlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(xteaBlockCrypt)
 	block, err := xtea.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	c.block = block
-	return c, nil
+	return newBlockCrypt(block), nil
 }
-
-func (c *xteaBlockCrypt) Encrypt(dst, src []byte) { encrypt(c.block, dst, src, c.encbuf[:]) }
-func (c *xteaBlockCrypt) Decrypt(dst, src []byte) { decrypt(c.block, dst, src, c.decbuf[:]) }
 
 type simpleXORBlockCrypt struct {
 	xortbl []byte
