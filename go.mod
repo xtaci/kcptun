@@ -9,7 +9,7 @@ require (
 	github.com/xtaci/qpp v1.1.18
 	github.com/xtaci/smux v1.5.44
 	github.com/xtaci/tcpraw v1.2.31
-	golang.org/x/crypto v0.45.0
+	golang.org/x/crypto v0.46.0
 )
 
 require (
@@ -23,11 +23,11 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 )
 
 //replace github.com/xtaci/tcpraw => /home/xtaci/tcpraw
 replace github.com/xtaci/kcp-go/v5 => /home/xtaci/go/src/github.com/xtaci/kcp-go
 
-go 1.22.0
+go 1.24.0
