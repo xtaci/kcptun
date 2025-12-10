@@ -142,9 +142,6 @@ type (
 		socketReadErrorOnce  sync.Once
 		socketWriteErrorOnce sync.Once
 
-		// nonce generator
-		nonce Entropy
-
 		// packets waiting to be sent on wire
 		chPostProcessing chan []byte
 
@@ -174,8 +171,6 @@ type (
 func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn net.PacketConn, ownConn bool, remote net.Addr, block BlockCrypt) *UDPSession {
 	sess := new(UDPSession)
 	sess.die = make(chan struct{})
-	sess.nonce = new(nonceAES128)
-	sess.nonce.Init()
 	sess.chReadEvent = make(chan struct{}, 1)
 	sess.chWriteEvent = make(chan struct{}, 1)
 	sess.chSocketReadError = make(chan struct{})
@@ -637,13 +632,13 @@ func (s *UDPSession) postProcess() {
 
 			// 2&3. crc32 & encryption
 			if s.block != nil {
-				s.nonce.Fill(buf[:nonceSize])
+				fillRand(buf[:nonceSize])
 				checksum := crc32.ChecksumIEEE(buf[cryptHeaderSize:])
 				binary.LittleEndian.PutUint32(buf[nonceSize:], checksum)
 				s.block.Encrypt(buf, buf)
 
 				for k := range ecc {
-					s.nonce.Fill(ecc[k][:nonceSize])
+					fillRand(ecc[k][:nonceSize])
 					checksum := crc32.ChecksumIEEE(ecc[k][cryptHeaderSize:])
 					binary.LittleEndian.PutUint32(ecc[k][nonceSize:], checksum)
 					s.block.Encrypt(ecc[k], ecc[k])

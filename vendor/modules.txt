@@ -38,13 +38,13 @@ github.com/tjfoc/gmsm/sm4
 # github.com/urfave/cli v1.22.17
 ## explicit; go 1.11
 github.com/urfave/cli
-# github.com/xtaci/kcp-go/v5 v5.6.47
+# github.com/xtaci/kcp-go/v5 v5.6.48
 ## explicit; go 1.24.0
 github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.18
 ## explicit; go 1.22.3
 github.com/xtaci/qpp
-# github.com/xtaci/smux v1.5.44
+# github.com/xtaci/smux v1.5.46
 ## explicit; go 1.18
 github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.31
@@ -70,6 +70,7 @@ golang.org/x/net/ipv4
 golang.org/x/net/ipv6
 # golang.org/x/sys v0.39.0
 ## explicit; go 1.24.0
+golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/time v0.14.0

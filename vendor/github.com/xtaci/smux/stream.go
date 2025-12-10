@@ -97,12 +97,12 @@ func (s *stream) ID() uint32 {
 func (s *stream) Read(b []byte) (n int, err error) {
 	for {
 		n, err = s.tryRead(b)
-		if err == ErrWouldBlock {
-			if ew := s.waitRead(); ew != nil {
-				return 0, ew
-			}
-		} else {
+		if err != ErrWouldBlock {
 			return n, err
+		}
+
+		if ew := s.waitRead(); ew != nil {
+			return 0, ew
 		}
 	}
 }
@@ -187,11 +187,9 @@ func (s *stream) tryReadv2(b []byte) (n int, err error) {
 
 		// send window update if necessary
 		if notifyConsumed > 0 {
-			err := s.sendWindowUpdate(notifyConsumed)
-			return n, err
-		} else {
-			return n, nil
+			return n, s.sendWindowUpdate(notifyConsumed)
 		}
+		return n, nil
 	}
 
 	select {
@@ -368,20 +366,21 @@ func (s *stream) Write(b []byte) (n int, err error) {
 	// frame split and transmit
 	sent := 0
 	frame := newFrame(byte(s.sess.config.Version), cmdPSH, s.id)
-	bts := b
-	for len(bts) > 0 {
-		sz := len(bts)
-		if sz > s.frameSize {
-			sz = s.frameSize
+	for len(b) > 0 {
+		size := len(b)
+		if size > s.frameSize {
+			size = s.frameSize
 		}
-		frame.data = bts[:sz]
-		bts = bts[sz:]
+
+		frame.data = b[:size]
 		n, err := s.sess.writeFrameInternal(frame, deadline, CLSDATA)
 		s.numWritten++
 		sent += n
 		if err != nil {
 			return sent, err
 		}
+
+		b = b[size:]
 	}
 
 	return sent, nil
@@ -419,7 +418,6 @@ func (s *stream) writeV2(b []byte) (n int, err error) {
 		// per stream sliding window control
 		// [.... [consumed... numWritten] ... win... ]
 		// [.... [consumed...................+rmtwnd]]
-		var bts []byte
 		// note:
 		// even if uint32 overflow, this math still works:
 		// eg1: uint32(0) - uint32(math.MaxUint32) = 1
@@ -436,52 +434,53 @@ func (s *stream) writeV2(b []byte) (n int, err error) {
 
 		if win > 0 {
 			// determine how many bytes to send
-			if win > int32(len(b)) {
-				bts = b
-				b = nil
-			} else {
-				bts = b[:win]
-				b = b[win:]
+			n := len(b)
+			if n > int(win) {
+				n = int(win)
 			}
 
 			// frame split and transmit
+			bts := b[:n]
 			for len(bts) > 0 {
 				// splitting frame
-				sz := len(bts)
-				if sz > s.frameSize {
-					sz = s.frameSize
+				size := len(bts)
+				if size > s.frameSize {
+					size = s.frameSize
 				}
-				frame.data = bts[:sz]
-				bts = bts[sz:]
+				frame.data = bts[:size]
 
 				// transmit of frame
-				n, err := s.sess.writeFrameInternal(frame, deadline, CLSDATA)
-				atomic.AddUint32(&s.numWritten, uint32(sz))
-				sent += n
+				nw, err := s.sess.writeFrameInternal(frame, deadline, CLSDATA)
+				atomic.AddUint32(&s.numWritten, uint32(size))
+				sent += nw
 				if err != nil {
 					return sent, err
 				}
+
+				bts = bts[size:]
 			}
+
+			b = b[n:]
 		}
 
 		// if there is any data left to be sent,
 		// wait until stream closes, window changes or deadline reached
 		// this blocking behavior will back propagate flow control to upper layer.
-		if len(b) > 0 {
-			select {
-			case <-s.chFinEvent:
-				return 0, io.EOF
-			case <-s.die:
-				return sent, io.ErrClosedPipe
-			case <-deadline:
-				return sent, ErrTimeout
-			case <-s.sess.chSocketWriteError:
-				return sent, s.sess.socketWriteError.Load().(error)
-			case <-s.chUpdate: // notify of remote data consuming and window update
-				continue
-			}
-		} else {
+		if len(b) <= 0 {
 			return sent, nil
+		}
+
+		select {
+		case <-s.chFinEvent:
+			return 0, io.EOF
+		case <-s.die:
+			return sent, io.ErrClosedPipe
+		case <-deadline:
+			return sent, ErrTimeout
+		case <-s.sess.chSocketWriteError:
+			return sent, s.sess.socketWriteError.Load().(error)
+		case <-s.chUpdate: // notify of remote data consuming and window update
+			continue
 		}
 	}
 }
@@ -489,25 +488,24 @@ func (s *stream) writeV2(b []byte) (n int, err error) {
 // Close implements net.Conn
 func (s *stream) Close() error {
 	var once bool
-	var err error
 	s.dieOnce.Do(func() {
 		close(s.die)
 		once = true
 	})
 
-	if once {
-		// send FIN in order
-		f := newFrame(byte(s.sess.config.Version), cmdFIN, s.id)
-
-		timer := time.NewTimer(openCloseTimeout)
-		defer timer.Stop()
-
-		_, err = s.sess.writeFrameInternal(f, timer.C, CLSDATA)
-		s.sess.streamClosed(s.id)
-		return err
-	} else {
+	if !once {
 		return io.ErrClosedPipe
 	}
+
+	// send FIN in order
+	f := newFrame(byte(s.sess.config.Version), cmdFIN, s.id)
+
+	timer := time.NewTimer(openCloseTimeout)
+	defer timer.Stop()
+
+	_, err := s.sess.writeFrameInternal(f, timer.C, CLSDATA)
+	s.sess.streamClosed(s.id)
+	return err
 }
 
 // GetDieCh returns a readonly chan which can be readable
@@ -570,24 +568,25 @@ func (s *stream) RemoteAddr() net.Addr {
 }
 
 // pushBytes append buf to buffers
-func (s *stream) pushBytes(pbuf *[]byte) (written int, err error) {
+func (s *stream) pushBytes(pbuf *[]byte) {
 	s.bufferLock.Lock()
+	defer s.bufferLock.Unlock()
+
 	s.buffers = append(s.buffers, pbuf)
 	s.heads = append(s.heads, pbuf)
-	s.bufferLock.Unlock()
-	return
 }
 
 // recycleTokens transform remaining bytes to tokens(will truncate buffer)
 func (s *stream) recycleTokens() (n int) {
 	s.bufferLock.Lock()
+	defer s.bufferLock.Unlock()
+
 	for k := range s.buffers {
 		n += len(*s.buffers[k])
 		defaultAllocator.Put(s.heads[k])
 	}
 	s.buffers = nil
 	s.heads = nil
-	s.bufferLock.Unlock()
 	return
 }
 

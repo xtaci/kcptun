@@ -25,52 +25,148 @@ package kcp
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/md5"
-	"crypto/rand"
+	crand "crypto/rand"
 	"io"
+	"math/rand/v2"
+	"runtime"
+	"sync"
+
+	"golang.org/x/sys/cpu"
 )
 
-// Entropy defines a entropy source
-//
-//	Entropy in this file generate random bits for the first 16-bytes of each packets.
-type Entropy interface {
-	Init()
-	Fill(nonce []byte)
-}
+const reseedInterval = 1 << 24
 
-// nonceMD5 nonce generator for packet header
-type nonceMD5 struct {
-	seed [md5.Size]byte
-}
+var (
+	hasAESAsmAMD64 = cpu.X86.HasAES && cpu.X86.HasSSE41 && cpu.X86.HasSSSE3
+	hasAESAsmARM64 = cpu.ARM64.HasAES
+	hasAESAsmS390X = cpu.S390X.HasAES
+	hasAESAsmPPC64 = runtime.GOARCH == "ppc64" || runtime.GOARCH == "ppc64le"
 
-func (n *nonceMD5) Init() { /*nothing required*/ }
+	hasAESHardwareSupport = hasAESAsmAMD64 || hasAESAsmARM64 || hasAESAsmS390X || hasAESAsmPPC64
 
-func (n *nonceMD5) Fill(nonce []byte) {
-	if n.seed[0] == 0 { // entropy update
-		io.ReadFull(rand.Reader, n.seed[:])
+	entropy io.Reader = NewEntropy()
+)
+
+// NewEntropy creates a new entropy source.
+func NewEntropy() io.Reader {
+	if hasAESHardwareSupport {
+		return NewEntropyAES()
 	}
-	n.seed = md5.Sum(n.seed[:])
-	copy(nonce, n.seed[:])
+
+	return NewEntropyChacha8()
 }
 
-// nonceAES128 nonce generator for packet headers
-type nonceAES128 struct {
-	seed  [aes.BlockSize]byte
+// SetEntropy sets the global entropy source used by fillRand.
+func SetEntropy(r io.Reader) {
+	entropy = r
+}
+
+// fillRand fills p with random data from the global entropy source.
+func fillRand(p []byte) {
+	if len(p) <= 0 {
+		return
+	}
+	io.ReadFull(entropy, p)
+}
+
+// rngAES is an AES-based random number generator.
+type rngAES struct {
+	mutex sync.Mutex
 	block cipher.Block
+	seed  [16]byte
+	count uint64
 }
 
-func (n *nonceAES128) Init() {
-	var key [16]byte //aes-128
-	io.ReadFull(rand.Reader, key[:])
-	io.ReadFull(rand.Reader, n.seed[:])
-	block, _ := aes.NewCipher(key[:])
-	n.block = block
-}
+// NewEntropyAES creates a new AES-based entropy source.
+func NewEntropyAES() io.Reader {
+	r := new(rngAES)
 
-func (n *nonceAES128) Fill(nonce []byte) {
-	if n.seed[0] == 0 { // entropy update
-		io.ReadFull(rand.Reader, n.seed[:])
+	var key [16]byte
+	io.ReadFull(crand.Reader, key[:])
+	io.ReadFull(crand.Reader, r.seed[:])
+
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		panic(err)
 	}
-	n.block.Encrypt(n.seed[:], n.seed[:])
-	copy(nonce, n.seed[:])
+	r.block = block
+	return r
+}
+
+// updateSeed updates the AES seed after a certain number of reads.
+func (r *rngAES) updateSeed() {
+	if r.count < reseedInterval {
+		r.count++
+		return
+	}
+
+	var key [16]byte
+	io.ReadFull(crand.Reader, key[:])
+	io.ReadFull(crand.Reader, r.seed[:])
+
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		panic(err)
+	}
+	r.block = block
+	r.count = 0
+}
+
+// Read fills p with random data using AES encryption.
+func (r *rngAES) Read(p []byte) (int, error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.updateSeed()
+	r.block.Encrypt(r.seed[:], r.seed[:])
+	return copy(p, r.seed[:]), nil
+}
+
+// rngChacha8 is a ChaCha8-based random number generator.
+type rngChacha8 struct {
+	mutex sync.Mutex
+	rand  *rand.ChaCha8
+	count uint64
+}
+
+// NewEntropyChacha8 creates a new ChaCha8-based entropy source.
+func NewEntropyChacha8() io.Reader {
+	var seed [32]byte
+	io.ReadFull(crand.Reader, seed[:])
+
+	return &rngChacha8{
+		rand: rand.NewChaCha8(seed),
+	}
+}
+
+// updateSeed updates the ChaCha8 seed after a certain number of reads.
+func (r *rngChacha8) updateSeed() {
+	if r.count < reseedInterval {
+		r.count++
+		return
+	}
+
+	var seed [32]byte
+	io.ReadFull(crand.Reader, seed[:])
+
+	r.rand.Seed(seed)
+	r.count = 0
+}
+
+// Read fills p with random data using ChaCha8.
+func (r *rngChacha8) Read(p []byte) (int, error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.updateSeed()
+	n, err := r.rand.Read(p)
+	return n, err
 }

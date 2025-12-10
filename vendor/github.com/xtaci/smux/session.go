@@ -255,16 +255,16 @@ func (s *Session) Close() error {
 		once = true
 	})
 
-	if once {
-		s.streamLock.Lock()
-		for k := range s.streams {
-			s.streams[k].sessionClose()
-		}
-		s.streamLock.Unlock()
-		return s.conn.Close()
-	} else {
+	if !once {
 		return io.ErrClosedPipe
 	}
+
+	s.streamLock.Lock()
+	for k := range s.streams {
+		s.streams[k].sessionClose()
+	}
+	s.streamLock.Unlock()
+	return s.conn.Close()
 }
 
 // CloseChan can be used by someone who wants to be notified immediately when this
@@ -352,16 +352,20 @@ func (s *Session) RemoteAddr() net.Addr {
 // notify the session that a stream has closed
 func (s *Session) streamClosed(sid uint32) {
 	s.streamLock.Lock()
-	if stream, ok := s.streams[sid]; ok {
-		n := stream.recycleTokens()
-		if n > 0 { // return remaining tokens to the bucket
-			if atomic.AddInt32(&s.bucket, int32(n)) > 0 {
-				s.notifyBucket()
-			}
-		}
-		delete(s.streams, sid)
+	defer s.streamLock.Unlock()
+
+	stream, ok := s.streams[sid]
+	if !ok {
+		return
 	}
-	s.streamLock.Unlock()
+
+	if n := stream.recycleTokens(); n > 0 {
+		// return remaining tokens to the bucket
+		if atomic.AddInt32(&s.bucket, int32(n)) > 0 {
+			s.notifyBucket()
+		}
+	}
+	delete(s.streams, sid)
 }
 
 // returnTokens is called by stream to return token after read
@@ -386,70 +390,79 @@ func (s *Session) recvLoop() {
 		}
 
 		// read header first
-		if _, err := io.ReadFull(s.conn, hdr[:]); err == nil {
-			atomic.StoreInt32(&s.dataReady, 1)
-			if hdr.Version() != byte(s.config.Version) {
-				s.notifyProtoError(ErrInvalidProtocol)
-				return
-			}
-			sid := hdr.StreamID()
-			switch hdr.Cmd() {
-			case cmdNOP:
-			case cmdSYN: // stream opening
-				s.streamLock.Lock()
-				if _, ok := s.streams[sid]; !ok {
-					stream := newStream(sid, s.config.MaxFrameSize, s)
-					s.streams[sid] = stream
-					select {
-					case s.chAccepts <- stream:
-					case <-s.die:
-					}
-				}
-				s.streamLock.Unlock()
-			case cmdFIN: // stream closing
-				s.streamLock.Lock()
-				if stream, ok := s.streams[sid]; ok {
-					stream.fin()
-					stream.notifyReadEvent()
-				}
-				s.streamLock.Unlock()
-			case cmdPSH: // data frame
-				if hdr.Length() > 0 {
-					pNewbuf := defaultAllocator.Get(int(hdr.Length()))
-					if written, err := io.ReadFull(s.conn, *pNewbuf); err == nil {
-						s.streamLock.Lock()
-						if stream, ok := s.streams[sid]; ok {
-							stream.pushBytes(pNewbuf)
-							// a stream used some token
-							atomic.AddInt32(&s.bucket, -int32(written))
-							stream.notifyReadEvent()
-						} else {
-							// data directed to a missing/closed stream, recycle the buffer immediately.
-							defaultAllocator.Put(pNewbuf)
-						}
-						s.streamLock.Unlock()
-					} else {
-						s.notifyReadError(err)
-						return
-					}
-				}
-			case cmdUPD: // a window update signal
-				if _, err := io.ReadFull(s.conn, updHdr[:]); err == nil {
-					s.streamLock.Lock()
-					if stream, ok := s.streams[sid]; ok {
-						stream.update(updHdr.Consumed(), updHdr.Window())
-					}
-					s.streamLock.Unlock()
-				} else {
-					s.notifyReadError(err)
-					return
-				}
-			default:
-				s.notifyProtoError(ErrInvalidProtocol)
-				return
-			}
-		} else {
+		_, err := io.ReadFull(s.conn, hdr[:])
+		if err != nil {
 			s.notifyReadError(err)
+			return
+		}
+
+		atomic.StoreInt32(&s.dataReady, 1)
+		if hdr.Version() != byte(s.config.Version) {
+			s.notifyProtoError(ErrInvalidProtocol)
+			return
+		}
+
+		sid := hdr.StreamID()
+		switch hdr.Cmd() {
+		case cmdNOP:
+		case cmdSYN: // stream opening
+			s.streamLock.Lock()
+			if _, ok := s.streams[sid]; !ok {
+				stream := newStream(sid, s.config.MaxFrameSize, s)
+				s.streams[sid] = stream
+				select {
+				case s.chAccepts <- stream:
+				case <-s.die:
+				}
+			}
+			s.streamLock.Unlock()
+		case cmdFIN: // stream closing
+			s.streamLock.Lock()
+			if stream, ok := s.streams[sid]; ok {
+				stream.fin()
+				stream.notifyReadEvent()
+			}
+			s.streamLock.Unlock()
+		case cmdPSH: // data frame
+			if hdr.Length() == 0 {
+				continue
+			}
+
+			pNewbuf := defaultAllocator.Get(int(hdr.Length()))
+			written, err := io.ReadFull(s.conn, *pNewbuf)
+			if err != nil {
+				s.notifyReadError(err)
+
+				// recycle the buffer immediately.
+				defaultAllocator.Put(pNewbuf)
+				return
+			}
+
+			s.streamLock.Lock()
+			if stream, ok := s.streams[sid]; ok {
+				stream.pushBytes(pNewbuf)
+				// a stream used some token
+				atomic.AddInt32(&s.bucket, -int32(written))
+				stream.notifyReadEvent()
+			} else {
+				// data directed to a missing/closed stream, recycle the buffer immediately.
+				defaultAllocator.Put(pNewbuf)
+			}
+			s.streamLock.Unlock()
+		case cmdUPD: // a window update signal
+			_, err := io.ReadFull(s.conn, updHdr[:])
+			if err != nil {
+				s.notifyReadError(err)
+				return
+			}
+
+			s.streamLock.Lock()
+			if stream, ok := s.streams[sid]; ok {
+				stream.update(updHdr.Consumed(), updHdr.Window())
+			}
+			s.streamLock.Unlock()
+		default:
+			s.notifyProtoError(ErrInvalidProtocol)
 			return
 		}
 	}
