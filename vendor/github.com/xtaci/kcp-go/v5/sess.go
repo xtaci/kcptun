@@ -1061,16 +1061,18 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 	}
 
 	// Now we have a valid conversation id here without a session object, create a new session.
+	// do not let the new sessions overwhelm accept queue
+	if len(l.chAccepts) >= cap(l.chAccepts) {
+		return
+	}
+
+	// new session
 	s = newUDPSession(conv, l.dataShards, l.parityShards, l, l.conn, false, addr, l.block)
 	s.kcpInput(data)
 	l.sessionLock.Lock()
 	l.sessions[addr.String()] = s
 	l.sessionLock.Unlock()
-	select {
-	case l.chAccepts <- s:
-	default:
-		// do not let the new sessions overwhelm accept queue
-	}
+	l.chAccepts <- s
 }
 
 func (l *Listener) notifyReadError(err error) {
