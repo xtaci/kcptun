@@ -22,7 +22,12 @@
 
 package kcp
 
-const maxAutoTuneSamples = 258
+import (
+	"container/heap"
+	"sort"
+)
+
+const maxAutoTuneSamples = 258 // 256 + 2 extra for edge detection
 
 // pulse represents a 0/1 signal with time sequence
 type pulse struct {
@@ -30,16 +35,43 @@ type pulse struct {
 	seq uint32 // sequence of the signal
 }
 
+// pulseHeap is a min-heap structure, ordered by the sequence number (seq).
+type pulseHeap []pulse
+
+func (h pulseHeap) Len() int           { return len(h) }
+func (h pulseHeap) Less(i, j int) bool { return h[i].seq < h[j].seq } // Min-heap: smaller seq goes to the top
+func (h pulseHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *pulseHeap) Push(x interface{}) {
+	*h = append(*h, x.(pulse))
+}
+
+func (h *pulseHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
 // autoTune object to detect pulses in a signal
 type autoTune struct {
-	pulses [maxAutoTuneSamples]pulse
+	pulses pulseHeap
 }
 
 // Sample adds a signal sample to the pulse buffer
 func (tune *autoTune) Sample(bit bool, seq uint32) {
-	// ensure seq is in range [pulses[0].seq, pulses[0].seq + maxAutoTuneSamples]
-	if seq >= tune.pulses[0].seq && seq <= tune.pulses[0].seq+maxAutoTuneSamples {
-		tune.pulses[seq%maxAutoTuneSamples] = pulse{bit, seq}
+	// 1. Push the new sample onto the heap
+	heap.Push(&tune.pulses, pulse{
+		bit: bit,
+		seq: seq,
+	})
+
+	// 2. Maintain the maximum capacity
+	// If the capacity is exceeded, pop the heap's root element (the packet with the smallest/oldest seq).
+	// This ensures the heap always contains the latest 258 packets in terms of sequence number.
+	if tune.pulses.Len() > maxAutoTuneSamples {
+		heap.Pop(&tune.pulses)
 	}
 }
 
@@ -59,37 +91,58 @@ func (tune *autoTune) Sample(bit bool, seq uint32) {
 //            A     B    C     D  E     F     G  H     I
 
 func (tune *autoTune) FindPeriod(bit bool) int {
-	// last pulse and initial index setup
-	lastPulse := tune.pulses[0]
-	idx := 1
+	// Copy the underlying array for sorting and analysis.
+	// This avoids modifying the heap structure.
+	sorted := make([]pulse, len(tune.pulses))
+	copy(sorted, tune.pulses)
+
+	// Sort the copied data by sequence number (seq) to ensure linear order for period calculation.
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].seq < sorted[j].seq
+	})
 
 	// left edge
-	var leftEdge int
-	for ; idx < len(tune.pulses); idx++ {
-		if lastPulse.bit != bit && tune.pulses[idx].bit == bit { // edge found
-			if lastPulse.seq+1 == tune.pulses[idx].seq { // ensure edge continuity
-				leftEdge = idx
+	leftEdge := -1
+	lastPulse := sorted[0]
+	idx := 1
+
+	for ; idx < len(sorted); idx++ {
+		if lastPulse.seq+1 == sorted[idx].seq { // continuous sequence
+			if lastPulse.bit != bit && sorted[idx].bit == bit { // edge found
+				leftEdge = idx // mark left edge(the changed bit position)
 				break
 			}
+		} else {
+			return -1
 		}
-		lastPulse = tune.pulses[idx]
+		lastPulse = sorted[idx]
+	}
+
+	// no left edge found
+	if leftEdge == -1 {
+		return -1
 	}
 
 	// right edge
-	var rightEdge int
-	lastPulse = tune.pulses[leftEdge]
+	rightEdge := -1
+	lastPulse = sorted[leftEdge]
 	idx = leftEdge + 1
 
-	for ; idx < len(tune.pulses); idx++ {
-		if lastPulse.seq+1 == tune.pulses[idx].seq { // ensure pulses in this level monotonic
-			if lastPulse.bit == bit && tune.pulses[idx].bit != bit { // edge found
+	for ; idx < len(sorted); idx++ {
+		if lastPulse.seq+1 == sorted[idx].seq {
+			if lastPulse.bit == bit && sorted[idx].bit != bit {
 				rightEdge = idx
 				break
 			}
 		} else {
 			return -1
 		}
-		lastPulse = tune.pulses[idx]
+		lastPulse = sorted[idx]
+	}
+
+	// no right edge found
+	if rightEdge == -1 {
+		return -1
 	}
 
 	return rightEdge - leftEdge
