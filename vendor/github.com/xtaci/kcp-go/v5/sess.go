@@ -184,18 +184,21 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 	sess.recvbuf = make([]byte, mtuLimit)
 	sess.initPlatform()
 
-	// FEC codec initialization
-	sess.fecDecoder = newFECDecoder(dataShards, parityShards)
-	if sess.block != nil {
-		sess.fecEncoder = newFECEncoder(dataShards, parityShards, cryptHeaderSize)
-	} else {
-		sess.fecEncoder = newFECEncoder(dataShards, parityShards, 0)
+	// calculate additional header size introduced by encryption
+	switch block := sess.block.(type) {
+	case nil:
+		sess.headerSize = 0
+	case *aeadCrypt:
+		sess.headerSize = block.NonceSize()
+	default:
+		sess.headerSize = cryptHeaderSize
 	}
 
-	// calculate additional header size introduced by FEC and encryption
-	if sess.block != nil {
-		sess.headerSize += cryptHeaderSize
-	}
+	// FEC codec initialization
+	sess.fecDecoder = newFECDecoder(dataShards, parityShards)
+	sess.fecEncoder = newFECEncoder(dataShards, parityShards, sess.headerSize)
+
+	// calculate additional header size introduced by FEC
 	if sess.fecEncoder != nil {
 		sess.headerSize += fecHeaderSizePlus2
 	}
@@ -217,7 +220,6 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 				// drop and recycle to avoid blocking; KCP will retransmit if needed
 				defaultBufferPool.Put(bts)
 			}
-
 		}
 	})
 
@@ -480,6 +482,9 @@ func (s *UDPSession) SetMtu(mtu int) bool {
 	mtu = min(mtuLimit, mtu)
 
 	mtu -= s.headerSize
+	if aead, ok := s.block.(*aeadCrypt); ok {
+		mtu -= aead.Overhead()
+	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -630,22 +635,42 @@ func (s *UDPSession) postProcess() {
 				ecc = s.fecEncoder.encode(buf, maxFECEncodeLatency)
 			}
 
-			// 2&3. crc32 & encryption
-			if s.block != nil {
+			// 2. Encryption
+			switch block := s.block.(type) {
+			case nil:
+			case *aeadCrypt: // AEAD mode
+				nonceSize := block.NonceSize()
+
+				dst := buf[:nonceSize]
+				nonce := buf[:nonceSize]
+				plaintext := buf[nonceSize:]
+
+				fillRand(nonce)
+				buf = block.Seal(dst, nonce, plaintext, nil)
+
+				for k := range ecc {
+					dst := ecc[k][:nonceSize]
+					nonce := ecc[k][:nonceSize]
+					plaintext := ecc[k][nonceSize:]
+
+					fillRand(nonce)
+					ecc[k] = block.Seal(dst, nonce, plaintext, nil)
+				}
+			default: // Cipher Feedback (CFB) mode
 				fillRand(buf[:nonceSize])
 				checksum := crc32.ChecksumIEEE(buf[cryptHeaderSize:])
 				binary.LittleEndian.PutUint32(buf[nonceSize:], checksum)
-				s.block.Encrypt(buf, buf)
+				block.Encrypt(buf, buf)
 
 				for k := range ecc {
 					fillRand(ecc[k][:nonceSize])
 					checksum := crc32.ChecksumIEEE(ecc[k][cryptHeaderSize:])
 					binary.LittleEndian.PutUint32(ecc[k][nonceSize:], checksum)
-					s.block.Encrypt(ecc[k], ecc[k])
+					block.Encrypt(ecc[k], ecc[k])
 				}
 			}
 
-			// 4. TxQueue
+			// 3. TxQueue
 			var msg ipv4.Message
 			msg.Addr = s.remote
 
@@ -778,7 +803,25 @@ func (s *UDPSession) notifyWriteError(err error) {
 // network -> [decryption ->] [crc32 ->] [FEC ->] [KCP input ->] stream -> application
 func (s *UDPSession) packetInput(data []byte) {
 	switch block := s.block.(type) {
-	case BlockCrypt:
+	case nil:
+	case *aeadCrypt:
+		nonceSize := block.NonceSize()
+		if len(data) < nonceSize+block.Overhead() {
+			break
+		}
+
+		nonce := data[:nonceSize]
+		ciphertext := data[nonceSize:]
+
+		plaintext, err := block.Open(ciphertext[:0], nonce, ciphertext, nil)
+		if err != nil {
+			atomic.AddUint64(&DefaultSnmp.InCsumErrors, 1)
+			return
+		}
+
+		data = plaintext
+	default:
+		// decryption and crc32 check
 		if len(data) < cryptHeaderSize {
 			return
 		}
@@ -791,16 +834,20 @@ func (s *UDPSession) packetInput(data []byte) {
 			atomic.AddUint64(&DefaultSnmp.InCsumErrors, 1)
 			return
 		}
+
 		data = data[crcSize:]
 	}
 
+	// basic check for minimum packet size
 	if len(data) < IKCP_OVERHEAD {
+		atomic.AddUint64(&DefaultSnmp.KCPInErrors, 1)
 		return
 	}
 
 	s.kcpInput(data)
 }
 
+// kcpInput inputs a decrypted and crc32-checked packet into kcp with FEC handling
 func (s *UDPSession) kcpInput(data []byte) {
 	atomic.AddUint64(&DefaultSnmp.InPkts, 1)
 	atomic.AddUint64(&DefaultSnmp.InBytes, uint64(len(data)))
@@ -809,7 +856,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 	fecFlag := binary.LittleEndian.Uint16(data[4:])
 
 	switch fecFlag {
-	case typeData, typeParity:
+	case typeData, typeParity: // packet with FEC
 		if len(data) < fecHeaderSizePlus2 {
 			atomic.AddUint64(&DefaultSnmp.InErrs, 1)
 			return
@@ -865,7 +912,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 		if kcpInErrors > 0 {
 			atomic.AddUint64(&DefaultSnmp.KCPInErrors, kcpInErrors)
 		}
-	default:
+	default: // packet without FEC
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -914,7 +961,25 @@ type (
 // packet input stage
 func (l *Listener) packetInput(data []byte, addr net.Addr) {
 	switch block := l.block.(type) {
-	case BlockCrypt:
+	case nil:
+	case *aeadCrypt:
+		nonceSize := block.NonceSize()
+		if len(data) < nonceSize+block.Overhead() {
+			break
+		}
+
+		nonce := data[:nonceSize]
+		ciphertext := data[nonceSize:]
+
+		plaintext, err := block.Open(ciphertext[:0], nonce, ciphertext, nil)
+		if err != nil {
+			atomic.AddUint64(&DefaultSnmp.InCsumErrors, 1)
+			return
+		}
+
+		data = plaintext
+	default:
+		// decryption and crc32 check
 		if len(data) < cryptHeaderSize {
 			return
 		}
@@ -927,20 +992,24 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 			atomic.AddUint64(&DefaultSnmp.InCsumErrors, 1)
 			return
 		}
+
 		data = data[crcSize:]
 	}
 
+	// basic check for minimum packet size
 	if len(data) < IKCP_OVERHEAD {
 		return
 	}
 
+	// look for existing session
 	l.sessionLock.RLock()
-	s, ok := l.sessions[addr.String()]
+	s, exist := l.sessions[addr.String()]
 	l.sessionLock.RUnlock()
 
 	var conv, sn uint32
 	hasConv := false
 
+	// try to get conversation id from the packet
 	// 16bit kcp cmd [81-84] and frg [0-255] will not overlap with FEC type 0x00f1 0x00f2
 	fecFlag := binary.LittleEndian.Uint16(data[4:])
 
@@ -963,39 +1032,40 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 		sn = binary.LittleEndian.Uint32(data[IKCP_SN_OFFSET:])
 	}
 
-	if ok {
-		// existing connection
-
+	// on an existing connection
+	if exist {
+		// If we have a valid conversation id or we cannot get conversation id from the packet,
+		// just feed the data into the existing session.
 		if !hasConv || conv == s.kcp.conv {
-			// parity data or valid conversation
 			s.kcpInput(data)
 			return
 		}
-
+		// conversation id mismatched, only accept reset packet with sn == 0
 		if sn != 0 {
 			return
 		}
-
-		// should replace current connection
+		// Close will remove the session from listener's session map,
+		// So we can create a new session with the same addr below.
 		s.Close()
 	}
 
+	// The connection does not exist, try to create a new one.
+	// But if we don't have a valid conversation id, nothing we can do here except dropping the packet.
 	if !hasConv {
 		return
 	}
 
-	if len(l.chAccepts) >= cap(l.chAccepts) {
-		// do not let the new sessions overwhelm accept queue
-		return
-	}
-
-	// new session
+	// Now we have a valid conversation id here without a session object, create a new session.
 	s = newUDPSession(conv, l.dataShards, l.parityShards, l, l.conn, false, addr, l.block)
 	s.kcpInput(data)
 	l.sessionLock.Lock()
 	l.sessions[addr.String()] = s
 	l.sessionLock.Unlock()
-	l.chAccepts <- s
+	select {
+	case l.chAccepts <- s:
+	default:
+		// do not let the new sessions overwhelm accept queue
+	}
 }
 
 func (l *Listener) notifyReadError(err error) {

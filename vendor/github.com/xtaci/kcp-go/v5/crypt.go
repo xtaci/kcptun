@@ -65,19 +65,69 @@ type BlockCrypt interface {
 	Decrypt(dst, src []byte)
 }
 
+var _ BlockCrypt = &aeadCrypt{}
+
+// aeadCrypt implements BlockCrypt interface using cipher.AEAD
+type aeadCrypt struct {
+	aead cipher.AEAD
+}
+
+func (aeadCrypt) Encrypt(_, _ []byte) {
+	panic("called Encrypt on AEAD crypt")
+}
+
+func (aeadCrypt) Decrypt(_, _ []byte) {
+	panic("called Decrypt on AEAD crypt")
+}
+
+func (a *aeadCrypt) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
+	return a.aead.Seal(dst, nonce, plaintext, additionalData)
+}
+
+func (a *aeadCrypt) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, error) {
+	return a.aead.Open(dst, nonce, ciphertext, additionalData)
+}
+
+func (a *aeadCrypt) NonceSize() int {
+	return a.aead.NonceSize()
+}
+
+func (a *aeadCrypt) Overhead() int {
+	return a.aead.Overhead()
+}
+
+// NewAEADCrypt creates an AEAD BlockCrypt instance from an existing cipher.AEAD
+func NewAEADCrypt(aead cipher.AEAD) BlockCrypt {
+	if aead == nil {
+		return nil
+	}
+	return &aeadCrypt{aead}
+}
+
+// NewAESGCMCrypt creates an AEAD BlockCrypt instance using AES-GCM
+// key must be either 16, 24, or 32 bytes to select
+// AES-128, AES-192, or AES-256.
+func NewAESGCMCrypt(key []byte) (BlockCrypt, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	return &aeadCrypt{aesgcm}, nil
+}
+
+var _ BlockCrypt = &blockCrypt{}
+
+// blockCrypt implements BlockCrypt interface using a cipher.Block
 type blockCrypt struct {
 	enc, dec       sync.Mutex
 	encbuf, decbuf []byte // 64bit alignment enc/dec buffer
 	block          cipher.Block
-}
-
-func newBlockCrypt(block cipher.Block) BlockCrypt {
-	blockSize := block.BlockSize()
-	return &blockCrypt{
-		block:  block,
-		encbuf: make([]byte, blockSize),
-		decbuf: make([]byte, 2*blockSize),
-	}
 }
 
 func (c *blockCrypt) Encrypt(dst, src []byte) {
@@ -92,6 +142,15 @@ func (c *blockCrypt) Decrypt(dst, src []byte) {
 	defer c.dec.Unlock()
 
 	decrypt(c.block, dst, src, c.decbuf)
+}
+
+func newBlockCrypt(block cipher.Block) BlockCrypt {
+	blockSize := block.BlockSize()
+	return &blockCrypt{
+		block:  block,
+		encbuf: make([]byte, blockSize),
+		decbuf: make([]byte, 2*blockSize),
+	}
 }
 
 type salsa20BlockCrypt struct {
