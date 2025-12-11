@@ -81,6 +81,10 @@ func (aeadCrypt) Decrypt(_, _ []byte) {
 }
 
 func (a *aeadCrypt) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
+	if dst == nil || cap(dst)-len(dst) < len(plaintext)+a.aead.Overhead() {
+		panic("AEAD Seal allocated new slice, please increase MTU size")
+	}
+
 	return a.aead.Seal(dst, nonce, plaintext, additionalData)
 }
 

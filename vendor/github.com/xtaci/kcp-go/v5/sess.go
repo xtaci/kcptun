@@ -223,6 +223,11 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 		}
 	})
 
+	// Set Default MTU
+	if !sess.SetMtu(IKCP_MTU_DEF) {
+		panic("Overhead too large")
+	}
+
 	// create post-processing goroutine
 	go sess.postProcess()
 
