@@ -91,7 +91,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "crypt",
 			Value: "aes",
-			Usage: "aes, aes-128, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, aead, none, null",
+			Usage: "aes, aes-128, aes-128-gcm, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, one, null",
 		},
 		cli.BoolFlag{
 			Name:  "QPP",
@@ -376,8 +376,8 @@ func main() {
 			block, _ = kcp.NewXTEABlockCrypt(pass[:16])
 		case "salsa20":
 			block, _ = kcp.NewSalsa20BlockCrypt(pass)
-		case "aead":
-			block, _ = kcp.NewAESBlockCrypt(pass)
+		case "aes-128-gcm":
+			block, _ = kcp.NewAESGCMCrypt(pass[:16])
 		default:
 			config.Crypt = "aes"
 			block, _ = kcp.NewAESBlockCrypt(pass)
