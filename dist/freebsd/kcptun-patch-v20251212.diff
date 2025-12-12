@@ -1,12 +1,12 @@
 diff --git a/net/kcptun/Makefile b/net/kcptun/Makefile
 new file mode 100644
-index 000000000000..ee2c4a2c59b1
+index 000000000000..0c2293a176e3
 --- /dev/null
 +++ b/net/kcptun/Makefile
 @@ -0,0 +1,47 @@
 +PORTNAME=	kcptun
 +DISTVERSIONPREFIX=	v
-+DISTVERSION=	20251206
++DISTVERSION=	20251212
 +CATEGORIES=	net
 +
 +MAINTAINER=	imap@live.com
@@ -53,13 +53,13 @@ index 000000000000..ee2c4a2c59b1
 +.include <bsd.port.mk>
 diff --git a/net/kcptun/distinfo b/net/kcptun/distinfo
 new file mode 100644
-index 000000000000..f96a59051c87
+index 000000000000..7f6888261072
 --- /dev/null
 +++ b/net/kcptun/distinfo
 @@ -0,0 +1,3 @@
-+TIMESTAMP = 1765004957
-+SHA256 (xtaci-kcptun-v20251206_GH0.tar.gz) = 102b15df11637df6d840b9096883d69b98c8b775f9c4d2ef85ab77db7a69ff1a
-+SIZE (xtaci-kcptun-v20251206_GH0.tar.gz) = 2715979
++TIMESTAMP = 1765516478
++SHA256 (xtaci-kcptun-v20251212_GH0.tar.gz) = 19e7f7786253d82e89f16a42c8e1088cdd39d043c343cbfc25a4db4ec334c9b0
++SIZE (xtaci-kcptun-v20251212_GH0.tar.gz) = 2743375
 diff --git a/net/kcptun/files/kcptun-client.json.sample b/net/kcptun/files/kcptun-client.json.sample
 new file mode 100644
 index 000000000000..383a44bceb47
