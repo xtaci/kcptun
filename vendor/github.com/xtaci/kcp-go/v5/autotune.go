@@ -38,9 +38,12 @@ type pulse struct {
 // pulseHeap is a min-heap structure, ordered by the sequence number (seq).
 type pulseHeap []pulse
 
-func (h pulseHeap) Len() int           { return len(h) }
-func (h pulseHeap) Less(i, j int) bool { return h[i].seq < h[j].seq } // Min-heap: smaller seq goes to the top
-func (h pulseHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h pulseHeap) Len() int { return len(h) }
+func (h pulseHeap) Less(i, j int) bool { // Min-heap: smaller seq goes to the top
+	return _itimediff(h[i].seq, h[j].seq) < 0
+}
+
+func (h pulseHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h *pulseHeap) Push(x interface{}) {
 	*h = append(*h, x.(pulse))
@@ -91,6 +94,11 @@ func (tune *autoTune) Sample(bit bool, seq uint32) {
 //            A     B    C     D  E     F     G  H     I
 
 func (tune *autoTune) FindPeriod(bit bool) int {
+	// Need at least 3 samples to detect a period (rising and falling edges)
+	if tune.pulses.Len() < 3 {
+		return -1
+	}
+
 	// Copy the underlying array for sorting and analysis.
 	// This avoids modifying the heap structure.
 	sorted := make([]pulse, len(tune.pulses))
