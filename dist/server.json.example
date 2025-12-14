@@ -1,5 +1,5 @@
 {
-        "listen": ":29900",
+        "listen": ":29900-29999",
         "target": "127.0.0.1:2000",
         "key": "PASSWORD",
         "crypt": "aes-128",
