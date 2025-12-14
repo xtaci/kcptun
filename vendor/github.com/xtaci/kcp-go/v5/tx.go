@@ -29,7 +29,7 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-// defaultTx is the default procedure to transmit data
+// defaultTx is the default transmission function for UDP sessions.
 func (s *UDPSession) defaultTx(txqueue []ipv4.Message) {
 	nbytes := 0
 	npkts := 0

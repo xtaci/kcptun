@@ -106,7 +106,7 @@ func (tune *autoTune) FindPeriod(bit bool) int {
 
 	// Sort the copied data by sequence number (seq) to ensure linear order for period calculation.
 	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].seq < sorted[j].seq
+		return _itimediff(sorted[i].seq, sorted[j].seq) < 0
 	})
 
 	// left edge

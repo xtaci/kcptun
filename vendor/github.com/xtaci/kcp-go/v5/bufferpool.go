@@ -50,6 +50,7 @@ func (bp *bufferPool) Get() []byte {
 
 // Put returns a buffer to the pool.
 func (bp *bufferPool) Put(buf []byte) {
+	// Only put back buffers of the correct size.
 	if cap(buf) != mtuLimit {
 		return
 	}

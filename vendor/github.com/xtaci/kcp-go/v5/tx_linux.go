@@ -31,7 +31,8 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-// tx is the optimized procedure to transmit packets utilizing the linux sendmmsg system call
+// tx is the optimized procedure to transmit packets utilizing
+// batch write syscall on linux platform.
 func (s *UDPSession) tx(txqueue []ipv4.Message) {
 	// default version
 	if s.platform.batchConn == nil {

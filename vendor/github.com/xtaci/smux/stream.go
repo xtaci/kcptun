@@ -41,28 +41,29 @@ type stream struct {
 	id   uint32 // Stream identifier
 	sess *Session
 
-	buffers []*[]byte // the sequential buffers of stream
+	buffers []*[]byte // slice of buffers holding ordered incoming data
 	heads   []*[]byte // slice heads of the buffers above, kept for recycle
 
 	bufferLock sync.Mutex // Mutex to protect access to buffers
 	frameSize  int        // Maximum frame size for the stream
 
-	// notify a read event
-	chReadEvent chan struct{}
+	// wakeup channels
+	chReaderWakeup chan struct{}
+	chWriterWakeup chan struct{}
 
-	// flag the stream has closed
+	// stream closing
 	die     chan struct{}
 	dieOnce sync.Once // Ensures die channel is closed only once
 
-	// FIN command
+	// to handle FIN event(i.e. EOF)
 	chFinEvent   chan struct{}
 	finEventOnce sync.Once // Ensures chFinEvent is closed only once
 
-	// deadlines
+	// read/write deadline
 	readDeadline  atomic.Value
 	writeDeadline atomic.Value
 
-	// per stream sliding window control
+	// v2 stream fields(flow control)
 	numRead    uint32 // count num of bytes read
 	numWritten uint32 // count num of bytes written
 	incr       uint32 // bytes sent since last window update
@@ -77,7 +78,8 @@ type stream struct {
 func newStream(id uint32, frameSize int, sess *Session) *stream {
 	s := new(stream)
 	s.id = id
-	s.chReadEvent = make(chan struct{}, 1)
+	s.chReaderWakeup = make(chan struct{}, 1)
+	s.chWriterWakeup = make(chan struct{}, 1)
 	s.chUpdate = make(chan struct{}, 1)
 	s.frameSize = frameSize
 	s.sess = sess
@@ -96,7 +98,13 @@ func (s *stream) ID() uint32 {
 // Read reads data from the stream into the provided buffer.
 func (s *stream) Read(b []byte) (n int, err error) {
 	for {
-		n, err = s.tryRead(b)
+		switch s.sess.config.Version {
+		case 2:
+			n, err = s.tryReadV2(b)
+		default:
+			n, err = s.tryReadV1(b)
+		}
+
 		if err != ErrWouldBlock {
 			return n, err
 		}
@@ -107,36 +115,35 @@ func (s *stream) Read(b []byte) (n int, err error) {
 	}
 }
 
-// tryRead attempts to read data from the stream without blocking.
-func (s *stream) tryRead(b []byte) (n int, err error) {
-	if s.sess.config.Version == 2 {
-		return s.tryReadv2(b)
-	}
-
+func (s *stream) tryReadV1(b []byte) (n int, err error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
 
-	// A critical section to copy data from buffers to
+	// A critical section to copy data from buffers to b
 	s.bufferLock.Lock()
 	if len(s.buffers) > 0 {
 		n = copy(b, *s.buffers[0])
 		*s.buffers[0] = (*s.buffers[0])[n:]
+
+		// recycle buffer when fully consumed
 		if len(*s.buffers[0]) == 0 {
 			s.buffers[0] = nil
 			s.buffers = s.buffers[1:]
-			// full recycle
 			defaultAllocator.Put(s.heads[0])
 			s.heads = s.heads[1:]
 		}
 	}
 	s.bufferLock.Unlock()
 
+	// return tokens to session to allow more data to be received
 	if n > 0 {
 		s.sess.returnTokens(n)
 		return n, nil
 	}
 
+	// even if the stream has been closed, we try to deliver all buffered data first.
+	// only when there's no data left in buffer, we return EOF to reader.
 	select {
 	case <-s.die:
 		return 0, io.EOF
@@ -145,8 +152,8 @@ func (s *stream) tryRead(b []byte) (n int, err error) {
 	}
 }
 
-// tryReadv2 is the non-blocking version of Read for version 2 streams.
-func (s *stream) tryReadv2(b []byte) (n int, err error) {
+// tryReadV2 is the non-blocking version of Read for version 2 streams.
+func (s *stream) tryReadV2(b []byte) (n int, err error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
@@ -156,29 +163,31 @@ func (s *stream) tryReadv2(b []byte) (n int, err error) {
 	if len(s.buffers) > 0 {
 		n = copy(b, *s.buffers[0])
 		*s.buffers[0] = (*s.buffers[0])[n:]
+
+		// recycle buffer when fully consumed
 		if len(*s.buffers[0]) == 0 {
 			s.buffers[0] = nil
 			s.buffers = s.buffers[1:]
-			// full recycle
 			defaultAllocator.Put(s.heads[0])
 			s.heads = s.heads[1:]
 		}
 	}
 
-	// in an ideal environment:
-	// if more than half of buffer has consumed, send read ack to peer
-	// based on round-trip time of ACK, continous flowing data
-	// won't slow down due to waiting for ACK, as long as the
-	// consumer keeps on reading data.
+	// In an ideal environment:
+	// If more than half of the buffer has been consumed, send a read ACK to the peer.
+	// With the ACK round-trip time taken into account, a continuous data stream
+	// will not slow down due to waiting for ACKs, as long as the consumer
+	// continues reading data.
 	//
-	// s.numRead == n implies that it's the initial reading
+	// s.numRead == n indicates that this is the initial read.
 	s.numRead += uint32(n)
 	s.incr += uint32(n)
 
-	// for initial reading, send window update
+	// send window update if the increased bytes exceed half of the buffer size
+	// or this is the initial read.
 	if s.incr >= uint32(s.sess.config.MaxStreamBuffer/2) || s.numRead == uint32(n) {
 		notifyConsumed = s.numRead
-		s.incr = 0 // reset couting for next window update
+		s.incr = 0 // reset incr counter
 	}
 	s.bufferLock.Unlock()
 
@@ -207,12 +216,20 @@ func (s *stream) tryReadv2(b []byte) (n int, err error) {
 // If the underlying stream is a v2 stream, it will send window update to peer when necessary.
 // If the underlying stream is a v1 stream, it will not send window update to peer.
 func (s *stream) WriteTo(w io.Writer) (n int64, err error) {
-	if s.sess.config.Version == 2 {
-		return s.writeTov2(w)
+	switch s.sess.config.Version {
+	case 2:
+		return s.writeToV2(w)
+	default:
+		return s.writeToV1(w)
 	}
+}
 
+// check comments in WriteTo
+func (s *stream) writeToV1(w io.Writer) (n int64, err error) {
 	for {
 		var pbuf *[]byte
+
+		// get the next buffer to write
 		s.bufferLock.Lock()
 		if len(s.buffers) > 0 {
 			pbuf = s.buffers[0]
@@ -221,6 +238,7 @@ func (s *stream) WriteTo(w io.Writer) (n int64, err error) {
 		}
 		s.bufferLock.Unlock()
 
+		// write the buffer to w
 		if pbuf != nil {
 			nw, ew := w.Write(*pbuf)
 			// NOTE: WriteTo is a reader, so we need to return tokens here
@@ -240,28 +258,35 @@ func (s *stream) WriteTo(w io.Writer) (n int64, err error) {
 }
 
 // check comments in WriteTo
-func (s *stream) writeTov2(w io.Writer) (n int64, err error) {
+func (s *stream) writeToV2(w io.Writer) (n int64, err error) {
 	for {
 		var notifyConsumed uint32
 		var pbuf *[]byte
+
+		// get the next buffer to write
 		s.bufferLock.Lock()
 		if len(s.buffers) > 0 {
 			pbuf = s.buffers[0]
 			s.buffers = s.buffers[1:]
 			s.heads = s.heads[1:]
 		}
+
+		// in v2, we need to track the number of bytes read
 		var bufLen uint32
 		if pbuf != nil {
 			bufLen = uint32(len(*pbuf))
 		}
 		s.numRead += bufLen
 		s.incr += bufLen
+
+		// send window update if the increased bytes exceed half of the buffer size
 		if s.incr >= uint32(s.sess.config.MaxStreamBuffer/2) || s.numRead == bufLen {
 			notifyConsumed = s.numRead
 			s.incr = 0
 		}
 		s.bufferLock.Unlock()
 
+		// same as v1, write the buffer to w
 		if pbuf != nil {
 			nw, ew := w.Write(*pbuf)
 			// NOTE: WriteTo is a reader, so we need to return tokens here
@@ -275,6 +300,7 @@ func (s *stream) writeTov2(w io.Writer) (n int64, err error) {
 				return n, ew
 			}
 
+			// send window update
 			if notifyConsumed > 0 {
 				if err := s.sendWindowUpdate(notifyConsumed); err != nil {
 					return n, err
@@ -286,7 +312,7 @@ func (s *stream) writeTov2(w io.Writer) (n int64, err error) {
 	}
 }
 
-// sendWindowUpdate sends a window update frame to the peer.
+// sendWindowUpdate sends a window update command to the peer.
 func (s *stream) sendWindowUpdate(consumed uint32) error {
 	var timer *time.Timer
 	var deadline <-chan time.Time
@@ -301,7 +327,7 @@ func (s *stream) sendWindowUpdate(consumed uint32) error {
 	binary.LittleEndian.PutUint32(hdr[:], consumed)
 	binary.LittleEndian.PutUint32(hdr[4:], uint32(s.sess.config.MaxStreamBuffer))
 	frame.data = hdr[:]
-	_, err := s.sess.writeFrameInternal(frame, deadline, CLSCTRL)
+	_, err := s.sess.writeFrameInternal(frame, deadline, CLSCTRL) // <-- NOTE(x): use control channel
 	return err
 }
 
@@ -316,7 +342,7 @@ func (s *stream) waitRead() error {
 	}
 
 	select {
-	case <-s.chReadEvent: // notify some data has arrived, or closed
+	case <-s.chReaderWakeup: // notify some data has arrived, or closed
 		return nil
 	case <-s.chFinEvent:
 		// BUGFIX(xtaci): Fix for https://github.com/xtaci/smux/issues/82
@@ -343,15 +369,19 @@ func (s *stream) waitRead() error {
 // Note that the behavior when multiple goroutines write concurrently is not deterministic,
 // frames may interleave in random way.
 func (s *stream) Write(b []byte) (n int, err error) {
-	if s.sess.config.Version == 2 {
+	switch s.sess.config.Version {
+	case 2:
 		return s.writeV2(b)
+	default:
+		return s.writeV1(b)
 	}
+}
 
-	var deadline <-chan time.Time
-	if d, ok := s.writeDeadline.Load().(time.Time); ok && !d.IsZero() {
-		timer := time.NewTimer(time.Until(d))
-		defer timer.Stop()
-		deadline = timer.C
+// writeV1 writes data to the stream for version 1 streams.
+func (s *stream) writeV1(b []byte) (n int, err error) {
+	// check empty input
+	if len(b) == 0 {
+		return 0, nil
 	}
 
 	// check if stream has closed
@@ -361,6 +391,14 @@ func (s *stream) Write(b []byte) (n int, err error) {
 	case <-s.die:
 		return 0, io.ErrClosedPipe
 	default:
+	}
+
+	// create write deadline timer
+	var deadline <-chan time.Time
+	if d, ok := s.writeDeadline.Load().(time.Time); ok && !d.IsZero() {
+		timer := time.NewTimer(time.Until(d))
+		defer timer.Stop()
+		deadline = timer.C
 	}
 
 	// frame split and transmit
@@ -402,19 +440,19 @@ func (s *stream) writeV2(b []byte) (n int, err error) {
 	default:
 	}
 
-	// create write deadline timer
-	var deadline <-chan time.Time
-	if d, ok := s.writeDeadline.Load().(time.Time); ok && !d.IsZero() {
-		timer := time.NewTimer(time.Until(d))
-		defer timer.Stop()
-		deadline = timer.C
-	}
-
 	// frame split and transmit process
 	sent := 0
 	frame := newFrame(byte(s.sess.config.Version), cmdPSH, s.id)
 
 	for {
+		// update write deadline timer
+		var deadline <-chan time.Time
+		if d, ok := s.writeDeadline.Load().(time.Time); ok && !d.IsZero() {
+			timer := time.NewTimer(time.Until(d))
+			defer timer.Stop()
+			deadline = timer.C
+		}
+
 		// per stream sliding window control
 		// [.... [consumed... numWritten] ... win... ]
 		// [.... [consumed...................+rmtwnd]]
@@ -463,14 +501,16 @@ func (s *stream) writeV2(b []byte) (n int, err error) {
 			b = b[n:]
 		}
 
-		// if there is any data left to be sent,
-		// wait until stream closes, window changes or deadline reached
-		// this blocking behavior will back propagate flow control to upper layer.
+		// all data has been sent
 		if len(b) <= 0 {
 			return sent, nil
 		}
 
+		// If there is remaining data to be sent,
+		// wait until the stream is closed, the window changes, or the deadline is reached.
+		// This blocking behavior propagates flow control back to the upper layer (backpressure).
 		select {
+		case <-s.chWriterWakeup: // wakeup
 		case <-s.chFinEvent:
 			return 0, io.EOF
 		case <-s.die:
@@ -503,7 +543,7 @@ func (s *stream) Close() error {
 	timer := time.NewTimer(openCloseTimeout)
 	defer timer.Stop()
 
-	_, err := s.sess.writeFrameInternal(f, timer.C, CLSDATA)
+	_, err := s.sess.writeFrameInternal(f, timer.C, CLSDATA) // NOTE(x): use data channel, EOF as data.
 	s.sess.streamClosed(s.id)
 	return err
 }
@@ -519,7 +559,7 @@ func (s *stream) GetDieCh() <-chan struct{} {
 // A zero time value disables the deadline.
 func (s *stream) SetReadDeadline(t time.Time) error {
 	s.readDeadline.Store(t)
-	s.notifyReadEvent()
+	s.wakeupReader()
 	return nil
 }
 
@@ -528,6 +568,7 @@ func (s *stream) SetReadDeadline(t time.Time) error {
 // A zero time value disables the deadline.
 func (s *stream) SetWriteDeadline(t time.Time) error {
 	s.writeDeadline.Store(t)
+	s.wakeupWriter()
 	return nil
 }
 
@@ -590,25 +631,36 @@ func (s *stream) recycleTokens() (n int) {
 	return
 }
 
-// notify read event
-func (s *stream) notifyReadEvent() {
+// wakeupReader notifies read process
+func (s *stream) wakeupReader() {
 	select {
-	case s.chReadEvent <- struct{}{}:
+	case s.chReaderWakeup <- struct{}{}:
+	default:
+	}
+}
+
+// wakeupWriter notifies write process
+func (s *stream) wakeupWriter() {
+	select {
+	case s.chWriterWakeup <- struct{}{}:
 	default:
 	}
 }
 
 // update command
 func (s *stream) update(consumed uint32, window uint32) {
+	// update peer consumed and window size immediately
 	atomic.StoreUint32(&s.peerConsumed, consumed)
 	atomic.StoreUint32(&s.peerWindow, window)
+
+	// notify write process
 	select {
 	case s.chUpdate <- struct{}{}:
 	default:
 	}
 }
 
-// mark this stream has been closed in protocol
+// mark this stream has been closed in protocol, i.e. receive EOF
 func (s *stream) fin() {
 	s.finEventOnce.Do(func() {
 		close(s.chFinEvent)

@@ -292,7 +292,7 @@ RESET_TIMER:
 				s.recvbuf = make([]byte, size)
 			}
 
-			// resize the length of recvbuf to correspond to data size
+			// resize the length of recvbuf to match the data size
 			s.recvbuf = s.recvbuf[:size]
 			s.kcp.Recv(s.recvbuf)    // read data to recvbuf first
 			n = copy(b, s.recvbuf)   // then copy bytes to 'b' as many as possible

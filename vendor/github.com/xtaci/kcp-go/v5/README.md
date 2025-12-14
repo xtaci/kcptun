@@ -34,9 +34,10 @@ This library is designed to provide **smooth, resilient, ordered, error-checked 
 4. Compatible with [net.Conn](https://golang.org/pkg/net/#Conn) and [net.Listener](https://golang.org/pkg/net/#Listener), serving as a drop-in replacement for [net.TCPConn](https://golang.org/pkg/net/#TCPConn).
 5. [FEC (Forward Error Correction)](https://en.wikipedia.org/wiki/Forward_error_correction) support by [Reed-Solomon Codes](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction).
 6. Packet-level encryption support on [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard), [TEA](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm), [3DES](https://en.wikipedia.org/wiki/Triple_DES), [Blowfish](https://en.wikipedia.org/wiki/Blowfish_(cipher)), [Cast5](https://en.wikipedia.org/wiki/CAST-128), [Salsa20](https://en.wikipedia.org/wiki/Salsa20), etc., in [CFB](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)) mode, generating completely anonymous packets.
-7. Only **a fixed number of goroutines** are created for the entire server application, with costs in **context switching** between goroutines taken into consideration.
-8. Compatible with [skywind3000's](https://github.com/skywind3000) C version with various improvements.
-9. Platform-dependent optimizations: [sendmmsg](http://man7.org/linux/man-pages/man2/sendmmsg.2.html) and [recvmmsg](http://man7.org/linux/man-pages/man2/recvmmsg.2.html) exploited for Linux.
+7. [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption) packet encryption support.
+8. Only **a fixed number of goroutines** are created for the entire server application, with costs in **context switching** between goroutines taken into consideration.
+9. Compatible with [skywind3000's](https://github.com/skywind3000) C version with various improvements.
+10. Platform-dependent optimizations: [sendmmsg](http://man7.org/linux/man-pages/man2/sendmmsg.2.html) and [recvmmsg](http://man7.org/linux/man-pages/man2/recvmmsg.2.html) exploited for Linux.
 
 ## Documentation
 
