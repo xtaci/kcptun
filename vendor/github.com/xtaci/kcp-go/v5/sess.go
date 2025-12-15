@@ -1020,7 +1020,7 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 
 	switch fecFlag {
 	case typeData:
-		// packet with FEC
+		// data packet of FEC, conversation id inside
 		if len(data) < fecHeaderSizePlus2+IKCP_OVERHEAD {
 			break
 		}
@@ -1029,7 +1029,7 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 		conv = binary.LittleEndian.Uint32(data[fecHeaderSizePlus2:])
 		sn = binary.LittleEndian.Uint32(data[fecHeaderSizePlus2+IKCP_SN_OFFSET:])
 	case typeParity:
-		// packet with FEC
+		// parity packet of FEC, conversation id inside
 	default:
 		// packet without FEC
 		hasConv = true

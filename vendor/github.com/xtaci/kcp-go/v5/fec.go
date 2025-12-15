@@ -108,6 +108,7 @@ type fecDecoder struct {
 	parityShards int
 	shardSize    int
 	shardSet     map[uint32]*shardHeap // shardMap[initial shard id] = shardHeap
+	paws         uint32                // Protect Against Wrapped Sequence numbers
 
 	// record the latest recovered shard id
 	// the shards smaller than this one will be discarded
@@ -130,11 +131,16 @@ func newFECDecoder(dataShards, parityShards int) *fecDecoder {
 		return nil
 	}
 
+	if dataShards+parityShards > 256 {
+		return nil
+	}
+
 	dec := new(fecDecoder)
 	dec.dataShards = dataShards
 	dec.parityShards = parityShards
 	dec.shardSize = dataShards + parityShards
 	dec.shardSet = make(map[uint32]*shardHeap)
+	dec.paws = 0xffffffff / uint32(dec.shardSize) * uint32(dec.shardSize)
 	codec, err := reedsolomon.New(dataShards, parityShards)
 	if err != nil {
 		return nil
@@ -154,8 +160,13 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 		dec.autoTune.Sample(false, in.seqid())
 	}
 
+	// check seqid < paws to avoid invalid packets
+	if in.seqid() >= dec.paws {
+		return nil
+	}
+
 	// check if the packet type matches the current FEC parameters
-	if int(in.seqid())%dec.shardSize < dec.dataShards {
+	if in.seqid()%uint32(dec.shardSize) < uint32(dec.dataShards) {
 		if in.flag() != typeData { // expect typeData
 			dec.shouldTune = true
 		}
@@ -171,7 +182,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 		autoPS := dec.autoTune.FindPeriod(false)
 
 		// validate the auto-tuned parameters
-		if autoDS > 0 && autoPS > 0 && autoDS < 256 && autoPS < 256 {
+		if autoDS > 0 && autoPS > 0 && autoDS+autoPS < 256 {
 			if autoDS != dec.dataShards || autoPS != dec.parityShards {
 				// apply the new FEC parameters
 				dec.dataShards = autoDS
@@ -185,6 +196,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				dec.codec = codec
 				dec.decodeCache = make([][]byte, dec.shardSize)
 				dec.flagCache = make([]bool, dec.shardSize)
+				dec.paws = 0xffffffff / uint32(dec.shardSize) * uint32(dec.shardSize)
 				dec.shouldTune = false
 				//log.Println("autotune to :", dec.dataShards, dec.parityShards)
 			}
