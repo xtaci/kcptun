@@ -162,7 +162,7 @@ GLOBAL OPTIONS:
    --autoexpire value               set auto expiration time(in seconds) for a single UDP connection, 0 to disable (default: 0)
    --scavengettl value              set how long an expired connection can live (in seconds) (default: 600)
    --mtu value                      set maximum transmission unit for UDP packets (default: 1350)
-   --ratelimit value                set maximum outgoing speed (in bytes per second) for a single KCP connection, 0 to disable. Enabling this will improve the stability of connections under high speed. (default: 0)
+   --ratelimit value                set maximum outgoing speed (in bytes per second) for a single KCP connection, 0 to disable. Also known as packet pacing. (default: 0)
    --sndwnd value                   set send window size(num of packets) (default: 128)
    --rcvwnd value                   set receive window size(num of packets) (default: 512)
    --datashard value, --ds value    set reed-solomon erasure coding - datashard (default: 10)
@@ -196,7 +196,7 @@ USAGE:
 VERSION:
    20251124
 
-COMMANDS:
+tCOMMANDS:
    help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
@@ -208,7 +208,7 @@ GLOBAL OPTIONS:
    --QPPCount value                 the prime number of pads to use for QPP: The more pads you use, the more secure the encryption. Each pad requires 256 bytes. (default: 61)
    --mode value                     profiles: fast3, fast2, fast, normal, manual (default: "fast")
    --mtu value                      set maximum transmission unit for UDP packets (default: 1350)
-   --ratelimit value                 set maximum outgoing speed (in bytes per second) for a single KCP connection, 0 to disable. Enabling this will improve the stability of connections under high speed. (default: 0)
+   --ratelimit value                set maximum outgoing speed (in bytes per second) for a single KCP connection, 0 to disable. Also known as packet pacing. (default: 0)
    --sndwnd value                   set send window size(num of packets) (default: 1024)
    --rcvwnd value                   set receive window size(num of packets) (default: 1024)
    --datashard value, --ds value    set reed-solomon erasure coding - datashard (default: 10)
