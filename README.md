@@ -276,7 +276,11 @@ kcptun includes built-in packet encryption powered by various block encryption a
 
 Packet contents are fully encrypted, including headers (FEC, KCP), checksums, and data. Note that regardless of which encryption method you use in your upper layer, if you disable kcptun encryption by specifying `-crypt none`, the transmission will be insecure because the header remains ***PLAINTEXT***, making it susceptible to tampering attacks such as manipulation of the *sliding window size*, *round-trip time*, *FEC properties*, and *checksums*. ```aes-128``` is recommended for minimal encryption since modern CPUs include [AES-NI](https://en.wikipedia.org/wiki/AES_instruction_set) instructions and perform even better than `salsa20` (see the table below).
 
-Other possible attacks against kcptun include: a) [Traffic analysis](https://en.wikipedia.org/wiki/Traffic_analysis) - data flow patterns from specific websites may be identifiable during data exchange. This type of eavesdropping has been mitigated by adapting [smux](https://github.com/xtaci/smux) to mix data streams and introduce noise. A perfect solution has not yet emerged; theoretically, shuffling/mixing messages across a larger-scale network may further mitigate this problem. b) [Replay attack](https://en.wikipedia.org/wiki/Replay_attack) - since asymmetric encryption has not been integrated into kcptun, capturing and replaying packets on a different machine is possible. (Note: hijacking sessions and decrypting contents remains *impossible*). Therefore, upper layers should implement an asymmetric encryption system to guarantee message authenticity (ensuring each message is processed exactly once), such as HTTPS/OpenSSL/LibreSSL. Only by signing requests with private keys can this type of attack be eliminated. 
+Other possible attacks against kcptun include: 
+
+- [Traffic analysis](https://en.wikipedia.org/wiki/Traffic_analysis) - data flow patterns from specific websites may be identifiable during data exchange. This type of eavesdropping has been mitigated by adapting [smux](https://github.com/xtaci/smux) to mix data streams and introduce noise. A perfect solution has not yet emerged; theoretically, shuffling/mixing messages across a larger-scale network may further mitigate this problem. 
+
+- [Replay attack](https://en.wikipedia.org/wiki/Replay_attack) - since asymmetric encryption has not been integrated into kcptun, capturing and replaying packets on a different machine is possible. (Note: hijacking sessions and decrypting contents remains *impossible*). Therefore, upper layers must implement an asymmetric cryptosystem or a derived MAC to guarantee authenticity and prevent replay attacks (ensuring each message is processed exactly once). This vulnerability can only be eliminated by signing requests with private keys or employing an HMAC-based mechanism following initial authentication.
 
 Important:
 1. `-crypt` and `-key` must be identical on both the KCP Client and KCP Server.
@@ -323,6 +327,7 @@ The encryption performance in kcptun is as fast as in openssl library(if not fas
 #### Quantum Resistance
 Quantum Resistance, also known as quantum-secure, post-quantum, or quantum-safe cryptography, refers to cryptographic algorithms that can withstand potential code-breaking attempts by quantum computers.
 Starting with version v20240701, kcptun adopts [QPP](https://github.com/xtaci/qpp) based on [Kuang's Quantum Permutation Pad](https://epjquantumtechnology.springeropen.com/articles/10.1140/epjqt/s40507-022-00145-y) for quantum-resistant communication.
+
 ![da824f7919f70dd1dfa3be9d2302e4e0](https://github.com/xtaci/kcptun/assets/2346725/7894f5e3-6134-4582-a9fe-e78494d2e417)
 
 To enable QPP in kcptun, set the following parameters:
