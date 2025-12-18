@@ -295,7 +295,8 @@ func QPPMinimumSeedLength(qubits uint8) int {
 	for i := 1<<qubits - 1; i > 0; i-- {
 		perms.Mul(perms, big.NewInt(int64(i)))
 	}
-	byteLen := perms.BitLen() / 8
+	bitLen := perms.BitLen()
+	byteLen := (bitLen + 7) / 8
 	if byteLen == 0 {
 		byteLen = 1
 	}
