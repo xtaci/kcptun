@@ -22,52 +22,56 @@
 
 package std
 
-import (
-	"fmt"
-	"regexp"
-	"strconv"
-	"testing"
-)
+import "testing"
 
-func TestDial(t *testing.T) {
-	reg := regexp.MustCompile(`(.*)\:([0-9]{1,5})-?([0-9]{1,5})?`)
-	matches := reg.FindStringSubmatch("www.unknown.unknown:20000-21000")
-	for i := 0; i < len(matches); i++ {
-		fmt.Println(matches[i])
+func TestParseMultiPortValid(t *testing.T) {
+	tests := []struct {
+		name string
+		addr string
+		host string
+		min  uint64
+		max  uint64
+	}{
+		{name: "SinglePort", addr: "example.com:2000", host: "example.com", min: 2000, max: 2000},
+		{name: "Range", addr: "example.com:2000-2005", host: "example.com", min: 2000, max: 2005},
+		{name: "IPv4Range", addr: "0.0.0.0:1-65535", host: "0.0.0.0", min: 1, max: 65535},
 	}
 
-	minPort, err := strconv.Atoi(matches[2])
-	if err != nil {
-		t.Fatal(err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mp, err := ParseMultiPort(tt.addr)
+			if err != nil {
+				t.Fatalf("ParseMultiPort(%q) unexpected error: %v", tt.addr, err)
+			}
+
+			if mp.Host != tt.host {
+				t.Fatalf("expected host %q, got %q", tt.host, mp.Host)
+			}
+
+			if mp.MinPort != tt.min || mp.MaxPort != tt.max {
+				t.Fatalf("expected ports [%d,%d], got [%d,%d]", tt.min, tt.max, mp.MinPort, mp.MaxPort)
+			}
+		})
 	}
-	maxPort, err := strconv.Atoi(matches[3])
-	if err != nil {
-		t.Fatal(err)
-	}
+}
 
-	t.Log("minport:", minPort)
-	t.Log("maxport:", maxPort)
-
-	remoteAddr := fmt.Sprintf("%v:%v", matches[1], uint64(minPort)+1000%uint64(maxPort-minPort+1))
-
-	t.Log("RemoteAddr:", remoteAddr)
-
-	testcase2 := "1.2.3.4:20000"
-	matches = reg.FindStringSubmatch(testcase2)
-	for i := 0; i < len(matches); i++ {
-		t.Log(testcase2, "submatch", i, matches[i])
-	}
-
-	testcase3 := ":20000-20001"
-	matches = reg.FindStringSubmatch(testcase3)
-	for i := 0; i < len(matches); i++ {
-		t.Log(testcase3, "submatch", i, matches[i])
-	}
-
-	testcase4 := ":20000"
-	matches = reg.FindStringSubmatch(testcase4)
-	for i := 0; i < len(matches); i++ {
-		t.Log(testcase4, "submatch", i, matches[i])
+func TestParseMultiPortInvalid(t *testing.T) {
+	tests := []struct {
+		name string
+		addr string
+	}{
+		{name: "MissingPort", addr: "example.com"},
+		{name: "ZeroPort", addr: "example.com:0"},
+		{name: "PortTooLarge", addr: "example.com:70000"},
+		{name: "MaxLessThanMin", addr: "example.com:3000-2000"},
+		{name: "HighRange", addr: "example.com:65534-70000"},
 	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := ParseMultiPort(tt.addr); err == nil {
+				t.Fatalf("ParseMultiPort(%q) expected error", tt.addr)
+			}
+		})
+	}
 }
