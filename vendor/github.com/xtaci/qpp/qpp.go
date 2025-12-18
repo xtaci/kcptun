@@ -135,10 +135,10 @@ func CreatePRNG(seed []byte) *Rand {
 	return rd
 }
 
-// FastPRNG creates a deterministic pseudo-random number generator based on the provided seed
+// FastPRNG creates a deterministic pseudo-random number generator based on the provided seed, but with a faster initialization,
+// it's suitable for the cases where the seed have sufficient randomness.
 func FastPRNG(seed []byte) *Rand {
-	sha := sha256.New()
-	sum := sha.Sum(seed)
+	sum := sha256.Sum256(seed)
 
 	// Create and return PRNG
 	rd := &Rand{}
@@ -342,7 +342,11 @@ func seedToChunks(seed []byte, qubits uint8) [][]byte {
 
 	// Calculate the required byte length for full permutation space
 	byteLength := QPPMinimumSeedLength(qubits)
-	chunks := make([][]byte, byteLength/32)
+	chunkCount := (byteLength + 31) / 32 // round up to avoid entropy shortfall
+	if chunkCount == 0 {
+		chunkCount = 1
+	}
+	chunks := make([][]byte, chunkCount)
 	for i := 0; i < len(chunks); i++ {
 		chunks[i] = make([]byte, 32)
 	}
