@@ -282,6 +282,11 @@ func main() {
 			checkError(err)
 		}
 
+		if config.RateLimit < 0 {
+			log.Printf("ratelimit %d is negative, falling back to 0", config.RateLimit)
+			config.RateLimit = 0
+		}
+
 		// log redirect
 		if config.Log != "" {
 			f, err := os.OpenFile(config.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -326,6 +331,9 @@ func main() {
 		log.Println("tcp:", config.TCP)
 
 		if config.QPP {
+			if config.QPPCount <= 0 {
+				log.Fatal("QPPCount must be greater than 0 when QPP is enabled")
+			}
 			minSeedLength := qpp.QPPMinimumSeedLength(8)
 			if len(config.Key) < minSeedLength {
 				color.Red("QPP Warning: 'key' has size of %d bytes, required %d bytes at least", len(config.Key), minSeedLength)
