@@ -812,7 +812,7 @@ func (s *UDPSession) packetInput(data []byte) {
 	case *aeadCrypt:
 		nonceSize := block.NonceSize()
 		if len(data) < nonceSize+block.Overhead() {
-			break
+			return
 		}
 
 		nonce := data[:nonceSize]
@@ -970,7 +970,7 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 	case *aeadCrypt:
 		nonceSize := block.NonceSize()
 		if len(data) < nonceSize+block.Overhead() {
-			break
+			return
 		}
 
 		nonce := data[:nonceSize]

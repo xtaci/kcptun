@@ -19,16 +19,16 @@
 
 ## Introduction
 
-Smux ( **S**imple **MU**ltiple**X**ing) is a multiplexing library for Golang. It relies on an underlying connection to provide reliability and ordering, such as TCP or [KCP](https://github.com/xtaci/kcp-go), and provides stream-oriented multiplexing. The original intention of this library is to power the connection management for [kcp-go](https://github.com/xtaci/kcp-go).
+Smux (**S**imple **MU**ltiple**X**ing) is a multiplexing library for Golang. It relies on an underlying connection to provide reliability and ordering, such as TCP or [KCP](https://github.com/xtaci/kcp-go), and provides stream-oriented multiplexing. This library was originally designed to power connection management for [kcp-go](https://github.com/xtaci/kcp-go).
 
 ## Features
 
-1. ***Token bucket*** controlled receiving, which provides smoother bandwidth graph(see picture below).
-2. Session-wide receive buffer, shared among streams, **fully controlled** overall memory usage.
-3. Minimized header(8Bytes), maximized payload. 
-4. Well-tested on millions of devices in [kcptun](https://github.com/xtaci/kcptun).
-5. Builtin fair queue traffic shaping.
-6. Per-stream sliding window to control congestion.(protocol version 2+).
+1. ***Token bucket*** controlled receiving, providing a smoother bandwidth graph (see picture below).
+2. Session-wide receive buffer shared among streams for **fully controlled** overall memory usage.
+3. Minimized header (8 bytes), maximized payload.
+4. Battle-tested on millions of devices in [kcptun](https://github.com/xtaci/kcptun).
+5. Built-in fair queue traffic shaping.
+6. Per-stream sliding window for congestion control (protocol version 2+).
 
 ![smooth bandwidth curve](assets/curve.jpg)
 

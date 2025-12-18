@@ -416,16 +416,21 @@ func (s *Session) recvLoop() {
 		switch hdr.Cmd() {
 		case cmdNOP:
 		case cmdSYN: // stream opening
+			var accepted *stream
 			s.streamLock.Lock()
 			if _, ok := s.streams[sid]; !ok {
 				stream := newStream(sid, s.config.MaxFrameSize, s)
 				s.streams[sid] = stream
+				accepted = stream
+			}
+			s.streamLock.Unlock()
+
+			if accepted != nil {
 				select {
-				case s.chAccepts <- stream:
+				case s.chAccepts <- accepted:
 				case <-s.die:
 				}
 			}
-			s.streamLock.Unlock()
 
 		case cmdFIN: // stream closing
 			s.streamLock.Lock()

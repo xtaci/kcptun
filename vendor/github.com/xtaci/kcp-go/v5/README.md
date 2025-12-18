@@ -1,4 +1,4 @@
-<img src="assets/kcp-go.png" alt="kcp-go" height="50px" />
+<img src="assets/kcp-go.png" alt="kcp-go" height="100px" />
 
 
 [![GoDoc][1]][2] [![Powered][9]][10] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Coverage Status][7]][8] [![Sourcegraph][13]][14]
@@ -20,24 +20,24 @@
 
 ## Introduction
 
-**kcp-go** is a **Reliable-UDP** library for [golang](https://golang.org/). 
+**kcp-go** is a **Reliable-UDP** library for [golang](https://golang.org/).
 
-This library is designed to provide **smooth, resilient, ordered, error-checked and anonymous** delivery of streams over **UDP** packets. It has been battle-tested with the open-source project [kcptun](https://github.com/xtaci/kcptun). Millions of devices, ranging from low-end MIPS routers to high-end servers, have deployed kcp-go-powered programs in various applications, including **online games, live broadcasting, file synchronization, and network acceleration**.
+This library provides **smooth, resilient, ordered, error-checked, and anonymous** stream delivery over **UDP** packets. Battle-tested with the open-source project [kcptun](https://github.com/xtaci/kcptun), millions of devices—from low-end MIPS routers to high-end servers—have deployed kcp-go-powered programs across various applications, including **online games, live broadcasting, file synchronization, and network acceleration**.
 
 [Latest Release](https://github.com/xtaci/kcp-go/releases)
 
 ## Features
 
 1. Designed for **latency-sensitive** scenarios.
-2. **Cache-friendly** and **memory-optimized** design, offering extremely **high performance** core.
+2. **Cache-friendly** and **memory-optimized** design, offering an extremely **high-performance** core.
 3. Handles **>5K concurrent connections** on a single commodity server.
 4. Compatible with [net.Conn](https://golang.org/pkg/net/#Conn) and [net.Listener](https://golang.org/pkg/net/#Listener), serving as a drop-in replacement for [net.TCPConn](https://golang.org/pkg/net/#TCPConn).
-5. [FEC (Forward Error Correction)](https://en.wikipedia.org/wiki/Forward_error_correction) support by [Reed-Solomon Codes](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction).
-6. Packet-level encryption support on [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard), [TEA](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm), [3DES](https://en.wikipedia.org/wiki/Triple_DES), [Blowfish](https://en.wikipedia.org/wiki/Blowfish_(cipher)), [Cast5](https://en.wikipedia.org/wiki/CAST-128), [Salsa20](https://en.wikipedia.org/wiki/Salsa20), etc., in [CFB](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)) mode, generating completely anonymous packets.
+5. [FEC (Forward Error Correction)](https://en.wikipedia.org/wiki/Forward_error_correction) support using [Reed-Solomon Codes](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction).
+6. Packet-level encryption support for [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard), [TEA](https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm), [3DES](https://en.wikipedia.org/wiki/Triple_DES), [Blowfish](https://en.wikipedia.org/wiki/Blowfish_(cipher)), [Cast5](https://en.wikipedia.org/wiki/CAST-128), [Salsa20](https://en.wikipedia.org/wiki/Salsa20), etc., in [CFB](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)) mode, generating completely anonymous packets.
 7. [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption) packet encryption support.
-8. Only **a fixed number of goroutines** are created for the entire server application, with costs in **context switching** between goroutines taken into consideration.
-9. Compatible with [skywind3000's](https://github.com/skywind3000) C version with various improvements.
-10. Platform-dependent optimizations: [sendmmsg](http://man7.org/linux/man-pages/man2/sendmmsg.2.html) and [recvmmsg](http://man7.org/linux/man-pages/man2/recvmmsg.2.html) exploited for Linux.
+8. Only **a fixed number of goroutines** are created for the entire server application, with **context switching** costs between goroutines taken into consideration.
+9. Compatible with [skywind3000's](https://github.com/skywind3000) C version, with various improvements.
+10. Platform-specific optimizations: [sendmmsg](http://man7.org/linux/man-pages/man2/sendmmsg.2.html) and [recvmmsg](http://man7.org/linux/man-pages/man2/recvmmsg.2.html) for Linux.
 
 ## Documentation
 
@@ -319,11 +319,11 @@ BenchmarkLoopSlice-4   	2000000000	         0.39 ns/op
 BenchmarkLoopList-4    	100000000	        54.6 ns/op
 ```
 
-The list structure introduces **heavy cache misses** compared to the slice, which has better **locality**. For 5,000 connections with a 32-window size and a 20 ms interval, using a slice costs 6 μs (0.03% CPU) per `kcp.flush()`, while using a list costs 8.7 ms (43.5% CPU).
+The list structure introduces **heavy cache misses** compared to the slice, which offers better **locality**. For 5,000 connections with a 32-window size and a 20 ms interval, using a slice costs 6 μs (0.03% CPU) per `kcp.flush()`, whereas using a list costs 8.7 ms (43.5% CPU).
 
 ### 2. Timing Accuracy vs. Syscall clock_gettime
 
-Timing is **critical** to the **RTT estimator**. Inaccurate timing leads to false retransmissions in KCP, but calling `time.Now()` costs 42 cycles (10.5 ns on a 4 GHz CPU, 15.6 ns on my MacBook Pro 2.7 GHz).
+Timing is **critical** for the **RTT estimator**. Inaccurate timing leads to false retransmissions in KCP, but calling `time.Now()` costs 42 cycles (10.5 ns on a 4 GHz CPU, 15.6 ns on my MacBook Pro 2.7 GHz).
 
 The benchmark for `time.Now()` is [here](https://github.com/xtaci/notes/blob/master/golang/benchmark2/syscall_test.go):
 
@@ -331,36 +331,36 @@ The benchmark for `time.Now()` is [here](https://github.com/xtaci/notes/blob/mas
 BenchmarkNow-4         	100000000	        15.6 ns/op
 ```
 
-In kcp-go, after each `kcp.output()` function call, the current clock time is updated upon return. For a single `kcp.flush()` operation, the current time is queried from the system once. For 5,000 connections, this costs 5000 * 15.6 ns = 78 μs (a fixed cost when no packet needs to be sent). For 10 MB/s data transfer with a 1400 MTU, `kcp.output()` is called around 7500 times, costing 117 μs for `time.Now()` every second.
+In kcp-go, after each `kcp.output()` function call, the current clock time is updated upon return. For a single `kcp.flush()` operation, the current time is queried from the system once. For 5,000 connections, this costs 5000 × 15.6 ns = 78 μs (a fixed cost when no packets need to be sent). For 10 MB/s data transfer with a 1400 MTU, `kcp.output()` is called approximately 7,500 times, costing 117 μs for `time.Now()` per second.
 
 ### 3. Memory Management
 
-Primary memory allocation is done from a global buffer pool, `xmit.Buf`. In kcp-go, when we need to allocate some bytes, we get them from that pool, which returns a fixed-capacity 1500 bytes (mtuLimit). The rx queue, tx queue, and fec queue all receive bytes from this pool and return them after use to prevent unnecessary zeroing of bytes. The pool mechanism maintains a high watermark for slice objects, allowing these in-flight objects to survive periodic garbage collection, while also being able to return memory to the runtime when idle.
+Primary memory allocation is performed from a global buffer pool, `xmit.Buf`. In kcp-go, when bytes need to be allocated, they are obtained from this pool, which returns a fixed-capacity 1500 bytes (mtuLimit). The rx queue, tx queue, and FEC queue all receive bytes from this pool and return them after use to prevent unnecessary zeroing of bytes. The pool mechanism maintains a high watermark for slice objects, allowing these in-flight objects to survive periodic garbage collection while also being able to return memory to the runtime when idle.
 
 ### 4. Information Security
 
-kcp-go is shipped with built-in packet encryption powered by various block encryption algorithms and works in [Cipher Feedback Mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)). For each packet to be sent, the encryption process starts by encrypting a [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) from the [system entropy](https://en.wikipedia.org/wiki//dev/random), ensuring that encryption of the same plaintext never results in the same ciphertext.
+kcp-go ships with built-in packet encryption powered by various block encryption algorithms and operates in [Cipher Feedback Mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)). For each packet to be sent, the encryption process begins by encrypting a [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) from the [system entropy](https://en.wikipedia.org/wiki//dev/random), ensuring that encryption of the same plaintext never produces the same ciphertext.
 
-The contents of the packets are completely anonymous with encryption, including the headers (FEC, KCP), checksums, and contents. Note that no matter which encryption method you choose at the upper layer, if you disable encryption, the transmission will be insecure, as the header is ***plaintext*** and susceptible to tampering, such as jamming the *sliding window size*, *round-trip time*, *FEC properties*, and *checksums*. `AES-128` is suggested for minimal encryption, as modern CPUs come with [AES-NI](https://en.wikipedia.org/wiki/AES_instruction_set) instructions and perform better than `salsa20` (check the table above).
+The contents of packets are completely anonymous with encryption, including the headers (FEC, KCP), checksums, and payload. Note that regardless of which encryption method you choose at the upper layer, if you disable encryption, the transmission will be insecure because the header is ***plaintext*** and susceptible to tampering, such as jamming the *sliding window size*, *round-trip time*, *FEC properties*, and *checksums*. `AES-128` is recommended for minimal encryption, as modern CPUs feature [AES-NI](https://en.wikipedia.org/wiki/AES_instruction_set) instructions and perform better than `salsa20` (see the table above).
 
 Other possible attacks on kcp-go include:
 
-- **[Traffic analysis](https://en.wikipedia.org/wiki/Traffic_analysis):** Data flow on specific websites may have patterns while exchanging data. This type of eavesdropping has been mitigated by adopting [smux](https://github.com/xtaci/smux) to mix data streams and introduce noise. A perfect solution has not yet appeared, but theoretically, shuffling/mixing messages on a larger scale network may mitigate this problem.
-- **[Replay attack](https://en.wikipedia.org/wiki/Replay_attack):** Since asymmetrical encryption has not been introduced into kcp-go, capturing packets and replaying them on a different machine is possible. Note that hijacking the session and decrypting the contents is still *impossible*. Upper layers should use an asymmetrical encryption system to guarantee the authenticity of each message (to process each message exactly once), such as HTTPS/OpenSSL/LibreSSL. Signing requests with private keys can eliminate this type of attack.
+- **[Traffic analysis](https://en.wikipedia.org/wiki/Traffic_analysis):** Data flow on specific websites may exhibit patterns during data exchange. This type of eavesdropping has been mitigated by adopting [smux](https://github.com/xtaci/smux) to mix data streams and introduce noise. While a perfect solution has not yet emerged, theoretically, shuffling/mixing messages on a larger-scale network may mitigate this problem.
+- **[Replay attack](https://en.wikipedia.org/wiki/Replay_attack):** Since asymmetric encryption has not been introduced into kcp-go, capturing packets and replaying them on a different machine is possible. Note that hijacking the session and decrypting the contents is still *impossible*. Upper layers should use an asymmetric encryption system to guarantee the authenticity of each message (to process each message exactly once), such as HTTPS/OpenSSL/LibreSSL. Signing requests with private keys can eliminate this type of attack.
 
 ## Connection Termination
 
-Control messages like **SYN/FIN/RST** in TCP **are not defined** in KCP. You need a **keepalive/heartbeat mechanism** at the application level. A real-world example is to use a **multiplexing** protocol over the session, such as [smux](https://github.com/xtaci/smux) (which has an embedded keepalive mechanism). See [kcptun](https://github.com/xtaci/kcptun) for an example.
+Control messages like **SYN/FIN/RST** in TCP **are not defined** in KCP. You need a **keepalive/heartbeat mechanism** at the application level. A practical example is to use a **multiplexing** protocol over the session, such as [smux](https://github.com/xtaci/smux) (which has an embedded keepalive mechanism). See [kcptun](https://github.com/xtaci/kcptun) for a reference implementation.
 
 ## FAQ
 
-**Q: I'm handling >5K connections on my server, and the CPU utilization is so high.**
+**Q: I'm handling >5K connections on my server, and the CPU utilization is very high.**
 
-**A:** A standalone `agent` or `gate` server for running kcp-go is suggested, not only to reduce CPU utilization but also to improve the **precision** of RTT measurements (timing), which indirectly affects retransmission. Increasing the update `interval` with `SetNoDelay`, such as `conn.SetNoDelay(1, 40, 1, 1)`, will dramatically reduce system load but may lower performance.
+**A:** A standalone `agent` or `gate` server for running kcp-go is recommended, not only to reduce CPU utilization but also to improve the **precision** of RTT measurements (timing), which indirectly affects retransmission. Increasing the update `interval` with `SetNoDelay`, such as `conn.SetNoDelay(1, 40, 1, 1)`, will dramatically reduce system load but may lower performance.
 
 **Q: When should I enable FEC?**
 
-**A:** Forward error correction is critical for long-distance transmission because packet loss incurs a huge time penalty. In the complex packet routing networks of the modern world, round-trip time-based loss checks are not always efficient. The significant deviation of RTT samples over long distances usually leads to a larger RTO value in typical RTT estimators, which slows down the transmission.
+**A:** Forward error correction is critical for long-distance transmission because packet loss incurs a significant time penalty. In the complex packet routing networks of the modern world, round-trip time-based loss checks are not always efficient. The significant deviation of RTT samples over long distances typically leads to a larger RTO value in typical RTT estimators, which slows down transmission.
 
 **Q: Should I enable encryption?**
 
@@ -368,9 +368,9 @@ Control messages like **SYN/FIN/RST** in TCP **are not defined** in KCP. You nee
 
 ## Who is using this?
 
-1. https://github.com/xtaci/kcptun -- A Secure Tunnel Based On KCP over UDP.
-2. https://github.com/getlantern/lantern -- Lantern delivers fast access to the open Internet. 
-3. https://github.com/smallnest/rpcx -- A RPC service framework based on net/rpc like alibaba Dubbo and weibo Motan.
+1. https://github.com/xtaci/kcptun -- A Secure Tunnel Based on KCP over UDP.
+2. https://github.com/getlantern/lantern -- Lantern delivers fast access to the open Internet.
+3. https://github.com/smallnest/rpcx -- An RPC service framework based on net/rpc, similar to Alibaba Dubbo and Weibo Motan.
 4. https://github.com/gonet2/agent -- A gateway for games with stream multiplexing.
 5. https://github.com/syncthing/syncthing -- Open Source Continuous File Synchronization.
 

@@ -92,6 +92,9 @@ func VerifyConfig(config *Config) error {
 	if config.MaxReceiveBuffer <= 0 {
 		return errors.New("max receive buffer must be positive")
 	}
+	if config.MaxReceiveBuffer > math.MaxInt32 {
+		return errors.New("max receive buffer cannot be larger than 2147483647")
+	}
 	if config.MaxStreamBuffer <= 0 {
 		return errors.New("max stream buffer must be positive")
 	}
