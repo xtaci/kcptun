@@ -53,10 +53,10 @@ type Rand struct {
 // QuantumPermutationPad represents the encryption/decryption structure using quantum permutation pads
 // QPP is a cryptographic technique that leverages quantum-inspired permutation matrices to provide secure encryption.
 type QuantumPermutationPad struct {
-	pads     []byte  // Encryption pads, each pad is a permutation matrix for encryption
-	rpads    []byte  // Decryption pads, each pad is a reverse permutation matrix for decryption
-	padsPtr  uintptr // raw pointer to encryption pads
-	rpadsPtr uintptr // raw pointer to decryption pads
+	pads     []byte         // Encryption pads, each pad is a permutation matrix for encryption
+	rpads    []byte         // Decryption pads, each pad is a reverse permutation matrix for decryption
+	padsPtr  unsafe.Pointer // raw pointer to encryption pads
+	rpadsPtr unsafe.Pointer // raw pointer to decryption pads
 
 	numPads uint16 // Number of pads (permutation matrices)
 	encRand *Rand  // Default random source for encryption pad selection
@@ -73,8 +73,8 @@ func NewQPP(seed []byte, numPads uint16) *QuantumPermutationPad {
 	matrixBytes := 1 << QUBITS
 	qpp.pads = make([]byte, int(numPads)*matrixBytes)
 	qpp.rpads = make([]byte, int(numPads)*matrixBytes)
-	qpp.padsPtr = uintptr(unsafe.Pointer(unsafe.SliceData(qpp.pads)))
-	qpp.rpadsPtr = uintptr(unsafe.Pointer(unsafe.SliceData(qpp.rpads)))
+	qpp.padsPtr = unsafe.Pointer(unsafe.SliceData(qpp.pads))
+	qpp.rpadsPtr = unsafe.Pointer(unsafe.SliceData(qpp.rpads))
 
 	chunks := seedToChunks(seed, QUBITS)
 	// creat AES-256 blocks to generate random number for shuffling
@@ -93,7 +93,7 @@ func NewQPP(seed []byte, numPads uint16) *QuantumPermutationPad {
 		// Fill pad with sequential byte values
 		fill(pad)
 		// Shuffle pad to create a unique permutation matrix
-		shuffle(chunks[i%len(chunks)], QUBITS, pad, uint16(i), blocks)
+		shuffle(chunks[i%len(chunks)], pad, uint16(i), blocks)
 		// Create the reverse permutation matrix for decryption
 		reverse(pad, rpad)
 	}
@@ -156,7 +156,7 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 	// initial r, index, count
 	size := len(data)
 	r := rand.seed64
-	base := qpp.padsPtr + uintptr(uint16(r)%qpp.numPads)<<8
+	base := unsafe.Pointer(uintptr(qpp.padsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
 	count := rand.count
 	var rr byte
 
@@ -166,14 +166,14 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 		for ; offset < len(data); offset++ {
 			// using r as the base random number
 			rr = byte(r >> (count * 8))
-			data[offset] = *(*byte)(unsafe.Pointer(base + uintptr(data[offset]^rr)))
+			data[offset] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[offset]^rr)))
 			count++
 
 			// switch to another pad when count reaches PAD_SWITCH
 			if count == PAD_SWITCH {
 				// switch to another pad
 				r = xoshiro256ss(&rand.xoshiro)
-				base = qpp.padsPtr + uintptr(uint16(r)%qpp.numPads)<<8
+				base = unsafe.Pointer(uintptr(qpp.padsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
 				offset = offset + 1
 				count = 0
 				break
@@ -195,24 +195,24 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 		rr6 := byte(r >> 48)
 		rr7 := byte(r >> 56)
 
-		d[0] = *(*byte)(unsafe.Pointer(base + uintptr(d[0]^rr0)))
-		d[1] = *(*byte)(unsafe.Pointer(base + uintptr(d[1]^rr1)))
-		d[2] = *(*byte)(unsafe.Pointer(base + uintptr(d[2]^rr2)))
-		d[3] = *(*byte)(unsafe.Pointer(base + uintptr(d[3]^rr3)))
-		d[4] = *(*byte)(unsafe.Pointer(base + uintptr(d[4]^rr4)))
-		d[5] = *(*byte)(unsafe.Pointer(base + uintptr(d[5]^rr5)))
-		d[6] = *(*byte)(unsafe.Pointer(base + uintptr(d[6]^rr6)))
-		d[7] = *(*byte)(unsafe.Pointer(base + uintptr(d[7]^rr7)))
+		d[0] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[0]^rr0)))
+		d[1] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[1]^rr1)))
+		d[2] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[2]^rr2)))
+		d[3] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[3]^rr3)))
+		d[4] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[4]^rr4)))
+		d[5] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[5]^rr5)))
+		d[6] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[6]^rr6)))
+		d[7] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[7]^rr7)))
 
 		r = xoshiro256ss(&rand.xoshiro)
-		base = qpp.padsPtr + uintptr(uint16(r)%qpp.numPads)<<8
+		base = unsafe.Pointer(uintptr(qpp.padsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
 	}
 	data = data[repeat*8:]
 
 	// handle remaining unaligned bytes
 	for i := 0; i < len(data); i++ {
 		rr = byte(r >> (count * 8))
-		data[i] = *(*byte)(unsafe.Pointer(base + uintptr(data[i]^byte(rr))))
+		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]^byte(rr))))
 		count++
 	}
 
@@ -226,7 +226,7 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 	size := len(data)
 	r := rand.seed64
-	base := qpp.rpadsPtr + uintptr(uint16(r)%qpp.numPads)<<8
+	base := unsafe.Pointer(uintptr(qpp.rpadsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
 	count := rand.count
 	var rr byte
 
@@ -235,12 +235,12 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 		offset := 0
 		for ; offset < len(data); offset++ {
 			rr = byte(r >> (count * 8))
-			data[offset] = *(*byte)(unsafe.Pointer(base + uintptr(data[offset]))) ^ rr
+			data[offset] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[offset]))) ^ rr
 			count++
 
 			if count == PAD_SWITCH {
 				r = xoshiro256ss(&rand.xoshiro)
-				base = qpp.rpadsPtr + uintptr(uint16(r)%qpp.numPads)<<8
+				base = unsafe.Pointer(uintptr(qpp.rpadsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
 				offset = offset + 1
 				count = 0
 				break
@@ -262,24 +262,24 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 		rr6 := byte(r >> 48)
 		rr7 := byte(r >> 56)
 
-		d[0] = *(*byte)(unsafe.Pointer(base + uintptr(d[0]))) ^ rr0
-		d[1] = *(*byte)(unsafe.Pointer(base + uintptr(d[1]))) ^ rr1
-		d[2] = *(*byte)(unsafe.Pointer(base + uintptr(d[2]))) ^ rr2
-		d[3] = *(*byte)(unsafe.Pointer(base + uintptr(d[3]))) ^ rr3
-		d[4] = *(*byte)(unsafe.Pointer(base + uintptr(d[4]))) ^ rr4
-		d[5] = *(*byte)(unsafe.Pointer(base + uintptr(d[5]))) ^ rr5
-		d[6] = *(*byte)(unsafe.Pointer(base + uintptr(d[6]))) ^ rr6
-		d[7] = *(*byte)(unsafe.Pointer(base + uintptr(d[7]))) ^ rr7
+		d[0] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[0]))) ^ rr0
+		d[1] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[1]))) ^ rr1
+		d[2] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[2]))) ^ rr2
+		d[3] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[3]))) ^ rr3
+		d[4] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[4]))) ^ rr4
+		d[5] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[5]))) ^ rr5
+		d[6] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[6]))) ^ rr6
+		d[7] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[7]))) ^ rr7
 
 		r = xoshiro256ss(&rand.xoshiro)
-		base = qpp.rpadsPtr + uintptr(uint16(r)%qpp.numPads)<<8
+		base = unsafe.Pointer(uintptr(qpp.rpadsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
 	}
 	data = data[repeat*8:]
 
 	// handle remaining unaligned bytes
 	for i := 0; i < len(data); i++ {
 		rr = byte(r >> (count * 8))
-		data[i] = *(*byte)(unsafe.Pointer(base + uintptr(data[i]))) ^ rr
+		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]))) ^ rr
 		count++
 	}
 
@@ -370,7 +370,7 @@ func seedToChunks(seed []byte, qubits uint8) [][]byte {
 
 // shuffle shuffles the pad based on the seed and pad identifier to create a permutation matrix
 // It uses HMAC and PBKDF2 to derive a unique shuffle pattern from the seed and pad ID
-func shuffle(chunk []byte, qubits uint8, pad []byte, padID uint16, blocks []cipher.Block) {
+func shuffle(chunk []byte, pad []byte, padID uint16, blocks []cipher.Block) {
 	// use selected chunk based on pad ID to hmac the PAD_IDENTIFIER
 	message := fmt.Sprintf(PAD_IDENTIFIER, padID)
 	mac := hmac.New(sha256.New, chunk)
