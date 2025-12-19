@@ -46,6 +46,9 @@ func (s *UDPSession) readLoop() {
 
 	// x/net version
 	var src string
+	if s.remote != nil {
+		src = s.remote.String()
+	}
 	msgs := make([]ipv4.Message, batchSize)
 	for k := range msgs {
 		msgs[k].Buffers = [][]byte{make([]byte, mtuLimit)}
@@ -66,14 +69,9 @@ func (s *UDPSession) readLoop() {
 			msg := &msgs[i]
 
 			// make sure the packet is from the same source
-			switch src {
-			case "":
-				// set source address if not set
+			if src == "" { // set source address if nil
 				src = msg.Addr.String()
-			case msg.Addr.String():
-				// source valid
-			default:
-				// source invalid
+			} else if msg.Addr.String() != src {
 				atomic.AddUint64(&DefaultSnmp.InErrs, 1)
 				continue
 			}

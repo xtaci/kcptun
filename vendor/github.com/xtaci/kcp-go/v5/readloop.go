@@ -33,6 +33,9 @@ func (s *UDPSession) defaultReadLoop() {
 	buf := make([]byte, mtuLimit)
 
 	var src string
+	if s.remote != nil {
+		src = s.remote.String()
+	}
 	for {
 		n, addr, err := s.conn.ReadFrom(buf)
 		if err != nil {
@@ -45,14 +48,9 @@ func (s *UDPSession) defaultReadLoop() {
 		}
 
 		// make sure the packet is from the same source
-		switch src {
-		case "":
-			// set source address if not set
+		if src == "" { // set source address if nil
 			src = addr.String()
-		case addr.String():
-			// source valid
-		default:
-			// source invalid
+		} else if addr.String() != src {
 			atomic.AddUint64(&DefaultSnmp.InErrs, 1)
 			continue
 		}

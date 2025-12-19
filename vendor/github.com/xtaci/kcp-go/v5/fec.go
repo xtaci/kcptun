@@ -241,8 +241,10 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 		}
 
 		// pop all shards from the heap and fill into the decode cache
+		var pkts []fecPacket
 		for shard.Len() > 0 {
 			pkt := shard.Pop().(fecPacket)
+			pkts = append(pkts, pkt)
 			seqid := pkt.seqid()
 			shards[seqid%uint32(dec.shardSize)] = pkt.data()
 			shardsflag[seqid%uint32(dec.shardSize)] = true
@@ -259,6 +261,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 			atomic.AddUint64(&DefaultSnmp.FECFullShardSet, 1)
 		} else { // case 2: some data shards are missing, try to recover
 			// fill '0' into the tail of each shard to make them equal-sized
+			var newBuffers [][]byte
 			for k := range shards {
 				if shards[k] != nil {
 					dlen := len(shards[k])
@@ -267,6 +270,7 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				} else if k < dec.dataShards {
 					// prepare memory for the data recovery
 					shards[k] = defaultBufferPool.Get()[:0]
+					newBuffers = append(newBuffers, shards[k])
 				}
 			}
 
@@ -280,15 +284,25 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 			} else {
 				// recovery failed, record the error
 				atomic.AddUint64(&DefaultSnmp.FECErrs, 1)
+				// recycle new buffers if failed
+				// NOTE: if success, these buffers are returned in 'recovered' and will be recycled by the caller
+				for _, buf := range newBuffers {
+					defaultBufferPool.Put(buf)
+				}
 			}
 
 			// record the number of recovered packets
 			atomic.AddUint64(&DefaultSnmp.FECRecovered, uint64(len(recovered)))
 		}
+
+		// recycle the packets
+		for _, pkt := range pkts {
+			defaultBufferPool.Put(pkt)
+		}
 	}
 
 	// update the newest shard id
-	if _itimediff(shardId, dec.newestShardId) > 0 {
+	if _itimediff(shardId*uint32(dec.shardSize), dec.newestShardId*uint32(dec.shardSize)) > 0 {
 		dec.newestShardId = shardId
 		atomic.StoreUint64(&DefaultSnmp.FECShardMin, uint64(dec.newestShardId))
 	}
@@ -306,10 +320,13 @@ func (dec *fecDecoder) getShardId(seqid uint32) uint32 {
 
 // discardShards removes shards that are too old from the shardSet
 func (dec *fecDecoder) discardShards() {
-	for shardId := range dec.shardSet {
+	for shardId, shard := range dec.shardSet {
 		// discard shards that are too old
-		if _itimediff(dec.newestShardId, shardId) > maxShardSets {
+		if _itimediff(dec.newestShardId*uint32(dec.shardSize), shardId*uint32(dec.shardSize)) > maxShardSets*int32(dec.shardSize) {
 			//println("flushing shard", shardId, "minShardId", dec.minShardId, _itimediff(dec.minShardId, shardId))
+			for _, pkt := range shard.elements {
+				defaultBufferPool.Put(pkt)
+			}
 			delete(dec.shardSet, shardId)
 		}
 	}
