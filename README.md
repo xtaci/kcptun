@@ -420,10 +420,11 @@ Low-level KCP configuration can be modified using manual mode as shown above. Ma
 
 These parameters **MUST** be **IDENTICAL** on **BOTH** sides:
 
-1. -key
-1. -crypt
-1. -nocomp
-1. -smuxver
+1. --key and --crypt
+1. --QPP and --QPPCount 
+1. --nocomp
+1. --smuxver
+
 
 ### Example Configurations
 
