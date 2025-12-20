@@ -248,7 +248,7 @@ kcptun 支持多端口拨号，如下所示：
 通过指定端口范围，kcptun 在建立每个新连接时会自动切换到该范围内的下一个随机端口。
 
 #### 速率限制和平滑发送 (Pacing)
-kcptun 引入了用户空间平滑发送机制，以实现更平滑的数据传输：https://github.com/xtaci/kcp-go/releases/tag/v5.6.36。
+kcptun 引入了用户空间平滑发送机制，以实现更平滑的数据传输：https://github.com/xtaci/kcp-go/releases/tag/v5.6.36 。
 
 通过设置 `--ratelimit <value>`，您可以指定单个 KCP 连接的最大发送速度（以字节/秒为单位，包括 FEC 数据包）。将此值设置为 `0` 可禁用速率限制。启用速率限制可提高高速下的连接稳定性。（默认值：0）
 
