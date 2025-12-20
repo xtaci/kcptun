@@ -156,8 +156,8 @@ GLOBAL OPTIONS:
    --key value                      客户端和服务端之间的预共享密钥 (默认: "it's a secrect") [$KCPTUN_KEY]
    --crypt value                    加密方式: aes, aes-128, aes-128-gcm, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none, null (默认: "aes")
    --mode value                     模式配置: fast3, fast2, fast, normal, manual (默认: "fast")
-   --QPP                            启用量子置换填充 (Quantum Permutation Pads, QPP)
-   --QPPCount value                 用于 QPP 的素数填充数量：使用的填充越多，加密越安全。每个填充需要 256 字节。(默认: 61)
+   --QPP                            启用量子置换密码本 (Quantum Permutation Pads, QPP)
+   --QPPCount value                 用于 QPP 的素数密码本数量：使用的密码本越多，加密越安全。每个密码本需要 256 字节。(默认: 61)
    --conn value                     连接到服务器的 UDP 连接数 (默认: 1)
    --autoexpire value               设置单个 UDP 连接的自动过期时间（秒），0 为禁用 (默认: 0)
    --scavengettl value              设置过期连接可以存活多久（秒） (默认: 600)
@@ -204,8 +204,8 @@ GLOBAL OPTIONS:
    --target value, -t value         目标服务器地址, 或 path/to/unix_socket (默认: "127.0.0.1:12948")
    --key value                      客户端和服务端之间的预共享密钥 (默认: "it's a secrect") [$KCPTUN_KEY]
    --crypt value                    加密方式: aes, aes-128, aes-128-gcm, aes-192, salsa20, blowfish, twofish, cast5, 3des, tea, xtea, xor, sm4, none, null (默认: "aes")
-   --QPP                            启用量子置换填充 (Quantum Permutation Pads, QPP)
-   --QPPCount value                 用于 QPP 的素数填充数量：使用的填充越多，加密越安全。每个填充需要 256 字节。(默认: 61)
+   --QPP                            启用量子置换密码本 (Quantum Permutation Pads, QPP)
+   --QPPCount value                 用于 QPP 的素数密码本数量：使用的密码本越多，加密越安全。每个密码本需要 256 字节。(默认: 61)
    --mode value                     模式配置: fast3, fast2, fast, normal, manual (默认: "fast")
    --mtu value                      设置 UDP 数据包的最大传输单元 (默认: 1350)
    --ratelimit value                设置单个 KCP 连接的最大发送速度（字节/秒），0 为禁用。也称为数据包平滑发送 (packet pacing)。(默认: 0)
@@ -332,8 +332,8 @@ kcptun 中的加密性能与 openssl 库一样快（如果不是更快的话）�
 
 要在 kcptun 中启用 QPP，请设置以下参数：
 ```
-   --QPP                启用量子置换填充 (Quantum Permutation Pads, QPP)
-   --QPPCount value     用于 QPP 的素数填充数量。更多的填充提供更高的加密安全性。每个填充需要 256 字节。(默认: 61)
+   --QPP                启用量子置换密码本 (Quantum Permutation Pads, QPP)
+   --QPPCount value     用于 QPP 的素数密码本数量。更多的密码本提供更高的加密安全性。每个密码本需要 256 字节。(默认: 61)
 ```
 您也可以在客户端和服务端的 JSON 配置文件中指定：
 ```json
