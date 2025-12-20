@@ -250,19 +250,45 @@ server: --listen 0.0.0.0:3000-4000
 By specifying a port range, kcptun will automatically switch to the next random port within that range when establishing each new connection.
 
 #### Rate Limit and Pacing
-kcptun introduces userspace pacing for smoother data transmission: https://github.com/xtaci/kcp-go/releases/tag/v5.6.36 .
 
-By setting `--ratelimit <value>`, you can specify the maximum outgoing speed (in bytes per second, including FEC packets) for a single KCP connection. Set this value to `0` to disable rate limiting. Enabling rate limiting improves connection stability at high speeds. (Default: 0)
+kcptun supports userspace packet pacing to smooth out data transmission.
 
-This parameter is particularly useful **for limiting upload speed** on asymmetric networks.
+**Why use it?**
+Without pacing, KCP may send data in large bursts (micro-bursts). These sudden spikes can overflow the network interface card (NIC) buffers or the OS kernel's UDP buffer, causing **local packet drops** before the data even leaves your server. This is especially common on high-speed links or restricted environments.
+
+**How to use:**
+Use `--ratelimit <value>` to set the maximum outgoing speed (in bytes per second) for a single KCP connection.
+- Example: `--ratelimit 1048576` limits the speed to 1MB/s.
+- Default: `0` (unlimited).
+
+**Benefits:**
+1. **Prevents Kernel Drops**: Reduces the risk of `ENOBUFS` errors and kernel-level packet drops.
+2. **Smoother Traffic**: Creates a more consistent flow of packets, which is friendlier to intermediate routers and reduces jitter.
+3. **Bandwidth Control**: Useful for limiting upload speed on asymmetric networks (e.g., ADSL/Cable).
 
 #### Forward Error Correction
 
-In coding theory, the [Reed–Solomon code](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction) belongs to the class of non-binary cyclic error-correcting codes. Reed–Solomon codes are based on univariate polynomials over finite fields.
+kcptun uses [Reed-Solomon Codes](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction) to recover lost packets, which significantly improves data throughput on lossy networks.
 
-They can detect and correct multiple symbol errors. By adding t check symbols to the data, a Reed–Solomon code can detect any combination of up to t erroneous symbols, or correct up to ⌊t/2⌋ symbols. As an erasure code, it can correct up to t known erasures, or detect and correct combinations of errors and erasures. Furthermore, Reed–Solomon codes are suitable for correcting multiple-burst bit errors, since a sequence of b + 1 consecutive bit errors can affect at most two symbols of size b. The value of t is determined by the code designer and can be selected within wide limits.
+You can configure the FEC parameters using the following flags:
+- `--datashard, -ds`: Number of data shards (default: 10).
+- `--parityshard, -ps`: Number of parity shards (default: 3).
 
-![FED](assets/FEC.png)
+**How it works:**
+For every `datashard` packets sent, `parityshard` redundant packets are generated and sent. This allows the receiver to recover the original data even if up to `parityshard` packets are lost within the group of `datashard + parityshard` packets.
+
+**Overhead:**
+The bandwidth overhead can be calculated as: `parityshard / datashard`.
+For the default setting (10 data, 3 parity), the overhead is 30%.
+
+**Configuration Guide:**
+1. **AutoTune**: The receiver automatically detects and adapts to the sender's FEC parameters (DataShard/ParityShard), so you can adjust them on one side without restarting the other.
+2. **Tuning**:
+   - Increase `-parityshard` to improve reliability on highly lossy networks, at the cost of higher bandwidth usage.
+   - Decrease `-parityshard` to reduce bandwidth overhead if the network quality is good.
+3. **Disable FEC**: Set `--parityshard 0` to disable Forward Error Correction. This saves CPU and bandwidth but reduces reliability on unstable networks.
+
+![FEC](assets/FEC.png)
 
 #### DSCP
 
