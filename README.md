@@ -288,6 +288,9 @@ For the default setting (10 data, 3 parity), the overhead is 30%.
    - Decrease `-parityshard` to reduce bandwidth overhead if the network quality is good.
 3. **Disable FEC**: Set `--parityshard 0` to disable Forward Error Correction. This saves CPU and bandwidth but reduces reliability on unstable networks.
 
+**Long-Distance Communication:**
+In long-distance communication (e.g., cross-continent), the Round-Trip Time (RTT) is high. If a packet is lost, waiting for retransmission (RTO) incurs a significant latency penalty. FEC allows the receiver to reconstruct lost packets immediately without waiting for retransmission, making it highly effective for reducing latency in high-RTT environments.
+
 ![FEC](assets/FEC.png)
 
 #### DSCP
@@ -300,9 +303,12 @@ Set each side with ```-dscp value```. Here are some [commonly used DSCP values](
 
 #### Cryptoanalysis
 
-kcptun includes built-in packet encryption powered by various block encryption algorithms operating in [Cipher Feedback Mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)). For each packet to be sent, the encryption process begins by encrypting a [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) from the [system entropy](https://en.wikipedia.org/wiki//dev/random), ensuring that encrypting identical plaintexts never produces identical ciphertexts.
+kcptun includes built-in packet encryption powered by various block encryption algorithms operating in [Cipher Feedback Mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)) or [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption). For each packet to be sent, the encryption process begins by encrypting a [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) from the [system entropy](https://en.wikipedia.org/wiki//dev/random), ensuring that encrypting identical plaintexts never produces identical ciphertexts.
 
 Packet contents are fully encrypted, including headers (FEC, KCP), checksums, and data. Note that regardless of which encryption method you use in your upper layer, if you disable kcptun encryption by specifying `-crypt none`, the transmission will be insecure because the header remains ***PLAINTEXT***, making it susceptible to tampering attacks such as manipulation of the *sliding window size*, *round-trip time*, *FEC properties*, and *checksums*. ```aes-128``` is recommended for minimal encryption since modern CPUs include [AES-NI](https://en.wikipedia.org/wiki/AES_instruction_set) instructions and perform even better than `salsa20` (see the table below).
+
+**AEAD Support:**
+Starting from v20251212, kcptun supports `aes-128-gcm`, which is an Authenticated Encryption with Associated Data (AEAD) algorithm. It provides both confidentiality and data integrity, effectively preventing ciphertext tampering.
 
 Other possible attacks against kcptun include: 
 
@@ -435,15 +441,6 @@ type Snmp struct {
 
 Sending a `SIGUSR1` signal to the KCP Client or KCP Server will dump SNMP information to the console, similar to `/proc/net/snmp`. You can use this information for fine-grained tuning.
 
-### Manual Control
-
-https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
-
-`-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1`
-
-Low-level KCP configuration can be modified using manual mode as shown above. Make sure you fully **UNDERSTAND** what these parameters mean before making **ANY** manual adjustments.
-
-
 ### Identical Parameters
 
 These parameters **MUST** be **IDENTICAL** on **BOTH** sides:
@@ -452,6 +449,14 @@ These parameters **MUST** be **IDENTICAL** on **BOTH** sides:
 1. --QPP and --QPPCount 
 1. --nocomp
 1. --smuxver
+
+### Manual Control
+
+https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
+
+`-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1`
+
+Low-level KCP configuration can be modified using manual mode as shown above. Make sure you fully **UNDERSTAND** what these parameters mean before making **ANY** manual adjustments.
 
 
 ### Example Configurations

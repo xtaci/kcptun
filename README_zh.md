@@ -17,6 +17,8 @@
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
 
+[**English**](README.md)
+
 <img src="assets/kcptun.png" alt="kcptun" height="300px"/>
 
 > *免责声明：kcptun 仅维护一个官方网站 — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun)。任何非 [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) 的网站均未获得 xtaci 的认可。*
@@ -286,6 +288,9 @@ kcptun 使用 [Reed-Solomon 纠删码](https://en.wikipedia.org/wiki/Reed%E2%80%
    - 如果网络质量良好，减少 `-parityshard` 以降低带宽开销。
 3. **禁用 FEC**：设置 `--parityshard 0` 以禁用前向纠错。这可以节省 CPU 和带宽，但会降低不稳定网络上的可靠性。
 
+**长距离通信：**
+在长距离通信（如跨洲传输）中，往返时间（RTT）很高。如果发生丢包，等待重传（RTO）会带来巨大的延迟代价。FEC 允许接收方立即重建丢失的数据包，而无需等待重传，这对于降低高 RTT 环境下的延迟非常有效。
+
 ![FEC](assets/FEC.png)
 
 #### DSCP
@@ -298,9 +303,12 @@ DiffServ 使用 IP 标头中 8 位区分服务字段 (DS 字段) 中的 6 位区
 
 #### 密码分析
 
-kcptun 包含内置的数据包加密功能，由在 [密文反馈模式 (CFB)](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)) 下运行的各种块加密算法提供支持。对于每个要发送的数据包，加密过程从加密来自 [系统熵](https://en.wikipedia.org/wiki//dev/random) 的 [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) 开始，确保加密相同的明文永远不会产生相同的密文。
+kcptun 包含内置的数据包加密功能，由在 [密文反馈模式 (CFB)](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)) 或 [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption) 模式下运行的各种块加密算法提供支持。对于每个要发送的数据包，加密过程从加密来自 [系统熵](https://en.wikipedia.org/wiki//dev/random) 的 [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) 开始，确保加密相同的明文永远不会产生相同的密文。
 
 数据包内容已完全加密，包括标头（FEC、KCP）、校验和及数据。请注意，无论您在上层使用哪种加密方法，如果您通过指定 `-crypt none` 禁用 kcptun 加密，传输将是不安全的，因为标头保持 ***明文***，使其容易受到篡改攻击，例如操纵 *滑动窗口大小*、*往返时间*、*FEC 属性* 和 *校验和*。建议使用 ```aes-128``` 进行最小程度的加密，因为现代 CPU 包含 [AES-NI](https://en.wikipedia.org/wiki/AES_instruction_set) 指令，性能甚至优于 `salsa20`（见下表）。
+
+**AEAD 支持：**
+从 v20251212 版本开始，kcptun 支持 `aes-128-gcm`，这是一种带关联数据的认证加密 (AEAD) 算法。它同时提供保密性和数据完整性，可有效防止密文篡改。
 
 针对 kcptun 的其他可能攻击包括：
 
@@ -432,15 +440,6 @@ type Snmp struct {
 
 向 KCP 客户端或 KCP 服务端发送 `SIGUSR1` 信号会将 SNMP 信息转储到控制台，类似于 `/proc/net/snmp`。您可以使用此信息进行细粒度调优。
 
-### 手动控制
-
-https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
-
-`-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1`
-
-可以使用如上所示的手动模式修改低级 KCP 配置。在进行**任何**手动调整之前，请确保您完全**理解**这些参数的含义。
-
-
 ### 必须相同的参数
 
 这些参数在**两端** **必须** **完全相同**：
@@ -449,6 +448,14 @@ https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configurati
 1. --QPP 和 --QPPCount 
 1. --nocomp
 1. --smuxver
+
+### 手动控制
+
+https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
+
+`-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1`
+
+可以使用如上所示的手动模式修改低级 KCP 配置。在进行**任何**手动调整之前，请确保您完全**理解**这些参数的含义。
 
 
 ### 配置示例
