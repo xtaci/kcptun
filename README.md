@@ -17,6 +17,8 @@
 [17]: https://img.shields.io/badge/KCP-Powered-blue.svg
 [18]: https://github.com/skywind3000/kcp
 
+[**中文说明**](README_zh.md)
+
 <img src="assets/kcptun.png" alt="kcptun" height="300px"/>
 
 > *Disclaimer: kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
