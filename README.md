@@ -21,7 +21,7 @@
 
 > *Disclaimer: kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
 
-### Requirements
+## Requirements
 
 | Target | Supported | Recommended |
 | --- | --- | --- |
@@ -32,7 +32,7 @@
 *NOTE: If you are using KVM, ensure that the guest OS supports AES instructions*
 <img src="https://github.com/xtaci/kcptun/assets/2346725/9358e8e5-2a4a-4be9-9859-62f1aaa553b0" alt="cpuinfo" height="400px"/>
 
-### QuickStart
+## QuickStart
 
 Download:
 
@@ -75,7 +75,7 @@ which tunnels the original connection:
 
 **_OR START WITH THESE COMPLETE CONFIGURATION FILES:_** [client](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example) --> [server](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
 
-### Building from source
+## Building from source
 
 ```
 $ git clone https://github.com/xtaci/kcptun.git
@@ -86,7 +86,7 @@ $ cd build
 
 All precompiled releases are generated using the `build-release.sh` script.
 
-### Performance
+## Performance
 
 <img src="assets/fast.png" alt="fast.com" height="256px" />  
 
@@ -98,15 +98,15 @@ All precompiled releases are generated using the `build-release.sh` script.
 
 
 
-### Basic Tuning Guide
+## Basic Tuning Guide
 
-#### To Improve Throughput
+### To Improve Throughput
 
 > **Q: I have a high-speed network link. How can I maximize bandwidth?**
 
 > **A:** Increase `-rcvwnd` on the KCP Client and `-sndwnd` on the KCP Server **simultaneously and gradually**. The minimum of these values determines the maximum transfer rate of the link using the formula `wnd * mtu / rtt`. Then test your connection by downloading content to verify it meets your requirements. (The MTU can be adjusted using the `-mtu` parameter.)
 
-#### To Improve Latency
+### To Improve Latency
 
 > **Q: I'm using kcptun for gaming and want to minimize latency.**
 
@@ -118,19 +118,19 @@ All precompiled releases are generated using the `build-release.sh` script.
 
 > *fast3 > fast2 > fast > normal > default*
 
-#### Head-of-Line Blocking (HOLB)
+### Head-of-Line Blocking (HOLB)
 
 Since streams are multiplexed into a single physical channel, head-of-line blocking may occur. Increasing `-smuxbuf` to a larger value (default is 4MB) can mitigate this issue, though it will consume more memory.
 
 For versions >= v20190924, you can switch to smux version 2. Smux v2 provides options to limit per-stream memory usage. Set `-smuxver 2` to enable smux v2, and adjust `-streambuf` to control per-stream memory consumption. For example: `-streambuf 2097152` limits per-stream memory usage to 2MB. Limiting the stream buffer on the receiver side applies back-pressure to the sender, preventing buffer overflow along the link. (The `-smuxver` setting **MUST** be **IDENTICAL** on both sides; the default is 1.)
 
-#### Slow Devices
+### Slow Devices
 
 kcptun uses **Reed-Solomon Codes** for packet recovery, which requires substantial computational resources. Low-end ARM devices may experience performance issues with kcptun. For optimal performance, a multi-core x86 server CPU such as AMD Opteron is recommended. If you must use ARM routers, it's advisable to disable `FEC` and use `salsa20` for encryption.
 
-### Expert Tuning Guide
+## Expert Tuning Guide
 
-#### Overview
+### Overview
 
 <p align="left"><img src="assets/layeredparams.png" alt="params" height="450px"/></p>
 
@@ -231,7 +231,7 @@ GLOBAL OPTIONS:
    --version, -v                    print the version
 ```
 
-#### Multiport Dialer
+### Multiport Dialer
 
 kcptun can dial across a port range to avoid ISP QoS throttling or port-based interference.
 
@@ -261,7 +261,7 @@ Each new kcptun UDP/KCP session uses one randomly selected port from the range; 
 - Single-port usage still works: `IP:29900` (no hyphen).
 - Works with `--tcp` mode as well; the remote port is still chosen from the range before initializing the connection.
 
-#### Rate Limit and Pacing
+### Rate Limit and Pacing
 
 kcptun supports userspace packet pacing to smooth out data transmission.
 
@@ -278,7 +278,7 @@ Use `--ratelimit <value>` to set the maximum outgoing speed (in bytes per second
 2. **Smoother Traffic**: Creates a more consistent flow of packets, which is friendlier to intermediate routers and reduces jitter.
 3. **Bandwidth Control**: Useful for limiting upload speed on asymmetric networks (e.g., ADSL/Cable).
 
-#### Forward Error Correction
+### Forward Error Correction
 
 kcptun uses [Reed-Solomon Codes](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction) to recover lost packets, which significantly improves data throughput on lossy networks.
 
@@ -305,7 +305,7 @@ In long-distance communication (e.g., cross-continent), the Round-Trip Time (RTT
 
 ![FEC](assets/FEC.png)
 
-#### DSCP
+### DSCP
 
 Differentiated Services (DiffServ) is a computer networking architecture that specifies a simple, scalable, and coarse-grained mechanism for classifying and managing network traffic and providing Quality of Service (QoS) on modern IP networks. DiffServ can, for example, be used to provide low-latency service to critical network traffic such as voice or streaming media while providing simple best-effort service to non-critical traffic such as web browsing or file transfers.
 
@@ -313,7 +313,7 @@ DiffServ uses a 6-bit differentiated services code point (DSCP) in the 8-bit dif
 
 Set each side with ```-dscp value```. Here are some [commonly used DSCP values](https://en.wikipedia.org/wiki/Differentiated_services#Commonly_used_DSCP_values).
 
-#### Cryptoanalysis
+### Cryptoanalysis
 
 kcptun includes built-in packet encryption powered by various block encryption algorithms operating in [Cipher Feedback Mode](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Feedback_(CFB)) or [AEAD](https://en.wikipedia.org/wiki/Authenticated_encryption). For each packet to be sent, the encryption process begins by encrypting a [nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce) from the [system entropy](https://en.wikipedia.org/wiki//dev/random), ensuring that encrypting identical plaintexts never produces identical ciphertexts.
 
@@ -370,7 +370,7 @@ aes-128-cfb     847216.79k   850770.86k   853712.05k   859912.39k   854565.80k
 
 The encryption performance in kcptun is as fast as in openssl library(if not faster).
 
-#### Quantum Resistance
+### Quantum Resistance
 Quantum Resistance, also known as quantum-secure, post-quantum, or quantum-safe cryptography, refers to cryptographic algorithms that can withstand potential code-breaking attempts by quantum computers.
 Starting with version v20240701, kcptun adopts [QPP](https://github.com/xtaci/qpp) based on [Kuang's Quantum Permutation Pad](https://epjquantumtechnology.springeropen.com/articles/10.1140/epjqt/s40507-022-00145-y) for quantum-resistant communication.
 
@@ -392,7 +392,7 @@ in your client and server-side JSON configuration files. These two parameters mu
 2. Ensure that `-QPPCount` is **COPRIME (互素)** to **8** (or simply set it to a **PRIME** number) such as: 
 ```101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199... ```
 
-#### Memory Control
+### Memory Control
 
 Routers and mobile devices are susceptible to memory constraints. Setting the GOGC environment variable (e.g., GOGC=20) will cause the garbage collector to recycle memory more aggressively.
 Reference: https://blog.golang.org/go15gc
@@ -402,8 +402,7 @@ The pool mechanism maintains a *high watermark* for slice objects. These *in-fli
 
 The `-smuxbuf` parameter also affects maximum memory consumption and maintains a delicate balance between *concurrency* and *resource usage*. You can increase this value (default 4MB) to boost concurrency if you have many clients to serve and a powerful server. Conversely, you can decrease this value to serve only 1-2 clients if you're running the program on an embedded SoC system with limited memory. (Note that the `-smuxbuf` value is not directly proportional to concurrency; testing is required.)
 
-
-#### Compression
+### Compression
 
 kcptun has builtin snappy algorithms for compressing streams:
 
@@ -420,7 +419,7 @@ Compression can save bandwidth for **PLAINTEXT** data and is particularly useful
 
 Compression is enabled by default. You can disable it by setting ```-nocomp``` on **BOTH** the KCP Client and KCP Server (the setting **MUST** be **IDENTICAL** on both sides).
 
-#### SNMP
+### SNMP
 
 ```go
 type Snmp struct {
