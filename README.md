@@ -134,8 +134,6 @@ kcptun uses **Reed-Solomon Codes** for packet recovery, which requires substanti
 
 <p align="left"><img src="assets/layeredparams.png" alt="params" height="450px"/></p>
 
-#### Usage
-
 ```bash 
 $ ./client_freebsd_amd64 -h
 NAME:
