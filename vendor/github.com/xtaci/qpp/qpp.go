@@ -151,7 +151,9 @@ func FastPRNG(seed []byte) *Rand {
 }
 
 // EncryptWithPRNG encrypts the data using the Quantum Permutation Pad with a custom PRNG
-// This function shares the same permutation matrices
+// The PRNG exposes 64-bit chunks; the `count` field tracks how many bytes of the
+// current 64-bit word have already been consumed so that successive calls remain
+// byte-aligned even if the caller streams arbitrary lengths.
 func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 	// initial r, index, count
 	size := len(data)
@@ -164,16 +166,20 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 	if count != 0 {
 		offset := 0
 		for ; offset < len(data); offset++ {
-			// using r as the base random number
+			// Use the already generated 64-bit random word and keep consuming it byte by byte.
 			rr = byte(r >> (count * 8))
 			data[offset] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[offset]^rr)))
 			count++
 
 			// switch to another pad when count reaches PAD_SWITCH
 			if count == PAD_SWITCH {
-				// switch to another pad
+				// Once we exhaust PAD_SWITCH bytes we reseed from xoshiro, select a new pad,
+				// and realign the loop so the remaining bytes can be handled in 8-byte chunks.
 				r = xoshiro256ss(&rand.xoshiro)
 				base = unsafe.Pointer(uintptr(qpp.padsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
+				// `offset` is advanced to skip the byte we just finished so the slice below
+				// starts at the first unprocessed byte. Without this the processed byte would
+				// be re-encrypted when we fall through to the aligned logic.
 				offset = offset + 1
 				count = 0
 				break
@@ -182,7 +188,7 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 		data = data[offset:] // aligned bytes start from here
 	}
 
-	// handle 8-bytes aligned, loop unrolling to improve performance(to mitigate data-dependency)
+	// handle 8-byte aligned blocks with explicit unrolling to minimize data dependency stalls
 	repeat := len(data) / 8
 	for i := 0; i < repeat; i++ {
 		d := data[i*8 : i*8+8]
@@ -209,7 +215,7 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 	}
 	data = data[repeat*8:]
 
-	// handle remaining unaligned bytes
+	// handle remaining tail bytes after the unrolled blocks
 	for i := 0; i < len(data); i++ {
 		rr = byte(r >> (count * 8))
 		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]^byte(rr))))
@@ -221,8 +227,8 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 	rand.count = uint8((int(rand.count) + size) % PAD_SWITCH)
 }
 
-// DecryptWithPRNG decrypts the data using the Quantum Permutation Pad with a custom PRNG
-// This function shares the same permutation matrices
+// DecryptWithPRNG mirrors EncryptWithPRNG but walks the reverse permutation pads so that
+// the cipher stream remains synchronized with the same PRNG state.
 func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 	size := len(data)
 	r := rand.seed64
@@ -241,6 +247,8 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 			if count == PAD_SWITCH {
 				r = xoshiro256ss(&rand.xoshiro)
 				base = unsafe.Pointer(uintptr(qpp.rpadsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
+				// Advance `offset` for the same reason as encryption: ensure the slice below
+				// resumes at the first unprocessed byte after we switch pads.
 				offset = offset + 1
 				count = 0
 				break
@@ -249,7 +257,7 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 		data = data[offset:]
 	}
 
-	// handle 8-bytes aligned
+	// handle 8-byte aligned blocks using the same unrolling as encryption to stay in sync
 	repeat := len(data) / 8
 	for i := 0; i < repeat; i++ {
 		d := data[i*8 : i*8+8]
@@ -276,7 +284,8 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 	}
 	data = data[repeat*8:]
 
-	// handle remaining unaligned bytes
+	// handle remaining tail bytes; at this point `count` already encodes how many bytes of `r`
+	// were consumed so the PRNG state stays identical to the encryption side.
 	for i := 0; i < len(data); i++ {
 		rr = byte(r >> (count * 8))
 		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]))) ^ rr
@@ -381,7 +390,9 @@ func shuffle(chunk []byte, pad []byte, padID uint16, blocks []cipher.Block) {
 		// use all the entropy from the seed to generate a random number
 		for j := 0; j < len(blocks); j++ {
 			block := blocks[j%len(blocks)]
-			block.Encrypt(sum, sum)
+			for off := 0; off < len(sum); off += aes.BlockSize {
+				block.Encrypt(sum[off:off+aes.BlockSize], sum[off:off+aes.BlockSize])
+			}
 		}
 		bigrand := new(big.Int).SetBytes(sum)
 

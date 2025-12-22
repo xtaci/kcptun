@@ -2,6 +2,8 @@
 
 [![GoDoc][1]][2] [![Go Report Card][3]][4] [![CreatedAt][5]][6] 
 
+[中文说明](README_zh.md)
+
 [1]: https://godoc.org/github.com/xtaci/qpp?status.svg
 [2]: https://pkg.go.dev/github.com/xtaci/qpp
 [3]: https://goreportcard.com/badge/github.com/xtaci/qpp
