@@ -266,14 +266,17 @@ Each new kcptun UDP/KCP session uses one randomly selected port from the range; 
 kcptun supports userspace packet pacing to smooth out data transmission.
 
 **Why use it?**
+
 Without pacing, KCP may send data in large bursts (micro-bursts). These sudden spikes can overflow the network interface card (NIC) buffers or the OS kernel's UDP buffer, causing **local packet drops** before the data even leaves your server. This is especially common on high-speed links or restricted environments.
 
 **How to use:**
+
 Use `--ratelimit <value>` to set the maximum outgoing speed (in bytes per second) for a single KCP connection.
 - Example: `--ratelimit 1048576` limits the speed to 1MB/s.
 - Default: `0` (unlimited).
 
 **Benefits:**
+
 1. **Prevents Kernel Drops**: Reduces the risk of `ENOBUFS` errors and kernel-level packet drops.
 2. **Smoother Traffic**: Creates a more consistent flow of packets, which is friendlier to intermediate routers and reduces jitter.
 3. **Bandwidth Control**: Useful for limiting upload speed on asymmetric networks (e.g., ADSL/Cable).
@@ -287,13 +290,16 @@ You can configure the FEC parameters using the following flags:
 - `--parityshard, -ps`: Number of parity shards (default: 3).
 
 **How it works:**
+
 For every `datashard` packets sent, `parityshard` redundant packets are generated and sent. This allows the receiver to recover the original data even if up to `parityshard` packets are lost within the group of `datashard + parityshard` packets.
 
 **Overhead:**
+
 The bandwidth overhead can be calculated as: `parityshard / datashard`.
 For the default setting (10 data, 3 parity), the overhead is 30%.
 
 **Configuration Guide:**
+
 1. **AutoTune**: The receiver automatically detects and adapts to the sender's FEC parameters (DataShard/ParityShard), so you can adjust them on one side without restarting the other.
 2. **Tuning**:
    - Increase `-parityshard` to improve reliability on highly lossy networks, at the cost of higher bandwidth usage.
@@ -301,6 +307,7 @@ For the default setting (10 data, 3 parity), the overhead is 30%.
 3. **Disable FEC**: Set `--parityshard 0` to disable Forward Error Correction. This saves CPU and bandwidth but reduces reliability on unstable networks.
 
 **Long-Distance Communication:**
+
 In long-distance communication (e.g., cross-continent), the Round-Trip Time (RTT) is high. If a packet is lost, waiting for retransmission (RTO) incurs a significant latency penalty. FEC allows the receiver to reconstruct lost packets immediately without waiting for retransmission, making it highly effective for reducing latency in high-RTT environments.
 
 ![FEC](assets/FEC.png)
