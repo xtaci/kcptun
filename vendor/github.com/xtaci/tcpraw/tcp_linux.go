@@ -26,7 +26,6 @@ package tcpraw
 
 import (
 	"container/list"
-	"crypto/rand"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -67,6 +66,7 @@ type tcpFlow struct {
 	handle       *net.IPConn                // the handle to send packets
 	seq          uint32                     // TCP sequence number
 	ack          uint32                     // TCP acknowledge number
+	tsEcr        uint32                     // TCP timestamp echo reply
 	networkLayer gopacket.SerializableLayer // network layer header for tx
 	ts           time.Time                  // last packet incoming time
 	buf          gopacket.SerializeBuffer   // a buffer for write
@@ -133,24 +133,32 @@ func (conn *tcpConn) lockflow(addr net.Addr, f func(e *tcpFlow)) {
 
 // clean expired flows
 func (conn *tcpConn) cleaner() {
-	ticker := time.NewTicker(time.Minute) // Create a ticker to trigger flow cleanup every minute
+	ticker := time.NewTicker(5 * time.Second) // Check every 5 seconds
 	defer ticker.Stop()
 
-	select {
-	case <-conn.die: // Exit if the connection is closed
-		return
-	case <-ticker.C: // On each tick, clean up expired flows
-		conn.flowsLock.Lock()
-		for k, v := range conn.flowTable {
-			if time.Now().Sub(v.ts) > expire { // Check if the flow has expired
-				if v.conn != nil {
-					setTTL(v.conn, 64) // Set TTL before closing the connection
-					v.conn.Close()
+	for {
+		select {
+		case <-conn.die: // Exit if the connection is closed
+			return
+		case <-ticker.C: // On each tick, clean up expired flows
+			conn.flowsLock.Lock()
+			now := time.Now()
+			for k, v := range conn.flowTable {
+				ttl := expire
+				if v.conn == nil {
+					ttl = 5 * time.Second // Short expire for orphans
 				}
-				delete(conn.flowTable, k) // Remove the flow from the table
+
+				if now.Sub(v.ts) > ttl { // Check if the flow has expired
+					if v.conn != nil {
+						setTTL(v.conn, 64) // Set TTL before closing the connection
+						v.conn.Close()
+					}
+					delete(conn.flowTable, k) // Remove the flow from the table
+				}
 			}
+			conn.flowsLock.Unlock()
 		}
-		conn.flowsLock.Unlock()
 	}
 }
 
@@ -194,14 +202,31 @@ func (conn *tcpConn) captureFlow(handle *net.IPConn, port int) {
 			if tcp.ACK {
 				e.seq = tcp.Ack
 			}
-			if tcp.SYN {
-				e.ack = tcp.Seq + 1
-			}
-			if tcp.PSH {
-				if e.ack == tcp.Seq {
-					e.ack = tcp.Seq + uint32(len(tcp.Payload))
+
+			// Parse TCP options to get Timestamp
+			for _, opt := range tcp.Options {
+				if opt.OptionType == layers.TCPOptionKindTimestamps && len(opt.OptionData) == 10 {
+					e.tsEcr = binary.BigEndian.Uint32(opt.OptionData[:4])
+					break
 				}
 			}
+
+			// Update ACK
+			nextSeq := tcp.Seq + uint32(len(tcp.Payload))
+			if tcp.SYN {
+				nextSeq++
+			}
+			if tcp.FIN {
+				nextSeq++
+			}
+
+			// If we have payload or flags that consume sequence space, update ack
+			if nextSeq != tcp.Seq {
+				if e.ack == 0 || e.ack == tcp.Seq {
+					e.ack = nextSeq
+				}
+			}
+
 			e.handle = handle
 		})
 
@@ -276,14 +301,13 @@ func (conn *tcpConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
 			// build tcp header with local and remote port
 			e.tcpHeader.SrcPort = layers.TCPPort(lport)
 			e.tcpHeader.DstPort = layers.TCPPort(raddr.Port)
-			binary.Read(rand.Reader, binary.LittleEndian, &e.tcpHeader.Window)
 			e.tcpHeader.Window = conn.tcpFingerPrint.Window
 			e.tcpHeader.Ack = e.ack
 			e.tcpHeader.Seq = e.seq
 			e.tcpHeader.PSH = true
 			e.tcpHeader.ACK = true
 			e.tcpHeader.Options = conn.tcpFingerPrint.Options
-			makeOption(conn.tcpFingerPrint.Type, e.tcpHeader.Options)
+			makeOption(conn.tcpFingerPrint.Type, e.tcpHeader.Options, e.tsEcr)
 
 			// build IP header with src & dst ip for TCP checksum
 			if raddr.IP.To4() != nil {
@@ -468,7 +492,7 @@ func Dial(network, address string) (*TCPConn, error) {
 		FixLengths:       true,
 		ComputeChecksums: true,
 	}
-	conn.tcpFingerPrint = fingerPrintLinux
+	conn.tcpFingerPrint = fingerPrintLinux.Clone()
 
 	go conn.captureFlow(handle, tcpconn.LocalAddr().(*net.TCPAddr).Port)
 	go conn.cleaner()
@@ -476,6 +500,7 @@ func Dial(network, address string) (*TCPConn, error) {
 	// iptables
 	err = setTTL(tcpconn, 1)
 	if err != nil {
+		conn.Close()
 		return nil, err
 	}
 
@@ -526,7 +551,7 @@ func Listen(network, address string) (*TCPConn, error) {
 		FixLengths:       true,
 		ComputeChecksums: true,
 	}
-	conn.tcpFingerPrint = fingerPrintLinux
+	conn.tcpFingerPrint = fingerPrintLinux.Clone()
 
 	// resolve address
 	laddr, err := net.ResolveTCPAddr(network, address)
@@ -571,6 +596,9 @@ func Listen(network, address string) (*TCPConn, error) {
 	// start listening
 	l, err := net.ListenTCP(network, laddr)
 	if err != nil {
+		for _, h := range conn.handles {
+			h.Close()
+		}
 		return nil, err
 	}
 
