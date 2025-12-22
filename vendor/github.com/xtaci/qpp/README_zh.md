@@ -81,7 +81,7 @@ func main() {
 
 在 8 位量子比特系统中，置换矩阵的数量取决于所提供的随机种子，并经随机程序选定。
 
-<img width="867" alt="image" src="https://github.com/user-attachments/assets/93ce8634-5300-47b1-ba1b-e46d9b46b432">
+<img width="1161" height="630" alt="image" src="https://github.com/user-attachments/assets/833cad70-f163-44ab-ab68-2e25961110ae" />
 
 置换密码本（pad）可以用[轮换表示法](https://zh.wikipedia.org/wiki/%E7%BD%AE%E6%8D%A2#%E8%BD%AE%E6%8D%A2%E8%A1%A8%E7%A4%BA%E6%B3%95)写为： $\sigma =(1\ 2\ 255)(3\ 36)(4\ 82\ 125)(...)$，其中置换元素无法像传统[流密码](https://zh.wikipedia.org/wiki/%E6%B5%81%E5%AF%86%E7%A0%81)那样通过两次 **异或 (XOR)** 还原，大幅提升分析难度。
 

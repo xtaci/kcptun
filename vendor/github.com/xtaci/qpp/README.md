@@ -81,7 +81,8 @@ The NewQPP generates permutations like the following (in [cycle notation](https:
 The overall security is equivalent to **1683-bit** symmetric encryption.
 
 The number of permutation matrices in an 8-qubit system is determined by the provided seed and selected randomly.
-<img width="867" alt="image" src="https://github.com/user-attachments/assets/93ce8634-5300-47b1-ba1b-e46d9b46b432">
+
+<img width="1161" height="630" alt="image" src="https://github.com/user-attachments/assets/833cad70-f163-44ab-ab68-2e25961110ae" />
 
 The permutation pad can be written in [Cycle notation](https://en.wikipedia.org/wiki/Permutation#Cycle_notation) as: $\sigma =(1\ 2\ 255)(3\ 36)(4\ 82\ 125)(....)$, where the elements are not reversible by **XORing** twice as in other [stream ciphers](https://en.wikipedia.org/wiki/Stream_cipher_attacks).
 

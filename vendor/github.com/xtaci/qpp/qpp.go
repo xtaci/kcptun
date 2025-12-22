@@ -79,14 +79,14 @@ func NewQPP(seed []byte, numPads uint16) *QuantumPermutationPad {
 	chunks := seedToChunks(seed, QUBITS)
 	// creat AES-256 blocks to generate random number for shuffling
 	var blocks []cipher.Block
-	for i := range chunks {
-		aeskey := pbkdf2.Key(chunks[i], []byte(SHUFFLE_SALT), PBKDF2_LOOPS, 32, sha1.New)
+	for _, chunk := range chunks {
+		aeskey := pbkdf2.Key(chunk, []byte(SHUFFLE_SALT), PBKDF2_LOOPS, 32, sha1.New)
 		block, _ := aes.NewCipher(aeskey)
 		blocks = append(blocks, block)
 	}
 
 	// Initialize and shuffle pads to create permutation matrices
-	for i := 0; i < int(numPads); i++ {
+	for i := range int(numPads) {
 		pad := qpp.pads[i*matrixBytes : (i+1)*matrixBytes]
 		rpad := qpp.rpads[i*matrixBytes : (i+1)*matrixBytes]
 
@@ -190,7 +190,7 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 
 	// handle 8-byte aligned blocks with explicit unrolling to minimize data dependency stalls
 	repeat := len(data) / 8
-	for i := 0; i < repeat; i++ {
+	for i := range repeat {
 		d := data[i*8 : i*8+8]
 		rr0 := byte(r >> 0)
 		rr1 := byte(r >> 8)
@@ -216,7 +216,7 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 	data = data[repeat*8:]
 
 	// handle remaining tail bytes after the unrolled blocks
-	for i := 0; i < len(data); i++ {
+	for i := range len(data) {
 		rr = byte(r >> (count * 8))
 		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]^byte(rr))))
 		count++
@@ -259,7 +259,7 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 
 	// handle 8-byte aligned blocks using the same unrolling as encryption to stay in sync
 	repeat := len(data) / 8
-	for i := 0; i < repeat; i++ {
+	for i := range repeat {
 		d := data[i*8 : i*8+8]
 		rr0 := byte(r >> 0)
 		rr1 := byte(r >> 8)
@@ -286,7 +286,7 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 
 	// handle remaining tail bytes; at this point `count` already encodes how many bytes of `r`
 	// were consumed so the PRNG state stays identical to the encryption side.
-	for i := 0; i < len(data); i++ {
+	for i := range len(data) {
 		rr = byte(r >> (count * 8))
 		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]))) ^ rr
 		count++
@@ -357,14 +357,14 @@ func seedToChunks(seed []byte, qubits uint8) [][]byte {
 		chunkCount = 1
 	}
 	chunks := make([][]byte, chunkCount)
-	for i := 0; i < len(chunks); i++ {
+	for i := range chunks {
 		chunks[i] = make([]byte, 32)
 	}
 
 	// Split the seed into overlapping chunks
 	seedIdx := 0
-	for i := 0; i < len(chunks); i++ {
-		for j := 0; j < 32; j++ {
+	for i := range chunks {
+		for j := range 32 {
 			chunks[i][j] = seed[seedIdx%len(seed)]
 			seedIdx++
 		}
@@ -388,7 +388,7 @@ func shuffle(chunk []byte, pad []byte, padID uint16, blocks []cipher.Block) {
 
 	for i := len(pad) - 1; i > 0; i-- {
 		// use all the entropy from the seed to generate a random number
-		for j := 0; j < len(blocks); j++ {
+		for j := range blocks {
 			block := blocks[j%len(blocks)]
 			for off := 0; off < len(sum); off += aes.BlockSize {
 				block.Encrypt(sum[off:off+aes.BlockSize], sum[off:off+aes.BlockSize])
