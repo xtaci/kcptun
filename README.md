@@ -235,17 +235,33 @@ GLOBAL OPTIONS:
 
 #### Multiport Dialer
 
-kcptun supports multi-port dialing as follows:
+kcptun can dial across a port range to avoid ISP QoS throttling or port-based interference.
 
-```
-client: --remoteaddr IP:minport-maxport
-server: --listen IP:minport-maxport
+**How it works:**
+- Address format: `IP:min-max` (e.g., `1.2.3.4:3000-4000`).
+- On each new connection, the client randomly picks one port in the given range and connects to it.
+- The server must listen on the same port range so it can accept connections on any port within that range.
 
-eg:
-client: --remoteaddr IP:3000-4000
-server: --listen 0.0.0.0:3000-4000
-```
-By specifying a port range, kcptun will automatically switch to the next random port within that range when establishing each new connection.
+Under the hood, addresses are parsed and validated as `[host, minPort, maxPort]` (see [std/multiport.go](std/multiport.go)), and the client selects a random port in `[minPort, maxPort]` for each session (see [client/dial.go](client/dial.go)).
+
+**Usage:**
+1. **Server** — listen on a range:
+   ```bash
+   ./server_linux_amd64 -l ":3000-4000" ...
+   ```
+   Note: open the UDP ports 3000–4000 in your firewall.
+
+2. **Client** — dial to a range:
+   ```bash
+   ./client_linux_amd64 -r "SERVER_IP:3000-4000" ...
+   ```
+
+Each new kcptun UDP/KCP session uses one randomly selected port from the range; sessions do not hop ports mid-connection.
+
+**Notes:**
+- Valid ranges are `1–65535` with `min <= max`.
+- Single-port usage still works: `IP:29900` (no hyphen).
+- Works with `--tcp` mode as well; the remote port is still chosen from the range before initializing the connection.
 
 #### Rate Limit and Pacing
 
