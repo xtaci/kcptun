@@ -459,28 +459,40 @@ type Snmp struct {
 
 Sending a `SIGUSR1` signal to the KCP Client or KCP Server will dump SNMP information to the console, similar to `/proc/net/snmp`. You can use this information for fine-grained tuning.
 
-### Identical Parameters
-
-These parameters **MUST** be **IDENTICAL** on **BOTH** sides:
-
-1. --key and --crypt
-1. --QPP and --QPPCount 
-1. --nocomp
-1. --smuxver
-
-### Manual Control
-
-https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration
-
-`-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1`
-
-Low-level KCP configuration can be modified using manual mode as shown above. Make sure you fully **UNDERSTAND** what these parameters mean before making **ANY** manual adjustments.
 
 
-### Example Configurations
+## FAQ
 
-1. [Local](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example)
-1. [Server](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
+### Q: Which parameters must be identical on both client and server?
+A: The following parameters **MUST** be exactly the same on both client and server, otherwise the connection will fail:
+
+- `--key` and `--crypt`
+- `--QPP` and `--QPPCount`
+- `--nocomp`
+- `--smuxver`
+
+### Q: How can I manually fine-tune KCP protocol parameters?
+A: You can use `-mode manual` along with `-nodelay`, `-interval`, `-resend`, and `-nc` for advanced tuning. For example:
+
+```
+-mode manual -nodelay 1 -interval 20 -resend 2 -nc 1
+```
+
+Manual mode allows you to customize low-level KCP behavior. **Make sure you fully understand each parameter before changing them**, as improper settings may degrade performance or stability. See the [KCP protocol configuration documentation](https://github.com/skywind3000/kcp/blob/master/README.en.md#protocol-configuration) for details.
+
+### Q: Are there example configuration files?
+A: Yes, official example configuration files are provided for quick setup:
+
+- [Client example](https://github.com/xtaci/kcptun/blob/master/dist/local.json.example)
+- [Server example](https://github.com/xtaci/kcptun/blob/master/dist/server.json.example)
+
+### Q: What is the difference between `crypt=none` and `crypt=null`?
+A: Both options disable encryption, but they differ in protocol behavior:
+
+- `crypt=none`: No encryption is applied, but a protocol header is still present. The packet format remains compatible with encrypted modes, but the content is plaintext. This helps with protocol compatibility.
+- `crypt=null`: No encryption and no protocol header—data is transmitted in raw form without any cryptographic framing. This offers the highest performance but is the least secure and most easily identified.
+
+In summary: `none` keeps the protocol header (plaintext payload), while `null` sends completely raw data (no header, no encryption).
 
 ### References
 
