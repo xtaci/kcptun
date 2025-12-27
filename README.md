@@ -120,9 +120,27 @@ All precompiled releases are generated using the `build-release.sh` script.
 
 ### Head-of-Line Blocking (HOLB)
 
-Since streams are multiplexed into a single physical channel, head-of-line blocking may occur. Increasing `-smuxbuf` to a larger value (default is 4MB) can mitigate this issue, though it will consume more memory.
 
-For versions >= v20190924, you can switch to smux version 2. Smux v2 provides options to limit per-stream memory usage. Set `-smuxver 2` to enable smux v2, and adjust `-streambuf` to control per-stream memory consumption. For example: `-streambuf 2097152` limits per-stream memory usage to 2MB. Limiting the stream buffer on the receiver side applies back-pressure to the sender, preventing buffer overflow along the link. (The `-smuxver` setting **MUST** be **IDENTICAL** on both sides; the default is 1.)
+When all streams are multiplexed over a single physical channel, Head-of-Line Blocking (HOLB) can occur. You can mitigate this by tuning the following parameters:
+
+- `-smuxbuf`: Sets the total buffer size for the multiplexer (default: 4MB). Increasing this value (e.g., `-smuxbuf 8388608` for 8MB) can reduce the chance of HOLB, but will increase memory usage.
+
+For versions >= v20190924, it is recommended to use smux v2:
+
+- `-smuxver 2`: Enables smux v2 (must be set identically on both client and server).
+- `-streambuf`: Limits the maximum buffer size per stream, in bytes (e.g., `-streambuf 2097152` for 2MB per stream).
+
+**Recommended usage:**
+1. If you experience HOLB, first try increasing `-smuxbuf` to 8MB or higher.
+2. For finer memory control, enable smux v2 and use `-streambuf` to limit per-stream memory usage.
+3. The `-smuxver` parameter **must** be identical on both client and server, otherwise the connection will fail.
+4. Limiting `-streambuf` on the receiver side applies back-pressure to the sender, preventing buffer overflow along the link.
+
+Example:
+```
+./client_linux_amd64 -r "server_ip:4000" -l ":8388" -smuxver 2 -smuxbuf 8388608 -streambuf 2097152
+```
+This command sets the total smux buffer to 8MB and limits each stream to 2MB.
 
 ### Slow Devices
 
