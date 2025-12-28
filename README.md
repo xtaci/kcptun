@@ -1,5 +1,26 @@
 # <img src="assets/logo.png" alt="kcptun" height="54px" /> 
-#
+
+[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2] 
+
+[1]: https://img.shields.io/docker/pulls/xtaci/kcptun
+[2]: https://hub.docker.com/r/xtaci/kcptun
+[3]: https://img.shields.io/github/created-at/xtaci/kcptun
+[4]: https://img.shields.io/github/created-at/xtaci/kcptun
+[5]: https://goreportcard.com/badge/github.com/xtaci/kcptun
+[6]: https://goreportcard.com/report/github.com/xtaci/kcptun
+[11]: https://img.shields.io/github/license/xtaci/kcptun
+[12]: LICENSE.md
+[13]: https://img.shields.io/github/v/release/xtaci/kcptun?color=orange
+[14]: https://github.com/xtaci/kcptun/releases/latest
+[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800&color=orange
+[16]: https://github.com/xtaci/kcptun/releases
+[17]: https://img.shields.io/badge/KCP-Powered-blue.svg
+[18]: https://github.com/skywind3000/kcp
+
+<img src="assets/kcptun.png" alt="kcptun" height="300px"/>
+
+> *Disclaimer: kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
+
 ## Table of Contents
 
 - [Requirements](#requirements)
@@ -25,26 +46,6 @@
 - [FAQ](#faq)
 - [References](#references)
 
-[![Release][13]][14] [![Powered][17]][18] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Downloads][15]][16] [![Docker][1]][2] 
-
-[1]: https://img.shields.io/docker/pulls/xtaci/kcptun
-[2]: https://hub.docker.com/r/xtaci/kcptun
-[3]: https://img.shields.io/github/created-at/xtaci/kcptun
-[4]: https://img.shields.io/github/created-at/xtaci/kcptun
-[5]: https://goreportcard.com/badge/github.com/xtaci/kcptun
-[6]: https://goreportcard.com/report/github.com/xtaci/kcptun
-[11]: https://img.shields.io/github/license/xtaci/kcptun
-[12]: LICENSE.md
-[13]: https://img.shields.io/github/v/release/xtaci/kcptun?color=orange
-[14]: https://github.com/xtaci/kcptun/releases/latest
-[15]: https://img.shields.io/github/downloads/xtaci/kcptun/total.svg?maxAge=1800&color=orange
-[16]: https://github.com/xtaci/kcptun/releases
-[17]: https://img.shields.io/badge/KCP-Powered-blue.svg
-[18]: https://github.com/skywind3000/kcp
-
-<img src="assets/kcptun.png" alt="kcptun" height="300px"/>
-
-> *Disclaimer: kcptun maintains a single website — [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun). Any websites other than [github.com/xtaci/kcptun](https://github.com/xtaci/kcptun) are not endorsed by xtaci.*
 
 ## Requirements
 
