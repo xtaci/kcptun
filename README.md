@@ -146,6 +146,18 @@ This command sets the total smux buffer to 8MB and limits each stream to 2MB.
 
 kcptun uses **Reed-Solomon Codes** for packet recovery, which requires substantial computational resources. Low-end ARM devices may experience performance issues with kcptun. For optimal performance, a multi-core x86 server CPU such as AMD Opteron is recommended. If you must use ARM routers, it's advisable to disable `FEC` and use `salsa20` for encryption.
 
+**How to optimize for slow devices:**
+
+- **Disable FEC:** Set both `--datashard 0 --parityshard 0` on client and server to turn off Forward Error Correction.
+- **Enable salsa20 encryption:** Use `--crypt salsa20` on both client and server for a lightweight cipher.
+
+Example:
+```
+./client_linux_amd64 ... --datashard 0 --parityshard 0 --crypt salsa20
+./server_linux_amd64 ... --datashard 0 --parityshard 0 --crypt salsa20
+```
+These settings can significantly reduce CPU usage and improve performance on ARM routers and other low-end hardware.
+
 ## Expert Tuning Guide
 
 ### Overview
