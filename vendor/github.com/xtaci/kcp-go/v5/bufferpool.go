@@ -22,7 +22,10 @@
 
 package kcp
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 // A system-wide packet buffer shared among sending, receiving and FEC
 // to mitigate high-frequency memory allocation of packets.
@@ -49,10 +52,11 @@ func (bp *bufferPool) Get() []byte {
 }
 
 // Put returns a buffer to the pool.
-func (bp *bufferPool) Put(buf []byte) {
+func (bp *bufferPool) Put(buf []byte) error {
 	// Only put back buffers of the correct size.
 	if cap(buf) != mtuLimit {
-		return
+		return errors.New("buffer size mismatch")
 	}
 	bp.xmitBuf.Put(buf)
+	return nil
 }
