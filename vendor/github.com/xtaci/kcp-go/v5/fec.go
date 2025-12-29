@@ -53,6 +53,7 @@ const (
 	fecHeaderSizePlus2 = fecHeaderSize + 2 // plus 2B data size
 	typeData           = 0xf1
 	typeParity         = 0xf2
+	typeOOB            = 0xf3
 	maxShardSets       = 3
 )
 
@@ -477,6 +478,18 @@ func (enc *fecEncoder) sealParity(data []byte) {
 	binary.LittleEndian.PutUint32(data, enc.next)
 	binary.LittleEndian.PutUint16(data[4:], typeParity)
 	enc.next = (enc.next + 1) % enc.paws
+}
+
+// encodeOOB encodes an out-of-band packet
+func (enc *fecEncoder) encodeOOB(b []byte) {
+	enc.sealOOB(b[enc.headerOffset:])
+	binary.LittleEndian.PutUint16(b[enc.payloadOffset:], uint16(len(b[enc.payloadOffset:])))
+}
+
+// sealOOB seals an out-of-band packet
+func (enc *fecEncoder) sealOOB(data []byte) {
+	binary.LittleEndian.PutUint32(data, uint32(0xffffffff)) // use max uint32 as OOB seqid
+	binary.LittleEndian.PutUint16(data[4:], typeOOB)
 }
 
 // skipParity skips the whole parity block by advancing the seqid

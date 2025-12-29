@@ -45,11 +45,11 @@ func (h pulseHeap) Less(i, j int) bool { // Min-heap: smaller seq goes to the to
 
 func (h pulseHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
-func (h *pulseHeap) Push(x interface{}) {
+func (h *pulseHeap) Push(x any) {
 	*h = append(*h, x.(pulse))
 }
 
-func (h *pulseHeap) Pop() interface{} {
+func (h *pulseHeap) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]

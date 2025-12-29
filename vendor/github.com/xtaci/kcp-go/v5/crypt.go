@@ -295,7 +295,7 @@ func encrypt8(block cipher.Block, dst, src, buf []byte) {
 	left := n % 8
 	ptr_tbl := (*uint64)(unsafe.Pointer(&tbl[0]))
 
-	for i := 0; i < repeat; i++ {
+	for range repeat {
 		s := src[base:][0:64]
 		d := dst[base:][0:64]
 		// 1
@@ -374,7 +374,7 @@ func encrypt16(block cipher.Block, dst, src, buf []byte) {
 	base := 0
 	repeat := n / 8
 	left := n % 8
-	for i := 0; i < repeat; i++ {
+	for range repeat {
 		s := src[base:][0:128]
 		d := dst[base:][0:128]
 		// 1
@@ -470,7 +470,7 @@ func decrypt8(block cipher.Block, dst, src, buf []byte) {
 	ptr_next := (*uint64)(unsafe.Pointer(&next[0]))
 
 	// loop unrolling to relieve data dependency
-	for i := 0; i < repeat; i++ {
+	for range repeat {
 		s := src[base:][0:64]
 		d := dst[base:][0:64]
 		// 1
@@ -558,7 +558,7 @@ func decrypt16(block cipher.Block, dst, src, buf []byte) {
 	left := n % 8
 
 	// loop unrolling to relieve data dependency
-	for i := 0; i < repeat; i++ {
+	for range repeat {
 		s := src[base:][0:128]
 		d := dst[base:][0:128]
 		// 1
