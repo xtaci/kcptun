@@ -4,7 +4,7 @@
 [![GoDoc][1]][2] [![Powered][9]][10] [![MIT licensed][11]][12] [![Build Status][3]][4] [![Go Report Card][5]][6] [![Coverage Status][7]][8] [![Sourcegraph][13]][14]
 
 [1]: https://godoc.org/github.com/xtaci/kcp-go?status.svg
-[2]: https://pkg.go.dev/github.com/xtaci/kcp-go
+[2]: https://pkg.go.dev/github.com/xtaci/kcp-go/v5
 [3]: https://img.shields.io/github/created-at/xtaci/kcp-go
 [4]: https://img.shields.io/github/created-at/xtaci/kcp-go
 [5]: https://goreportcard.com/badge/github.com/xtaci/kcp-go
@@ -19,6 +19,29 @@
 [14]: https://sourcegraph.com/github.com/xtaci/kcp-go?badge
 
 [English](README.md) | [中文](README_zh.md)
+
+
+## 目录
+
+- [简介](#简介)
+- [特性](#特性)
+- [文档](#文档)
+- [KCP-GO 分层模型](#kcp-go-分层模型)
+- [关键设计考量](#关键设计考量)
+  - [1. 切片 (Slice) vs. 容器/链表 (Container/List)](#1-切片-slice-vs-容器链表-containerlist)
+  - [2. 计时精度 vs. 系统调用 clock_gettime](#2-计时精度-vs-系统调用-clock_gettime)
+  - [3. 内存管理](#3-内存管理)
+  - [4. 信息安全](#4-信息安全)
+  - [5. 报文时钟](#5-报文时钟)
+  - [6. FEC 设计特性](#6-fec-设计特性)
+- [协议规范](#协议规范)
+- [性能](#性能)
+- [典型火焰图](#典型火焰图)
+- [连接终止](#连接终止)
+- [常见问题 (FAQ)](#常见问题-faq)
+- [谁在使用](#谁在使用)
+- [示例](#示例)
+- [相关链接](#相关链接)
 
 ## 简介
 
@@ -43,7 +66,7 @@
 
 ## 文档
 
-有关完整文档，请参阅关联的 [Godoc](https://godoc.org/github.com/xtaci/kcp-go)。
+有关完整文档，请参阅关联的 [Godoc](https://pkg.go.dev/github.com/xtaci/kcp-go/v5)。
 
 
 ### KCP-GO 分层模型
@@ -58,7 +81,7 @@
 
 `kcp.flush()` 每隔 20 毫秒都会扫描发送队列，确认是否需要触发重传。
 
-我们对顺序遍历 *slice* 与 *链表* 的成本做了基准测试（代码见 [这里](https://github.com/xtaci/notes/blob/master/golang/benchmark2/cachemiss_test.go)）：
+我们对顺序遍历 *slice* 与 *链表* 的成本做了基准测试（代码见 [这里](https://gist.github.com/xtaci/ac2f13f0108494d874b25551134e4c9c)）：
 
 ```
 BenchmarkLoopSlice-4   	2000000000	         0.39 ns/op
@@ -76,7 +99,7 @@ BenchmarkLoopList-4    	100000000	        54.6 ns/op
 
 RTT 估算离不开精准计时；误差一大，KCP 就会发生无谓的重传。然而调用 `time.Now()` 本身要消耗约 42 个 CPU 周期（4 GHz CPU 上约 10.5 ns，在 2.7 GHz MacBook Pro 上约 15.6 ns）。
 
-`time.Now()` 的基准测试详见 [这里](https://github.com/xtaci/notes/blob/master/golang/benchmark2/syscall_test.go)：
+`time.Now()` 的基准测试详见 [这里](https://gist.github.com/xtaci/f01503b9167f9b520b8896682b67e14d)：
 
 ```
 BenchmarkNow-4         	100000000	        15.6 ns/op
