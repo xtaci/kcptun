@@ -398,6 +398,7 @@ func main() {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
 		}
 
+		// Derive the shared encryption key and prepare the block cipher.
 		log.Println("initiating key derivation")
 		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		log.Println("key derivation done")

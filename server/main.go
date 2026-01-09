@@ -352,13 +352,17 @@ func main() {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
 		}
 
+		// Derive the shared session key from the pre-shared secret.
 		log.Println("initiating key derivation")
 		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		log.Println("key derivation done")
 		block, effectiveCrypt := std.SelectBlockCrypt(config.Crypt, pass)
 		config.Crypt = effectiveCrypt
 
+		// Start the SNMP logger if the feature is enabled.
 		go std.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
+
+		// Start the pprof server if the feature is enabled.
 		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
@@ -407,6 +411,7 @@ func main() {
 			}
 		}
 
+		// Parse the listen address which may contain a port range.
 		mp, err := std.ParseMultiPort(config.Listen)
 		if err != nil {
 			log.Println(err)
@@ -465,6 +470,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 		return
 	}
 
+	// Create the smux server session.
 	mux, err := smux.Server(conn, smuxConfig)
 	if err != nil {
 		log.Println(err)
@@ -472,6 +478,7 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	}
 	defer mux.Close()
 
+	// Accept and handle smux streams until the session terminates.
 	for {
 		stream, err := mux.AcceptStream()
 		if err != nil {
