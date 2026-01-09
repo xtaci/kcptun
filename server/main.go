@@ -33,7 +33,6 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"sync"
-	"time"
 
 	"golang.org/x/crypto/pbkdf2"
 
@@ -47,9 +46,9 @@ import (
 )
 
 const (
-	// SALT is use for pbkdf2 key expansion
+	// SALT is used as the PBKDF2 salt while deriving the shared session key.
 	SALT = "kcp-go"
-	// maximum supported smux version
+	// maxSmuxVer guards against negotiating unsupported smux protocol versions.
 	maxSmuxVer = 2
 )
 
@@ -58,12 +57,12 @@ const (
 	TGT_TCP
 )
 
-// VERSION is injected by buildflags
+// VERSION is populated via build flags when packaging official binaries.
 var VERSION = "SELFBUILD"
 
 func main() {
 	if VERSION == "SELFBUILD" {
-		// add more log flags for debugging
+		// Enable timestamps + file:line to simplify debugging self-built binaries.
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 
@@ -236,7 +235,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "c",
-			Value: "", // when the value is not empty, the config path must exists
+			Value: "", // when set, the JSON file must exist on disk
 			Usage: "config from json file, which will override the command from shell",
 		},
 	}
@@ -277,7 +276,7 @@ func main() {
 		config.CloseWait = c.Int("closewait")
 
 		if c.String("c") != "" {
-			//Now only support json config file
+			// Only JSON configuration files are supported at the moment.
 			err := parseJSONConfig(&config, c.String("c"))
 			checkError(err)
 		}
@@ -287,7 +286,7 @@ func main() {
 			config.RateLimit = 0
 		}
 
-		// log redirect
+		// Redirect logs when the user supplied a dedicated log file.
 		if config.Log != "" {
 			f, err := os.OpenFile(config.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 			checkError(err)
@@ -348,7 +347,7 @@ func main() {
 				color.Red("QPP Warning: QPPCount %d, choose a prime number for security", config.QPPCount)
 			}
 		}
-		// parameters check
+		// Guard against negotiating unsupported smux protocol versions.
 		if config.SmuxVer > maxSmuxVer {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
 		}
@@ -356,54 +355,24 @@ func main() {
 		log.Println("initiating key derivation")
 		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		log.Println("key derivation done")
-		var block kcp.BlockCrypt
-		switch config.Crypt {
-		case "null":
-			block = nil
-		case "sm4":
-			block, _ = kcp.NewSM4BlockCrypt(pass[:16])
-		case "tea":
-			block, _ = kcp.NewTEABlockCrypt(pass[:16])
-		case "xor":
-			block, _ = kcp.NewSimpleXORBlockCrypt(pass)
-		case "none":
-			block, _ = kcp.NewNoneBlockCrypt(pass)
-		case "aes-128":
-			block, _ = kcp.NewAESBlockCrypt(pass[:16])
-		case "aes-192":
-			block, _ = kcp.NewAESBlockCrypt(pass[:24])
-		case "blowfish":
-			block, _ = kcp.NewBlowfishBlockCrypt(pass)
-		case "twofish":
-			block, _ = kcp.NewTwofishBlockCrypt(pass)
-		case "cast5":
-			block, _ = kcp.NewCast5BlockCrypt(pass[:16])
-		case "3des":
-			block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
-		case "xtea":
-			block, _ = kcp.NewXTEABlockCrypt(pass[:16])
-		case "salsa20":
-			block, _ = kcp.NewSalsa20BlockCrypt(pass)
-		case "aes-128-gcm":
-			block, _ = kcp.NewAESGCMCrypt(pass[:16])
-		default:
-			config.Crypt = "aes"
-			block, _ = kcp.NewAESBlockCrypt(pass)
-		}
+		block, effectiveCrypt := std.SelectBlockCrypt(config.Crypt, pass)
+		config.Crypt = effectiveCrypt
 
 		go std.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
 
-		// create shared QPP
+		// Instantiate a shared QPP pad if the feature is enabled.
 		var _Q_ *qpp.QuantumPermutationPad
 		if config.QPP {
 			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount))
 		}
 
-		// main loop
+		// Spawn an accept loop per listener and track each goroutine via WaitGroup.
 		var wg sync.WaitGroup
+		// loop accepts new KCP conversations on the provided listener and hands
+		// each of them to handleMux in its own goroutine.
 		loop := func(lis *kcp.Listener) {
 			defer wg.Done()
 			if err := lis.SetDSCP(config.DSCP); err != nil {
@@ -444,10 +413,10 @@ func main() {
 			return err
 		}
 
-		// create multiple listener
+		// Create listeners for every port inside the configured range.
 		for port := mp.MinPort; port <= mp.MaxPort; port++ {
 			listenAddr := fmt.Sprintf("%v:%v", mp.Host, port)
-			if config.TCP { // tcp dual stack
+			if config.TCP { // optional tcpraw dual stack
 				if conn, err := tcpraw.Listen("tcp", listenAddr); err == nil {
 					log.Printf("Listening on: %v/tcp", listenAddr)
 					lis, err := kcp.ServeConn(block, config.DataShard, config.ParityShard, conn)
@@ -459,7 +428,7 @@ func main() {
 				}
 			}
 
-			// udp stack
+			// Always stand up the UDP listener; this is the default transport.
 			log.Printf("Listening on: %v/udp", listenAddr)
 			lis, err := kcp.ListenWithOptions(listenAddr, block, config.DataShard, config.ParityShard)
 			checkError(err)
@@ -473,22 +442,28 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-// handle multiplex-ed connection
+// handleMux terminates a KCP session, accepts smux streams, and forwards them
+// to the configured TCP or UNIX target.
 func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
-	// check target type
+	// Determine whether the upstream target is TCP or a UNIX socket path.
 	targetType := TGT_TCP
 	if _, _, err := net.SplitHostPort(config.Target); err != nil {
 		targetType = TGT_UNIX
 	}
 	log.Println("smux version:", config.SmuxVer, "on connection:", conn.LocalAddr(), "->", conn.RemoteAddr())
 
-	// stream multiplex
-	smuxConfig := smux.DefaultConfig()
-	smuxConfig.Version = config.SmuxVer
-	smuxConfig.MaxReceiveBuffer = config.SmuxBuf
-	smuxConfig.MaxStreamBuffer = config.StreamBuf
-	smuxConfig.MaxFrameSize = config.FrameSize
-	smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
+	smuxConfig, err := std.BuildSmuxConfig(std.SmuxConfigParams{
+		Version:          config.SmuxVer,
+		MaxReceiveBuffer: config.SmuxBuf,
+		MaxStreamBuffer:  config.StreamBuf,
+		MaxFrameSize:     config.FrameSize,
+		KeepAliveSeconds: config.KeepAlive,
+	})
+	if err != nil {
+		log.Println(err)
+		conn.Close()
+		return
+	}
 
 	mux, err := smux.Server(conn, smuxConfig)
 	if err != nil {
@@ -531,7 +506,8 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	}
 }
 
-// handleClient pipes two streams
+// handleClient bridges the smux stream to the upstream target and optionally
+// wraps it in a QPP layer for additional obfuscation.
 func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool, closeWait int) {
 	logln := func(v ...any) {
 		if !quiet {
@@ -546,16 +522,16 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
 
 	var s1, s2 io.ReadWriteCloser = p1, p2
-	// if QPP is enabled, create QPP read write closer
+	// Optionally wrap the smux side with QPP obfuscation.
 	if _Q_ != nil {
-		// replace s1 with QPP port
+		// Replace the smux side with a QPP-wrapped port.
 		s1 = std.NewQPPPort(p1, _Q_, seed)
 	}
 
-	// stream layer
+	// Begin piping data bidirectionally between the upstream and downstream ends.
 	err1, err2 := std.Pipe(s1, s2, closeWait)
 
-	// handles transport layer errors
+	// Report non-EOF errors so operators can diagnose failing streams.
 	if err1 != nil && err1 != io.EOF {
 		logln("pipe:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
 	}

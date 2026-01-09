@@ -39,27 +39,26 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	kcp "github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/kcptun/std"
 	"github.com/xtaci/qpp"
 	"github.com/xtaci/smux"
 )
 
 const (
-	// SALT is use for pbkdf2 key expansion
+	// SALT is used as the PBKDF2 salt while deriving the shared session key.
 	SALT = "kcp-go"
-	// maximum supported smux version
+	// maxSmuxVer guards against negotiating unsupported smux protocol versions.
 	maxSmuxVer = 2
-	// scavenger check period
+	// scavengePeriod defines how frequently expired sessions are purged.
 	scavengePeriod = 5
 )
 
-// VERSION is injected by buildflags
+// VERSION is populated via build flags when packaging official binaries.
 var VERSION = "SELFBUILD"
 
 func main() {
 	if VERSION == "SELFBUILD" {
-		// add more log flags for debugging
+		// Enable timestamps + file:line to simplify debugging self-built binaries.
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 
@@ -242,7 +241,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "c",
-			Value: "", // when the value is not empty, the config path must exists
+			Value: "", // when set, the JSON file must exist on disk
 			Usage: "config from json file, which will override the command from shell",
 		},
 		cli.BoolFlag{
@@ -303,7 +302,7 @@ func main() {
 			config.RateLimit = 0
 		}
 
-		// log redirect
+		// Redirect logs when the user supplied a dedicated log file.
 		if config.Log != "" {
 			f, err := os.OpenFile(config.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 			checkError(err)
@@ -368,7 +367,7 @@ func main() {
 		log.Println("tcp:", config.TCP)
 		log.Println("pprof:", config.Pprof)
 
-		// QPP parameters check
+		// Validate QPP parameters so we can warn about unsafe combinations early.
 		if config.QPP {
 			if config.QPPCount <= 0 {
 				log.Fatal("QPPCount must be greater than 0 when QPP is enabled")
@@ -388,13 +387,13 @@ func main() {
 			}
 		}
 
-		// Scavenge parameters check
+		// Ensure scavenger TTL does not exceed the auto-expire window.
 		if config.AutoExpire != 0 && config.ScavengeTTL > config.AutoExpire {
 			color.Red("WARNING: scavengettl is bigger than autoexpire, connections may race hard to use bandwidth.")
 			color.Red("Try limiting scavengettl to a smaller value.")
 		}
 
-		// SMUX Version check
+		// Guard against negotiating unsupported smux protocol versions.
 		if config.SmuxVer > maxSmuxVer {
 			log.Fatal("unsupported smux version:", config.SmuxVer)
 		}
@@ -402,40 +401,8 @@ func main() {
 		log.Println("initiating key derivation")
 		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
 		log.Println("key derivation done")
-		var block kcp.BlockCrypt
-		switch config.Crypt {
-		case "null":
-			block = nil
-		case "sm4":
-			block, _ = kcp.NewSM4BlockCrypt(pass[:16])
-		case "tea":
-			block, _ = kcp.NewTEABlockCrypt(pass[:16])
-		case "xor":
-			block, _ = kcp.NewSimpleXORBlockCrypt(pass)
-		case "none":
-			block, _ = kcp.NewNoneBlockCrypt(pass)
-		case "aes-128":
-			block, _ = kcp.NewAESBlockCrypt(pass[:16])
-		case "aes-192":
-			block, _ = kcp.NewAESBlockCrypt(pass[:24])
-		case "blowfish":
-			block, _ = kcp.NewBlowfishBlockCrypt(pass)
-		case "twofish":
-			block, _ = kcp.NewTwofishBlockCrypt(pass)
-		case "cast5":
-			block, _ = kcp.NewCast5BlockCrypt(pass[:16])
-		case "3des":
-			block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
-		case "xtea":
-			block, _ = kcp.NewXTEABlockCrypt(pass[:16])
-		case "salsa20":
-			block, _ = kcp.NewSalsa20BlockCrypt(pass)
-		case "aes-128-gcm":
-			block, _ = kcp.NewAESGCMCrypt(pass[:16])
-		default:
-			config.Crypt = "aes"
-			block, _ = kcp.NewAESBlockCrypt(pass)
-		}
+		block, effectiveCrypt := std.SelectBlockCrypt(config.Crypt, pass)
+		config.Crypt = effectiveCrypt
 
 		createConn := func() (*smux.Session, error) {
 			kcpconn, err := dial(&config, block)
@@ -460,18 +427,18 @@ func main() {
 				log.Println("SetWriteBuffer:", err)
 			}
 			log.Println("smux version:", config.SmuxVer, "on connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
-			smuxConfig := smux.DefaultConfig()
-			smuxConfig.Version = config.SmuxVer
-			smuxConfig.MaxReceiveBuffer = config.SmuxBuf
-			smuxConfig.MaxStreamBuffer = config.StreamBuf
-			smuxConfig.MaxFrameSize = config.FrameSize
-			smuxConfig.KeepAliveInterval = time.Duration(config.KeepAlive) * time.Second
-
-			if err := smux.VerifyConfig(smuxConfig); err != nil {
+			smuxConfig, err := std.BuildSmuxConfig(std.SmuxConfigParams{
+				Version:          config.SmuxVer,
+				MaxReceiveBuffer: config.SmuxBuf,
+				MaxStreamBuffer:  config.StreamBuf,
+				MaxFrameSize:     config.FrameSize,
+				KeepAliveSeconds: config.KeepAlive,
+			})
+			if err != nil {
 				log.Fatalf("%+v", err)
 			}
 
-			// stream multiplex
+			// Establish the smux session, optionally stacking compression on top.
 			var session *smux.Session
 			if config.NoComp {
 				session, err = smux.Client(kcpconn, smuxConfig)
@@ -484,7 +451,7 @@ func main() {
 			return session, nil
 		}
 
-		// wait until a connection is ready
+		// waitConn keeps dialing until a healthy smux session becomes available.
 		waitConn := func() *smux.Session {
 			for {
 				if session, err := createConn(); err == nil {
@@ -496,26 +463,28 @@ func main() {
 			}
 		}
 
-		// start snmp logger
+		// Continuously export SNMP counters when requested.
 		go std.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 
-		// start pprof
+		// Optionally expose Go's net/http/pprof handlers on :6060.
 		if config.Pprof {
 			go http.ListenAndServe(":6060", nil)
 		}
 
-		// start scavenger if autoexpire is set
+		// Launch the session scavenger only when auto-expiration is enabled.
 		chScavenger := make(chan timedSession, 128)
 		if config.AutoExpire > 0 {
 			go scavenger(chScavenger, &config)
 		}
 
-		// start listener
+		// Accept TCP/UNIX clients and multiplex them across the UDP tunnels.
 		numconn := uint16(config.Conn)
 		muxes := make([]timedSession, numconn)
+		// rr tracks which pre-established session should carry the next client so
+		// short-lived TCP dials do not hammer the same UDP tunnel.
 		rr := uint16(0)
 
-		// create shared QPP
+		// Instantiate a shared QPP pad if the feature is enabled.
 		var _Q_ *qpp.QuantumPermutationPad
 		if config.QPP {
 			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount))
@@ -528,7 +497,7 @@ func main() {
 			}
 			idx := rr % numconn
 
-			// do auto expiration && reconnection
+			// Refresh the selected session if it is missing, closed, or past its TTL.
 			if muxes[idx].session == nil || muxes[idx].session.IsClosed() ||
 				(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
 				muxes[idx].session = waitConn()
@@ -545,7 +514,8 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-// handleClient aggregates connection p1 on mux
+// handleClient proxies the accepted TCP/UNIX connection through a smux stream
+// and optionally wraps it in a QPP layer for extra obfuscation.
 func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool, closeWait int) {
 	logln := func(v ...any) {
 		if !quiet {
@@ -553,7 +523,7 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Ses
 		}
 	}
 
-	// handles transport layer
+	// Transport layer: accept the inbound socket and clean it up on exit.
 	defer p1.Close()
 	p2, err := session.OpenStream()
 	if err != nil {
@@ -566,16 +536,16 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Ses
 	defer logln("stream closed", "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
 
 	var s1, s2 io.ReadWriteCloser = p1, p2
-	// if QPP is enabled, create QPP read write closer
+	// Optionally wrap the smux side with QPP obfuscation.
 	if _Q_ != nil {
-		// replace s2 with QPP port
+		// Replace the smux side with a QPP-wrapped port.
 		s2 = std.NewQPPPort(p2, _Q_, seed)
 	}
 
-	// stream layer
+	// Begin piping data bidirectionally between the socket and the smux stream.
 	err1, err2 := std.Pipe(s1, s2, closeWait)
 
-	// handles transport layer errors
+	// Report non-EOF errors so operators can diagnose failing streams.
 	if err1 != nil && err1 != io.EOF {
 		logln("pipe:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.ID(), ")"))
 	}
@@ -591,13 +561,13 @@ func checkError(err error) {
 	}
 }
 
-// timedSession is a wrapper for smux.Session with expiry date
+// timedSession annotates a smux session with its expiration deadline.
 type timedSession struct {
 	session    *smux.Session
 	expiryDate time.Time
 }
 
-// scavenger goroutine is used to close expired sessions
+// scavenger periodically closes sessions whose TTL has elapsed.
 func scavenger(ch chan timedSession, config *Config) {
 	ticker := time.NewTicker(scavengePeriod * time.Second)
 	defer ticker.Stop()
