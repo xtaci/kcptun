@@ -27,6 +27,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/pkg/errors"
 	kcp "github.com/xtaci/kcp-go/v5"
@@ -34,20 +35,32 @@ import (
 	"github.com/xtaci/tcpraw"
 )
 
+var (
+	multiPort           *std.MultiPort
+	multiPortParseError error
+	multiPortOnce       sync.Once
+)
+
 // dial connects to the remote address
 func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
-	mp, err := std.ParseMultiPort(config.RemoteAddr)
-	if err != nil {
-		return nil, err
+	// initialize multiPort once
+	multiPortOnce.Do(func() {
+		multiPort, multiPortParseError = std.ParseMultiPort(config.RemoteAddr)
+	})
+
+	// return error if multiPort parsing failed
+	if multiPortParseError != nil {
+		return nil, multiPortParseError
 	}
 
 	// generate a random port
 	var randport uint64
-	err = binary.Read(rand.Reader, binary.LittleEndian, &randport)
+	err := binary.Read(rand.Reader, binary.LittleEndian, &randport)
 	if err != nil {
 		return nil, err
 	}
-	remoteAddr := fmt.Sprintf("%v:%v", mp.Host, uint64(mp.MinPort)+randport%uint64(mp.MaxPort-mp.MinPort+1))
+
+	remoteAddr := fmt.Sprintf("%v:%v", multiPort.Host, uint64(multiPort.MinPort)+randport%uint64(multiPort.MaxPort-multiPort.MinPort+1))
 
 	// emulate TCP connection
 	if config.TCP {
