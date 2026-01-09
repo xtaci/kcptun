@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/big"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -330,21 +329,12 @@ func main() {
 		log.Println("tcp:", config.TCP)
 
 		if config.QPP {
-			if config.QPPCount <= 0 {
-				log.Fatal("QPPCount must be greater than 0 when QPP is enabled")
+			suggestions, err := std.ValidateQPPParams(config.QPPCount, config.Key)
+			if err != nil {
+				log.Fatal(err)
 			}
-			minSeedLength := qpp.QPPMinimumSeedLength(8)
-			if len(config.Key) < minSeedLength {
-				color.Red("QPP Warning: 'key' has size of %d bytes, required %d bytes at least", len(config.Key), minSeedLength)
-			}
-
-			minPads := qpp.QPPMinimumPads(8)
-			if config.QPPCount < minPads {
-				color.Red("QPP Warning: QPPCount %d, required %d at least", config.QPPCount, minPads)
-			}
-
-			if new(big.Int).GCD(nil, nil, big.NewInt(int64(config.QPPCount)), big.NewInt(8)).Int64() != 1 {
-				color.Red("QPP Warning: QPPCount %d, choose a prime number for security", config.QPPCount)
+			for _, msg := range suggestions {
+				color.Red(msg)
 			}
 		}
 		// Guard against negotiating unsupported smux protocol versions.
