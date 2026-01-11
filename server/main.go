@@ -365,41 +365,6 @@ func main() {
 
 		// Spawn an accept loop per listener and track each goroutine via WaitGroup.
 		var wg sync.WaitGroup
-		// loop accepts new KCP conversations on the provided listener and hands
-		// each of them to handleMux in its own goroutine.
-		loop := func(lis *kcp.Listener) {
-			defer wg.Done()
-			if err := lis.SetDSCP(config.DSCP); err != nil {
-				log.Println("SetDSCP:", err)
-			}
-			if err := lis.SetReadBuffer(config.SockBuf); err != nil {
-				log.Println("SetReadBuffer:", err)
-			}
-			if err := lis.SetWriteBuffer(config.SockBuf); err != nil {
-				log.Println("SetWriteBuffer:", err)
-			}
-
-			for {
-				if conn, err := lis.AcceptKCP(); err == nil {
-					log.Println("remote address:", conn.RemoteAddr())
-					conn.SetStreamMode(true)
-					conn.SetWriteDelay(false)
-					conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
-					conn.SetMtu(config.MTU)
-					conn.SetWindowSize(config.SndWnd, config.RcvWnd)
-					conn.SetACKNoDelay(config.AckNodelay)
-					conn.SetRateLimit(uint32(config.RateLimit))
-
-					if config.NoComp {
-						go handleMux(_Q_, conn, &config)
-					} else {
-						go handleMux(_Q_, std.NewCompStream(conn), &config)
-					}
-				} else {
-					log.Printf("%+v", err)
-				}
-			}
-		}
 
 		// Parse the listen address which may contain a port range.
 		mp, err := std.ParseMultiPort(config.Listen)
@@ -417,7 +382,7 @@ func main() {
 					lis, err := kcp.ServeConn(block, config.DataShard, config.ParityShard, conn)
 					checkError(err)
 					wg.Add(1)
-					go loop(lis)
+					go serveListener(lis, _Q_, &config, &wg)
 				} else {
 					log.Println(err)
 				}
@@ -428,13 +393,50 @@ func main() {
 			lis, err := kcp.ListenWithOptions(listenAddr, block, config.DataShard, config.ParityShard)
 			checkError(err)
 			wg.Add(1)
-			go loop(lis)
+			go serveListener(lis, _Q_, &config, &wg)
 		}
 
 		wg.Wait()
 		return nil
 	}
 	myApp.Run(os.Args)
+}
+
+// serveListener accepts new KCP conversations from the listener and spins up
+// mux handlers for each session while honoring the configured wait group.
+func serveListener(lis *kcp.Listener, _Q_ *qpp.QuantumPermutationPad, config *Config, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if err := lis.SetDSCP(config.DSCP); err != nil {
+		log.Println("SetDSCP:", err)
+	}
+	if err := lis.SetReadBuffer(config.SockBuf); err != nil {
+		log.Println("SetReadBuffer:", err)
+	}
+	if err := lis.SetWriteBuffer(config.SockBuf); err != nil {
+		log.Println("SetWriteBuffer:", err)
+	}
+
+	for {
+		conn, err := lis.AcceptKCP()
+		if err != nil {
+			log.Printf("%+v", err)
+			continue
+		}
+		log.Println("remote address:", conn.RemoteAddr())
+		conn.SetStreamMode(true)
+		conn.SetWriteDelay(false)
+		conn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+		conn.SetMtu(config.MTU)
+		conn.SetWindowSize(config.SndWnd, config.RcvWnd)
+		conn.SetACKNoDelay(config.AckNodelay)
+		conn.SetRateLimit(uint32(config.RateLimit))
+
+		if config.NoComp {
+			go handleMux(_Q_, conn, config)
+		} else {
+			go handleMux(_Q_, std.NewCompStream(conn), config)
+		}
+	}
 }
 
 // handleMux terminates a KCP session, accepts smux streams, and forwards them

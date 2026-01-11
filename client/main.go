@@ -38,6 +38,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	kcp "github.com/xtaci/kcp-go/v5"
 	"github.com/xtaci/kcptun/std"
 	"github.com/xtaci/qpp"
 	"github.com/xtaci/smux"
@@ -395,65 +396,6 @@ func main() {
 		block, effectiveCrypt := std.SelectBlockCrypt(config.Crypt, pass)
 		config.Crypt = effectiveCrypt
 
-		createConn := func() (*smux.Session, error) {
-			kcpconn, err := dial(&config, block)
-			if err != nil {
-				return nil, errors.Wrap(err, "dial()")
-			}
-			kcpconn.SetStreamMode(true)
-			kcpconn.SetWriteDelay(false)
-			kcpconn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
-			kcpconn.SetWindowSize(config.SndWnd, config.RcvWnd)
-			kcpconn.SetMtu(config.MTU)
-			kcpconn.SetACKNoDelay(config.AckNodelay)
-			kcpconn.SetRateLimit(uint32(config.RateLimit))
-
-			if err := kcpconn.SetDSCP(config.DSCP); err != nil {
-				log.Println("SetDSCP:", err)
-			}
-			if err := kcpconn.SetReadBuffer(config.SockBuf); err != nil {
-				log.Println("SetReadBuffer:", err)
-			}
-			if err := kcpconn.SetWriteBuffer(config.SockBuf); err != nil {
-				log.Println("SetWriteBuffer:", err)
-			}
-			log.Println("smux version:", config.SmuxVer, "on connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
-			smuxConfig, err := std.BuildSmuxConfig(std.SmuxConfigParams{
-				Version:          config.SmuxVer,
-				MaxReceiveBuffer: config.SmuxBuf,
-				MaxStreamBuffer:  config.StreamBuf,
-				MaxFrameSize:     config.FrameSize,
-				KeepAliveSeconds: config.KeepAlive,
-			})
-			if err != nil {
-				log.Fatalf("%+v", err)
-			}
-
-			// Establish the smux session, optionally stacking compression on top.
-			var session *smux.Session
-			if config.NoComp {
-				session, err = smux.Client(kcpconn, smuxConfig)
-			} else {
-				session, err = smux.Client(std.NewCompStream(kcpconn), smuxConfig)
-			}
-			if err != nil {
-				return nil, errors.Wrap(err, "createConn()")
-			}
-			return session, nil
-		}
-
-		// waitConn keeps dialing until a healthy smux session becomes available.
-		waitConn := func() *smux.Session {
-			for {
-				if session, err := createConn(); err == nil {
-					return session
-				} else {
-					log.Println("re-connecting:", err)
-					time.Sleep(time.Second)
-				}
-			}
-		}
-
 		// Continuously export SNMP counters when requested.
 		go std.SnmpLogger(config.SnmpLog, config.SnmpPeriod)
 
@@ -491,7 +433,7 @@ func main() {
 			// Refresh the selected session if it is missing, closed, or past its TTL.
 			if muxes[idx].session == nil || muxes[idx].session.IsClosed() ||
 				(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
-				muxes[idx].session = waitConn()
+				muxes[idx].session = waitConn(&config, block)
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
 				if config.AutoExpire > 0 { // only when autoexpire set
 					chScavenger <- muxes[idx]
@@ -503,6 +445,65 @@ func main() {
 		}
 	}
 	myApp.Run(os.Args)
+}
+
+// createConn dials the remote server and upgrades the connection into an smux session.
+func createConn(config *Config, block kcp.BlockCrypt) (*smux.Session, error) {
+	kcpconn, err := dial(config, block)
+	if err != nil {
+		return nil, errors.Wrap(err, "dial()")
+	}
+	kcpconn.SetStreamMode(true)
+	kcpconn.SetWriteDelay(false)
+	kcpconn.SetNoDelay(config.NoDelay, config.Interval, config.Resend, config.NoCongestion)
+	kcpconn.SetWindowSize(config.SndWnd, config.RcvWnd)
+	kcpconn.SetMtu(config.MTU)
+	kcpconn.SetACKNoDelay(config.AckNodelay)
+	kcpconn.SetRateLimit(uint32(config.RateLimit))
+
+	if err := kcpconn.SetDSCP(config.DSCP); err != nil {
+		log.Println("SetDSCP:", err)
+	}
+	if err := kcpconn.SetReadBuffer(config.SockBuf); err != nil {
+		log.Println("SetReadBuffer:", err)
+	}
+	if err := kcpconn.SetWriteBuffer(config.SockBuf); err != nil {
+		log.Println("SetWriteBuffer:", err)
+	}
+	log.Println("smux version:", config.SmuxVer, "on connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
+	smuxConfig, err := std.BuildSmuxConfig(std.SmuxConfigParams{
+		Version:          config.SmuxVer,
+		MaxReceiveBuffer: config.SmuxBuf,
+		MaxStreamBuffer:  config.StreamBuf,
+		MaxFrameSize:     config.FrameSize,
+		KeepAliveSeconds: config.KeepAlive,
+	})
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+
+	var session *smux.Session
+	if config.NoComp {
+		session, err = smux.Client(kcpconn, smuxConfig)
+	} else {
+		session, err = smux.Client(std.NewCompStream(kcpconn), smuxConfig)
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "createConn()")
+	}
+	return session, nil
+}
+
+// waitConn keeps dialing until a healthy smux session becomes available.
+func waitConn(config *Config, block kcp.BlockCrypt) *smux.Session {
+	for {
+		session, err := createConn(config, block)
+		if err == nil {
+			return session
+		}
+		log.Println("re-connecting:", err)
+		time.Sleep(time.Second)
+	}
 }
 
 // handleClient proxies the accepted TCP/UNIX connection through a smux stream
