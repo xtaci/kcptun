@@ -172,7 +172,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "sockbuf",
-			Value: 4194304, // socket buffer size in bytes
+			Value: 4194304, // default socket buffer size in bytes
 			Usage: "per-socket buffer in bytes",
 		},
 		cli.IntFlag{
@@ -197,7 +197,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "keepalive",
-			Value: 10, // nat keepalive interval in seconds
+			Value: 10, // NAT keepalive interval in seconds
 			Usage: "seconds between heartbeats",
 		},
 		cli.IntFlag{
@@ -234,7 +234,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "c",
-			Value: "", // when set, the JSON file must exist on disk
+			Value: "", // when set, the referenced JSON file must exist on disk
 			Usage: "config from json file, which will override the command from shell",
 		},
 	}
@@ -275,7 +275,7 @@ func main() {
 		config.CloseWait = c.Int("closewait")
 
 		if c.String("c") != "" {
-			// Only JSON configuration files are supported at the moment.
+			// Currently only JSON configuration files are supported.
 			err := parseJSONConfig(&config, c.String("c"))
 			checkError(err)
 		}
@@ -376,7 +376,7 @@ func main() {
 		// Create listeners for every port inside the configured range.
 		for port := mp.MinPort; port <= mp.MaxPort; port++ {
 			listenAddr := fmt.Sprintf("%v:%v", mp.Host, port)
-			if config.TCP { // optional tcpraw dual stack
+			if config.TCP { // optionally expose a tcpraw listener alongside UDP
 				if conn, err := tcpraw.Listen("tcp", listenAddr); err == nil {
 					log.Printf("Listening on: %v/tcp", listenAddr)
 					lis, err := kcp.ServeConn(block, config.DataShard, config.ParityShard, conn)
@@ -402,8 +402,8 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-// serveListener accepts new KCP conversations from the listener and spins up
-// mux handlers for each session while honoring the configured wait group.
+// serveListener drains incoming KCP conversations from lis and dispatches each
+// one to handleMux while keeping wg accounting balanced.
 func serveListener(lis *kcp.Listener, _Q_ *qpp.QuantumPermutationPad, config *Config, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if err := lis.SetDSCP(config.DSCP); err != nil {
@@ -439,8 +439,8 @@ func serveListener(lis *kcp.Listener, _Q_ *qpp.QuantumPermutationPad, config *Co
 	}
 }
 
-// handleMux terminates a KCP session, accepts smux streams, and forwards them
-// to the configured TCP or UNIX target.
+// handleMux drives a single KCP session: it accepts smux streams and forwards
+// each stream to the configured TCP or UNIX target.
 func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	// Determine whether the upstream target is TCP or a UNIX socket path.
 	targetType := TGT_TCP
@@ -505,8 +505,8 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	}
 }
 
-// handleClient bridges the smux stream to the upstream target and optionally
-// wraps it in a QPP layer for additional obfuscation.
+// handleClient relays traffic between an smux stream and the upstream target
+// while optionally wrapping the smux side with QPP for obfuscation.
 func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, p2 net.Conn, quiet bool, closeWait int) {
 	logln := func(v ...any) {
 		if !quiet {
@@ -539,6 +539,7 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 	}
 }
 
+// checkError logs the supplied fatal error and terminates the process.
 func checkError(err error) {
 	if err != nil {
 		log.Printf("%+v\n", err)

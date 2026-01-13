@@ -41,19 +41,19 @@ var (
 	multiPortOnce       sync.Once
 )
 
-// dial connects to the remote address
+// dial establishes a connection to the configured remote endpoint.
 func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
-	// initialize multiPort once
+	// Parse the multiPort definition only once.
 	multiPortOnce.Do(func() {
 		multiPort, multiPortParseError = std.ParseMultiPort(config.RemoteAddr)
 	})
 
-	// return error if multiPort parsing failed
+	// Abort when the multiPort definition is invalid.
 	if multiPortParseError != nil {
 		return nil, multiPortParseError
 	}
 
-	// generate a random port
+	// Pick a random destination port within the configured range.
 	var randport uint64
 	err := binary.Read(rand.Reader, binary.LittleEndian, &randport)
 	if err != nil {
@@ -62,7 +62,7 @@ func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
 
 	remoteAddr := fmt.Sprintf("%v:%v", multiPort.Host, uint64(multiPort.MinPort)+randport%uint64(multiPort.MaxPort-multiPort.MinPort+1))
 
-	// emulate TCP connection
+	// Use tcpraw to emulate a TCP transport when requested.
 	if config.TCP {
 		conn, err := tcpraw.Dial("tcp", remoteAddr)
 		if err != nil {
@@ -79,6 +79,6 @@ func dial(config *Config, block kcp.BlockCrypt) (*kcp.UDPSession, error) {
 		return kcp.NewConn4(convid, udpaddr, block, config.DataShard, config.ParityShard, true, conn)
 	}
 
-	// default UDP connection
+	// Otherwise fall back to the standard UDP dialing path.
 	return kcp.DialWithOptions(remoteAddr, block, config.DataShard, config.ParityShard)
 }

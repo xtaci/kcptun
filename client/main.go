@@ -183,7 +183,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "sockbuf",
-			Value: 4194304, // socket buffer size in bytes
+			Value: 4194304, // default socket buffer size in bytes
 			Usage: "per-socket buffer in bytes",
 		},
 		cli.IntFlag{
@@ -208,7 +208,7 @@ func main() {
 		},
 		cli.IntFlag{
 			Name:  "keepalive",
-			Value: 10, // nat keepalive interval in seconds
+			Value: 10, // NAT keepalive interval in seconds
 			Usage: "seconds between heartbeats",
 		},
 		cli.IntFlag{
@@ -241,7 +241,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "c",
-			Value: "", // when set, the JSON file must exist on disk
+			Value: "", // when set, the referenced JSON file must exist on disk
 			Usage: "config from json file, which will override the command from shell",
 		},
 		cli.BoolFlag{
@@ -435,7 +435,7 @@ func main() {
 				(config.AutoExpire > 0 && time.Now().After(muxes[idx].expiryDate)) {
 				muxes[idx].session = waitConn(&config, block)
 				muxes[idx].expiryDate = time.Now().Add(time.Duration(config.AutoExpire) * time.Second)
-				if config.AutoExpire > 0 { // only when autoexpire set
+				if config.AutoExpire > 0 { // only track TTL when auto-expiration is enabled
 					chScavenger <- muxes[idx]
 				}
 			}
@@ -447,7 +447,8 @@ func main() {
 	myApp.Run(os.Args)
 }
 
-// createConn dials the remote server and upgrades the connection into an smux session.
+// createConn establishes a fresh KCP connection with all tunables applied and
+// then upgrades it into an smux session ready for multiplexing.
 func createConn(config *Config, block kcp.BlockCrypt) (*smux.Session, error) {
 	kcpconn, err := dial(config, block)
 	if err != nil {
@@ -506,8 +507,8 @@ func waitConn(config *Config, block kcp.BlockCrypt) *smux.Session {
 	}
 }
 
-// handleClient proxies the accepted TCP/UNIX connection through a smux stream
-// and optionally wraps it in a QPP layer for extra obfuscation.
+// handleClient tunnels a single accepted TCP/UNIX client through an smux
+// stream and optionally wraps the stream in QPP for additional obfuscation.
 func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Session, p1 net.Conn, quiet bool, closeWait int) {
 	logln := func(v ...any) {
 		if !quiet {
@@ -546,6 +547,7 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, session *smux.Ses
 	}
 }
 
+// checkError logs the supplied fatal error and terminates the process.
 func checkError(err error) {
 	if err != nil {
 		log.Printf("%+v\n", err)
@@ -559,7 +561,8 @@ type timedSession struct {
 	expiryDate time.Time
 }
 
-// scavenger periodically closes sessions whose TTL has elapsed.
+// scavenger tracks expiring sessions received on ch and closes them after the
+// configured TTL elapses.
 func scavenger(ch chan timedSession, config *Config) {
 	ticker := time.NewTicker(scavengePeriod * time.Second)
 	defer ticker.Stop()

@@ -27,7 +27,7 @@ import (
 	"os"
 )
 
-// Config for server
+// Config defines the server-side settings supplied via flags or JSON.
 type Config struct {
 	Listen       string `json:"listen"`
 	Target       string `json:"target"`
@@ -65,7 +65,7 @@ type Config struct {
 }
 
 func parseJSONConfig(config *Config, path string) error {
-	file, err := os.Open(path) // For read access.
+	file, err := os.Open(path) // Open the configuration file for reading.
 	if err != nil {
 		return err
 	}

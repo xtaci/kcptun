@@ -27,7 +27,7 @@ import (
 	"os"
 )
 
-// Config for client
+// Config models the client-side configuration loaded via flags or JSON.
 type Config struct {
 	LocalAddr    string `json:"localaddr"`
 	RemoteAddr   string `json:"remoteaddr"`
@@ -68,7 +68,7 @@ type Config struct {
 }
 
 func parseJSONConfig(config *Config, path string) error {
-	file, err := os.Open(path) // For read access.
+	file, err := os.Open(path) // Open the configuration file for reading.
 	if err != nil {
 		return err
 	}
