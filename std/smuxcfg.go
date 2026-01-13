@@ -28,24 +28,15 @@ import (
 	"github.com/xtaci/smux"
 )
 
-// SmuxConfigParams organizes the dials that shape a smux session.
-type SmuxConfigParams struct {
-	Version          int
-	MaxReceiveBuffer int
-	MaxStreamBuffer  int
-	MaxFrameSize     int
-	KeepAliveSeconds int
-}
-
 // BuildSmuxConfig constructs a smux.Config from CLI parameters and verifies the
 // result. Callers can log or wrap the returned error for better diagnostics.
-func BuildSmuxConfig(p SmuxConfigParams) (*smux.Config, error) {
+func BuildSmuxConfig(version, maxReceiveBuffer, maxStreamBuffer, maxFrameSize, keepAliveSeconds int) (*smux.Config, error) {
 	cfg := smux.DefaultConfig()
-	cfg.Version = p.Version
-	cfg.MaxReceiveBuffer = p.MaxReceiveBuffer
-	cfg.MaxStreamBuffer = p.MaxStreamBuffer
-	cfg.MaxFrameSize = p.MaxFrameSize
-	cfg.KeepAliveInterval = time.Duration(p.KeepAliveSeconds) * time.Second
+	cfg.Version = version
+	cfg.MaxReceiveBuffer = maxReceiveBuffer
+	cfg.MaxStreamBuffer = maxStreamBuffer
+	cfg.MaxFrameSize = maxFrameSize
+	cfg.KeepAliveInterval = time.Duration(keepAliveSeconds) * time.Second
 
 	return cfg, smux.VerifyConfig(cfg)
 }

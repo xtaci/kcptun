@@ -451,13 +451,13 @@ func handleMux(_Q_ *qpp.QuantumPermutationPad, conn net.Conn, config *Config) {
 	}
 	log.Println("smux version:", config.SmuxVer, "on connection:", conn.LocalAddr(), "->", conn.RemoteAddr())
 
-	smuxConfig, err := std.BuildSmuxConfig(std.SmuxConfigParams{
-		Version:          config.SmuxVer,
-		MaxReceiveBuffer: config.SmuxBuf,
-		MaxStreamBuffer:  config.StreamBuf,
-		MaxFrameSize:     config.FrameSize,
-		KeepAliveSeconds: config.KeepAlive,
-	})
+	smuxConfig, err := std.BuildSmuxConfig(
+		config.SmuxVer,
+		config.SmuxBuf,
+		config.StreamBuf,
+		config.FrameSize,
+		config.KeepAlive,
+	)
 	if err != nil {
 		log.Println(err)
 		conn.Close()

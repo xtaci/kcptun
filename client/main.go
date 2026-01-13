@@ -475,13 +475,13 @@ func createConn(config *Config, block kcp.BlockCrypt) (*smux.Session, error) {
 		log.Println("SetWriteBuffer:", err)
 	}
 	log.Println("smux version:", config.SmuxVer, "on connection:", kcpconn.LocalAddr(), "->", kcpconn.RemoteAddr())
-	smuxConfig, err := std.BuildSmuxConfig(std.SmuxConfigParams{
-		Version:          config.SmuxVer,
-		MaxReceiveBuffer: config.SmuxBuf,
-		MaxStreamBuffer:  config.StreamBuf,
-		MaxFrameSize:     config.FrameSize,
-		KeepAliveSeconds: config.KeepAlive,
-	})
+	smuxConfig, err := std.BuildSmuxConfig(
+		config.SmuxVer,
+		config.SmuxBuf,
+		config.StreamBuf,
+		config.FrameSize,
+		config.KeepAlive,
+	)
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
