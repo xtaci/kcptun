@@ -423,6 +423,8 @@ func main() {
 			_Q_ = qpp.NewQPP([]byte(config.Key), uint16(config.QPPCount))
 		}
 
+		// Main accept loop: assign each inbound client to a rotating smux session and
+		// refresh sessions on demand so parallel TCP streams keep flowing smoothly.
 		for {
 			p1, err := listener.Accept()
 			if err != nil {
@@ -440,6 +442,7 @@ func main() {
 				}
 			}
 
+			// Serve the accepted client in its own goroutine to keep the accept loop responsive.
 			go handleClient(_Q_, []byte(config.Key), muxes[idx].session, p1, config.Quiet, config.CloseWait)
 			rr++
 		}

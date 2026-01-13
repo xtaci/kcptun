@@ -416,6 +416,8 @@ func serveListener(lis *kcp.Listener, _Q_ *qpp.QuantumPermutationPad, config *Co
 		log.Println("SetWriteBuffer:", err)
 	}
 
+	// Drain incoming KCP conversations, configure each one, and hand it off to
+	// handleMux in a new goroutine so the listener keeps accepting.
 	for {
 		conn, err := lis.AcceptKCP()
 		if err != nil {
