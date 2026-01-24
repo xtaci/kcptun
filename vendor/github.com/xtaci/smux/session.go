@@ -468,7 +468,12 @@ func (s *Session) recvLoop() {
 			}
 			s.streamLock.Unlock()
 
-		case cmdUPD: // a window update signal
+		case cmdUPD: // a window update signal (v2 only)
+			if s.config.Version != 2 {
+				s.notifyProtoError(ErrInvalidProtocol)
+				return
+			}
+
 			_, err := io.ReadFull(s.conn, updHdr[:])
 			if err != nil {
 				s.notifyReadError(err)

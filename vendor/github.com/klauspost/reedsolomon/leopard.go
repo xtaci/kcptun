@@ -74,6 +74,10 @@ func (r *leopardFF16) AllocAligned(each int) [][]byte {
 	return AllocAligned(r.totalShards, each)
 }
 
+func (r *leopardFF16) DecodeIdx(dst [][]byte, expectInput []bool, input [][]byte) error {
+	return ErrNotSupported
+}
+
 type ffe uint16
 
 const (
@@ -284,10 +288,7 @@ func (r *leopardFF16) Split(data []byte) ([][]byte, error) {
 		} else {
 			data = data[:cap(data)]
 		}
-		clear := data[dataLen:]
-		for i := range clear {
-			clear[i] = 0
-		}
+		clear(data[dataLen:])
 	}
 
 	// Only allocate memory if necessary
@@ -307,10 +308,7 @@ func (r *leopardFF16) Split(data []byte) ([][]byte, error) {
 			}
 		}
 	} else {
-		zero := data[dataLen : r.totalShards*perShard]
-		for i := range zero {
-			zero[i] = 0
-		}
+		clear(data[dataLen : r.totalShards*perShard])
 	}
 
 	// Split into equal-length shards.
@@ -480,11 +478,11 @@ func (r *leopardFF16) reconstruct(shards [][]byte, recoverAll bool) error {
 		if len(shards[i+r.dataShards]) != 0 {
 			mulgf16(work[i], shards[i+r.dataShards], errLocs[i], &r.o)
 		} else {
-			memclr(work[i])
+			clear(work[i])
 		}
 	}
 	for i := r.parityShards; i < m; i++ {
-		memclr(work[i])
+		clear(work[i])
 	}
 
 	// work <- original data
@@ -493,11 +491,11 @@ func (r *leopardFF16) reconstruct(shards [][]byte, recoverAll bool) error {
 		if len(shards[i]) != 0 {
 			mulgf16(work[m+i], shards[i], errLocs[m+i], &r.o)
 		} else {
-			memclr(work[m+i])
+			clear(work[m+i])
 		}
 	}
 	for i := m + r.dataShards; i < n; i++ {
-		memclr(work[i])
+		clear(work[i])
 	}
 
 	// work <- IFFT(work, n, 0)
@@ -680,7 +678,7 @@ func ifftDITEncoder(data [][]byte, mtrunc int, work [][]byte, xorRes [][]byte, m
 		copy(work[i], data[i])
 	}
 	for i := mtrunc; i < m; i++ {
-		memclr(work[i])
+		clear(work[i])
 	}
 
 	// I tried splitting up the first few layers into L3-cache sized blocks but
@@ -785,12 +783,6 @@ func refMulAdd(x, y []byte, log_m ffe) {
 		}
 		x = x[64:]
 		y = y[64:]
-	}
-}
-
-func memclr(s []byte) {
-	for i := range s {
-		s[i] = 0
 	}
 }
 

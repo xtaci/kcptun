@@ -189,6 +189,12 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				dec.dataShards = autoDS
 				dec.parityShards = autoPS
 				dec.shardSize = autoDS + autoPS
+				// recycle old shards before creating new shardSet
+				for _, shard := range dec.shardSet {
+					for _, pkt := range shard.elements {
+						defaultBufferPool.Put(pkt)
+					}
+				}
 				dec.shardSet = make(map[uint32]*shardHeap) // empty the shard set
 				codec, err := reedsolomon.New(autoDS, autoPS)
 				if err != nil {

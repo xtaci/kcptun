@@ -283,11 +283,11 @@ func ifftDIT48(work [][]byte, dist int, log_m01, log_m23, log_m02 ffe8, o *optio
 		return
 	}
 
-	if false && o.useAvx512GFNI {
+	if o.useAvx512GFNI {
 		// Note that these currently require that length is multiple of 64.
-		t01 := gf2p811dMulMatrices[log_m01]
-		t23 := gf2p811dMulMatrices[log_m23]
-		t02 := gf2p811dMulMatrices[log_m02]
+		t01 := gf2p811dMulMatricesLeo8[log_m01]
+		t23 := gf2p811dMulMatricesLeo8[log_m23]
+		t02 := gf2p811dMulMatricesLeo8[log_m02]
 		if log_m01 == modulus8 {
 			if log_m23 == modulus8 {
 				if log_m02 == modulus8 {
@@ -438,10 +438,10 @@ func fftDIT48(work [][]byte, dist int, log_m01, log_m23, log_m02 ffe8, o *option
 		return
 	}
 
-	if false && o.useAvx512GFNI {
-		t01 := gf2p811dMulMatrices[log_m01]
-		t23 := gf2p811dMulMatrices[log_m23]
-		t02 := gf2p811dMulMatrices[log_m02]
+	if o.useAvx512GFNI {
+		t01 := gf2p811dMulMatricesLeo8[log_m01]
+		t23 := gf2p811dMulMatricesLeo8[log_m23]
+		t02 := gf2p811dMulMatricesLeo8[log_m02]
 		// Note that these currently require that length is multiple of 64.
 		if log_m02 == modulus8 {
 			if log_m01 == modulus8 {

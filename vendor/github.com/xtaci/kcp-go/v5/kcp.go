@@ -570,6 +570,8 @@ func (kcp *KCP) parse_data(newseg segment) bool {
 
 		// insert the new segment into rcv_buf
 		heap.Push(kcp.rcv_buf, newseg)
+	} else {
+		repeat = true
 	}
 
 	// move available data from rcv_buf -> rcv_queue

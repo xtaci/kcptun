@@ -23,96 +23,6 @@ go get -u github.com/klauspost/reedsolomon
 
 Using Go modules is recommended.
 
-# Changes
-
-## 2024
-
- * Auto-generation of SVE and NEON routines for ARM based on AVX2 code. This results in a speedup of 2x for SVE (as measured using Graviton 3 on AWS) and a speedup of 1.5x as compared to the existing NEON-accelerated code.
-
-## 2022
-
-* [GFNI](https://github.com/klauspost/reedsolomon/pull/224) support for amd64, for up to 3x faster processing.
-* [Leopard GF8](https://github.com/klauspost/reedsolomon#leopard-gf8) mode added, for faster processing of medium shard counts.
-* [Leopard GF16](https://github.com/klauspost/reedsolomon#leopard-compatible-gf16) mode added, for up to 65536 shards. 
-* [WithJerasureMatrix](https://pkg.go.dev/github.com/klauspost/reedsolomon?tab=doc#WithJerasureMatrix) allows constructing a [Jerasure](https://github.com/tsuraan/Jerasure) compatible matrix.
-
-## 2021
-
-* Use `GOAMD64=v4` to enable faster AVX2.
-* Add progressive shard encoding.
-* Wider AVX2 loops
-* Limit concurrency on AVX2, since we are likely memory bound.
-* Allow 0 parity shards.
-* Allow disabling inversion cache.
-* Faster AVX2 encoding.
-
-<details>
-	<summary>See older changes</summary>
-
-## May 2020
-
-* ARM64 optimizations, up to 2.5x faster.
-* Added [WithFastOneParityMatrix](https://pkg.go.dev/github.com/klauspost/reedsolomon?tab=doc#WithFastOneParityMatrix) for faster operation with 1 parity shard.
-* Much better performance when using a limited number of goroutines.
-* AVX512 is now using multiple cores.
-* Stream processing overhaul, big speedups in most cases.
-* AVX512 optimizations
-
-## March 6, 2019
-
-The pure Go implementation is about 30% faster. Minor tweaks to assembler implementations.
-
-## February 8, 2019
-
-AVX512 accelerated version added for Intel Skylake CPUs. This can give up to a 4x speed improvement as compared to AVX2.
-See [here](https://github.com/klauspost/reedsolomon#performance-on-avx512) for more details.
-
-## December 18, 2018
-
-Assembly code for ppc64le has been contributed, this boosts performance by about 10x on this platform.
-
-## November 18, 2017
-
-Added [WithAutoGoroutines](https://godoc.org/github.com/klauspost/reedsolomon#WithAutoGoroutines) which will attempt 
-to calculate the optimal number of goroutines to use based on your expected shard size and detected CPU.
-
-## October 1, 2017
-
-* [Cauchy Matrix](https://godoc.org/github.com/klauspost/reedsolomon#WithCauchyMatrix) is now an option. 
-Thanks to [templexxx](https://github.com/templexxx) for the basis of this.
-
-* Default maximum number of [goroutines](https://godoc.org/github.com/klauspost/reedsolomon#WithMaxGoroutines) 
-has been increased for better multi-core scaling.
-
-* After several requests the Reconstruct and ReconstructData now slices of zero length but sufficient capacity to 
-be used instead of allocating new memory.
-
-## August 26, 2017
-
-*  The [`Encoder()`](https://godoc.org/github.com/klauspost/reedsolomon#Encoder) now contains an `Update` 
-function contributed by [chenzhongtao](https://github.com/chenzhongtao).
-
-* [Frank Wessels](https://github.com/fwessels) kindly contributed ARM 64 bit assembly, 
-which gives a huge performance boost on this platform.
-
-## July 20, 2017
-
-`ReconstructData` added to [`Encoder`](https://godoc.org/github.com/klauspost/reedsolomon#Encoder) interface. 
-This can cause compatibility issues if you implement your own Encoder. A simple workaround can be added:
-
-```Go
-func (e *YourEnc) ReconstructData(shards [][]byte) error {
-	return ReconstructData(shards)
-}
-```
-
-You can of course also do your own implementation. 
-The [`StreamEncoder`](https://godoc.org/github.com/klauspost/reedsolomon#StreamEncoder) 
-handles this without modifying the interface. 
-This is a good lesson on why returning interfaces is not a good design.
-
-</details>
-
 # Usage
 
 This section assumes you know the basics of Reed-Solomon encoding. 
@@ -309,6 +219,142 @@ func test() {
     // parity now contains parity, as if all data was sent in one call.
 }
 ```
+
+# Progressive decoding
+
+For advanced use cases, you can progressively decode missing shards (data or parity) using `DecodeIdx`. 
+This allows you to:
+
+* Reconstruct shards from multiple sources arriving at different times
+* Merge partial reconstructions from different nodes in a distributed system
+* Incrementally add input shards as they become available
+
+To access progressive decoding, cast your encoder to the `Extensions` interface:
+
+```Go
+// Cast to Extensions interface
+ext := enc.(reedsolomon.Extensions)
+```
+
+## Basic Usage
+
+`DecodeIdx` works with three parameters:
+* `dst [][]byte` - Destination slices for reconstructed data (pre-allocated, initially zeroed)
+* `expectInput []bool` - Which shards you expect to receive (true = expected)
+* `input [][]byte` - The actual input shards for this call
+
+<details>
+
+<summary>Click to see example</summary>
+
+```Go
+func doReconstruct() {
+	// Create encoder:
+	enc, _ := reedsolomon.New(5, 3)
+	ext := enc.(reedsolomon.Extensions)
+
+	// Set up reconstruction - we want to reconstruct shards 1 and 4
+	dst := make([][]byte, 5+3)
+	dst[1] = make([]byte, shardSize) // Will reconstruct shard 1
+	dst[4] = make([]byte, shardSize) // Will reconstruct shard 4
+
+	// Mark which shards we expect to receive
+	expectInput := []bool{
+		0: true,
+		1: false, // Reconstructing this shard.
+		2: true,
+		3: true,
+		4: false, // Reconstructing this shard. 
+		5: true,
+		6: true,
+		7: false, // We only need to supply 6 shards, so we skip this.
+	}
+
+	// First call - provide some shards
+	input1 := make([][]byte, 5+3)
+	input1[0] = shard0data
+	input1[2] = shard2data
+
+	err := ext.DecodeIdx(dst, expectInput, input1)
+
+	// Second call - provide remaining shards
+	input2 := make([][]byte, 5+3)
+	input2[3] = shard3data
+	input2[5] = shard5data
+	input2[6] = shard6data
+
+	err = ext.DecodeIdx(dst, expectInput, input2)
+	// dst[1] and dst[4] now contain the reconstructed data
+}
+```
+
+</details>
+
+## Merging Partial DecodeIdx Results
+
+You can also merge partial reconstructions from different nodes using merge mode (`expectInput == nil`):
+
+<details>
+
+<summary>Click to see example</summary>
+
+```Go
+func progressiveReconstruct() {
+    // Create encoder: 5 data + 3 parity = 8 total shards
+    enc, _ := reedsolomon.New(5, 3)
+    ext := enc.(reedsolomon.Extensions)
+
+    // Assume we lost shards 1 and 3, need to reconstruct them
+    dst1 := make([][]byte, 8)
+    dst1[1] = make([]byte, shardSize)  // Reconstruct shard 1
+    dst1[3] = make([]byte, shardSize)  // Reconstruct shard 3
+
+    // We need 5 valid shards total - mark which ones we expect
+    expectInput := make([]bool, 8)
+    expectInput[0] = true  // Have shard 0
+    expectInput[2] = true  // Have shard 2
+    expectInput[4] = true  // Have shard 4
+    expectInput[5] = true  // Have shard 5 (parity)
+    expectInput[6] = true  // Have shard 6 (parity)
+
+    // First source provides shards 0, 2
+    input1 := make([][]byte, 8)
+    input1[0] = availableShards[0]
+    input1[2] = availableShards[2]
+    ext.DecodeIdx(dst1, expectInput, input1)
+
+    // Second source provides shard 4, 5 and 6
+    dst2 := make([][]byte, 8)
+    dst2[1] = make([]byte, shardSize)  // Reconstruct shard 1
+    dst2[3] = make([]byte, shardSize)  // Reconstruct shard 3
+
+    input2 := make([][]byte, 8)
+    input2[4] = availableShards[4]
+    input2[5] = availableShards[5]
+    input2[6] = availableShards[6]
+    ext.DecodeIdx(dst2, expectInput, input2)
+
+    // Merge the dst2 partial result into dst1
+	// These can come from different machines.
+    ext.DecodeIdx(dst1, nil, dst2)
+
+    // dst1[1] and dst1[3] now contain the reconstructed data
+}
+```
+</details>
+
+
+## Important Notes
+
+* **Consistency**: `expectInput` must be the same across all calls for a reconstruction
+* **Completeness**: You must provide exactly the shards marked in `expectInput`, one time each
+* **Automatic shard selection**: When more than `dataShards` positions are marked as `true` in `expectInput`, only the first `dataShards` will be used for reconstruction.
+* **Size matching**: All shards must be the same size
+* **Zero initialization**: Destination shards should start as zeros on the first call
+
+Progressive decoding is particularly useful for distributed storage systems, network reconstruction scenarios, and cases where input data arrives incrementally.
+
+While this can be used for regular reconstruction, typically that will be slightly faster and easier to use.
 
 # Streaming/Merging
 
