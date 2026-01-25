@@ -86,6 +86,9 @@ func newStream(id uint32, frameSize int, sess *Session) *stream {
 	s.die = make(chan struct{})
 	s.chFinEvent = make(chan struct{})
 	s.peerWindow = initialPeerWindow // set to initial window size
+	// pre-allocate buffer slices to reduce allocations during data transfer
+	s.buffers = make([][]byte, 0, 8)
+	s.heads = make([]*[]byte, 0, 8)
 
 	return s
 }

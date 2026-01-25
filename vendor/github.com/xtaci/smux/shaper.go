@@ -71,6 +71,14 @@ type shaperQueue struct {
 	mu      sync.Mutex
 }
 
+// shaperHeapPool reduces allocation of shaperHeap objects
+var shaperHeapPool = sync.Pool{
+	New: func() any {
+		h := make(shaperHeap, 0, 16) // pre-allocate capacity
+		return &h
+	},
+}
+
 func NewShaperQueue() *shaperQueue {
 	return &shaperQueue{
 		streams: make(map[uint32]*shaperHeap),
@@ -86,7 +94,10 @@ func (sq *shaperQueue) Push(req writeRequest) {
 	// create heap for the stream if not exists.
 	sid := req.frame.sid
 	if _, ok := sq.streams[sid]; !ok {
-		sq.streams[sid] = new(shaperHeap)
+		// get heap from pool
+		h := shaperHeapPool.Get().(*shaperHeap)
+		*h = (*h)[:0] // reset while keeping capacity
+		sq.streams[sid] = h
 		elem := sq.rrList.PushBack(sid)
 		if sq.next == nil {
 			sq.next = elem
@@ -134,6 +145,8 @@ func (sq *shaperQueue) Pop() (req writeRequest, ok bool) {
 			if h.Len() == 0 {
 				delete(sq.streams, sid)
 				sq.rrList.Remove(current)
+				// return heap to pool
+				shaperHeapPool.Put(h)
 				// if a list has only one element, then current->next will point to itself,
 				// so after removing current, we need to set next to nil.
 				if sq.rrList.Len() == 0 {

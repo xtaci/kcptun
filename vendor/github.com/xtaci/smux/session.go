@@ -40,6 +40,13 @@ const (
 	openCloseTimeout     = 30 * time.Second // Timeout for opening/closing streams
 )
 
+// resultChanPool reduces allocation of result channels
+var resultChanPool = sync.Pool{
+	New: func() any {
+		return make(chan writeResult, 1)
+	},
+}
+
 // CLASSID represents the class of a frame
 type CLASSID int
 
@@ -622,7 +629,6 @@ EVENT_LOOP:
 				}
 
 				request.result <- result
-				close(request.result)
 
 				// store conn error
 				if err != nil {
@@ -645,30 +651,40 @@ func (s *Session) writeControlFrame(f Frame) (n int, err error) {
 
 // internal writeFrame version to support deadline used in keepalive
 func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, class CLASSID) (int, error) {
+	// get result channel from pool
+	resultCh := resultChanPool.Get().(chan writeResult)
+
 	req := writeRequest{
 		class:  class,
 		frame:  f,
 		seq:    atomic.AddUint32(&s.requestID, 1),
-		result: make(chan writeResult, 1),
+		result: resultCh,
 	}
 	select {
 	case s.shaper <- req:
 	case <-s.die:
+		resultChanPool.Put(resultCh)
 		return 0, io.ErrClosedPipe
 	case <-s.chSocketWriteError:
+		resultChanPool.Put(resultCh)
 		return 0, s.socketWriteError.Load().(error)
 	case <-deadline:
+		resultChanPool.Put(resultCh)
 		return 0, ErrTimeout
 	}
 
 	select {
-	case result := <-req.result:
+	case result := <-resultCh:
+		resultChanPool.Put(resultCh)
 		return result.n, result.err
 	case <-s.die:
+		// Cannot recycle channel here - sendLoop may still write to it
 		return 0, io.ErrClosedPipe
 	case <-s.chSocketWriteError:
+		// Cannot recycle channel here - sendLoop may still write to it
 		return 0, s.socketWriteError.Load().(error)
 	case <-deadline:
+		// Cannot recycle channel here - sendLoop may still write to it
 		return 0, ErrTimeout
 	}
 }
