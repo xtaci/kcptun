@@ -44,23 +44,29 @@ const (
 )
 
 // Rand is a stateful random number generator
+// Fields are ordered for optimal cache line usage (64-byte cache line on modern CPUs)
 type Rand struct {
-	xoshiro [4]uint64 // xoshiro state
-	seed64  uint64    // the latest random number
-	count   uint8     // number of bytes encrypted, counted in modular arithmetic
+	xoshiro [4]uint64 // xoshiro state (32 bytes)
+	seed64  uint64    // the latest random number (8 bytes)
+	count   uint8     // number of bytes encrypted, counted in modular arithmetic (1 byte)
+	_       [7]byte   // padding to align to 48 bytes total
 }
 
 // QuantumPermutationPad represents the encryption/decryption structure using quantum permutation pads
 // QPP is a cryptographic technique that leverages quantum-inspired permutation matrices to provide secure encryption.
+// Fields are ordered for optimal cache line usage - hot path data first.
 type QuantumPermutationPad struct {
-	pads     []byte         // Encryption pads, each pad is a permutation matrix for encryption
-	rpads    []byte         // Decryption pads, each pad is a reverse permutation matrix for decryption
+	// Hot path fields - accessed every encryption/decryption call
 	padsPtr  unsafe.Pointer // raw pointer to encryption pads
 	rpadsPtr unsafe.Pointer // raw pointer to decryption pads
+	numPads  uint16         // Number of pads (permutation matrices)
 
-	numPads uint16 // Number of pads (permutation matrices)
-	encRand *Rand  // Default random source for encryption pad selection
-	decRand *Rand  // Default random source for decryption pad selection
+	encRand *Rand // Default random source for encryption pad selection
+	decRand *Rand // Default random source for decryption pad selection
+
+	// Cold path - only used for reference
+	pads  []byte // Encryption pads, each pad is a permutation matrix for encryption
+	rpads []byte // Decryption pads, each pad is a reverse permutation matrix for decryption
 }
 
 // NewQPP creates a new Quantum Permutation Pad instance with the provided seed, number of pads, and qubits
@@ -81,7 +87,10 @@ func NewQPP(seed []byte, numPads uint16) *QuantumPermutationPad {
 	var blocks []cipher.Block
 	for _, chunk := range chunks {
 		aeskey := pbkdf2.Key(chunk, []byte(SHUFFLE_SALT), PBKDF2_LOOPS, 32, sha1.New)
-		block, _ := aes.NewCipher(aeskey)
+		block, err := aes.NewCipher(aeskey)
+		if err != nil {
+			panic(fmt.Sprintf("NewQPP: failed to create AES cipher block: %v", err))
+		}
 		blocks = append(blocks, block)
 	}
 
@@ -154,33 +163,47 @@ func FastPRNG(seed []byte) *Rand {
 // The PRNG exposes 64-bit chunks; the `count` field tracks how many bytes of the
 // current 64-bit word have already been consumed so that successive calls remain
 // byte-aligned even if the caller streams arbitrary lengths.
+//
+//go:nosplit
 func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
+	if len(data) == 0 {
+		return
+	}
+
 	// initial r, index, count
 	size := len(data)
 	r := rand.seed64
-	base := unsafe.Pointer(uintptr(qpp.padsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
+	numPads := qpp.numPads
+	padsPtr := qpp.padsPtr
+	base := unsafe.Add(padsPtr, uintptr(uint16(r)%numPads)<<8)
 	count := rand.count
-	var rr byte
+
+	// inline xoshiro state for speed
+	s0, s1, s2, s3 := rand.xoshiro[0], rand.xoshiro[1], rand.xoshiro[2], rand.xoshiro[3]
 
 	// handle unaligned 8bytes
 	if count != 0 {
 		offset := 0
 		for ; offset < len(data); offset++ {
 			// Use the already generated 64-bit random word and keep consuming it byte by byte.
-			rr = byte(r >> (count * 8))
-			data[offset] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[offset]^rr)))
+			rr := byte(r >> (count << 3))
+			data[offset] = *(*byte)(unsafe.Add(base, uintptr(data[offset]^rr)))
 			count++
 
 			// switch to another pad when count reaches PAD_SWITCH
 			if count == PAD_SWITCH {
-				// Once we exhaust PAD_SWITCH bytes we reseed from xoshiro, select a new pad,
-				// and realign the loop so the remaining bytes can be handled in 8-byte chunks.
-				r = xoshiro256ss(&rand.xoshiro)
-				base = unsafe.Pointer(uintptr(qpp.padsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
-				// `offset` is advanced to skip the byte we just finished so the slice below
-				// starts at the first unprocessed byte. Without this the processed byte would
-				// be re-encrypted when we fall through to the aligned logic.
-				offset = offset + 1
+				// inline xoshiro256**
+				r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+				t := s1 << 17
+				s2 ^= s0
+				s3 ^= s1
+				s1 ^= s2
+				s0 ^= s3
+				s2 ^= t
+				s3 = (s3 << 45) | (s3 >> 19)
+
+				base = unsafe.Add(padsPtr, uintptr(uint16(r)%numPads)<<8)
+				offset++
 				count = 0
 				break
 			}
@@ -188,68 +211,162 @@ func (qpp *QuantumPermutationPad) EncryptWithPRNG(data []byte, rand *Rand) {
 		data = data[offset:] // aligned bytes start from here
 	}
 
-	// handle 8-byte aligned blocks with explicit unrolling to minimize data dependency stalls
-	repeat := len(data) / 8
-	for i := range repeat {
-		d := data[i*8 : i*8+8]
-		rr0 := byte(r >> 0)
-		rr1 := byte(r >> 8)
-		rr2 := byte(r >> 16)
-		rr3 := byte(r >> 24)
-		rr4 := byte(r >> 32)
-		rr5 := byte(r >> 40)
-		rr6 := byte(r >> 48)
-		rr7 := byte(r >> 56)
+	// handle 8-byte aligned blocks with 2x unrolling for better ILP
+	repeat := len(data) >> 4 // process 16 bytes at a time
+	for i := 0; i < repeat; i++ {
+		d := data[i<<4:]
+		_ = d[15] // bounds check elimination
 
-		d[0] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[0]^rr0)))
-		d[1] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[1]^rr1)))
-		d[2] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[2]^rr2)))
-		d[3] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[3]^rr3)))
-		d[4] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[4]^rr4)))
-		d[5] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[5]^rr5)))
-		d[6] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[6]^rr6)))
-		d[7] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[7]^rr7)))
+		// first 8 bytes
+		x0 := uintptr(d[0] ^ byte(r))
+		x1 := uintptr(d[1] ^ byte(r>>8))
+		x2 := uintptr(d[2] ^ byte(r>>16))
+		x3 := uintptr(d[3] ^ byte(r>>24))
+		x4 := uintptr(d[4] ^ byte(r>>32))
+		x5 := uintptr(d[5] ^ byte(r>>40))
+		x6 := uintptr(d[6] ^ byte(r>>48))
+		x7 := uintptr(d[7] ^ byte(r>>56))
 
-		r = xoshiro256ss(&rand.xoshiro)
-		base = unsafe.Pointer(uintptr(qpp.padsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
+		d[0] = *(*byte)(unsafe.Add(base, x0))
+		d[1] = *(*byte)(unsafe.Add(base, x1))
+		d[2] = *(*byte)(unsafe.Add(base, x2))
+		d[3] = *(*byte)(unsafe.Add(base, x3))
+		d[4] = *(*byte)(unsafe.Add(base, x4))
+		d[5] = *(*byte)(unsafe.Add(base, x5))
+		d[6] = *(*byte)(unsafe.Add(base, x6))
+		d[7] = *(*byte)(unsafe.Add(base, x7))
+
+		// inline xoshiro256** for next 8 bytes
+		r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+		t := s1 << 17
+		s2 ^= s0
+		s3 ^= s1
+		s1 ^= s2
+		s0 ^= s3
+		s2 ^= t
+		s3 = (s3 << 45) | (s3 >> 19)
+		base = unsafe.Add(padsPtr, uintptr(uint16(r)%numPads)<<8)
+
+		// second 8 bytes
+		x0 = uintptr(d[8] ^ byte(r))
+		x1 = uintptr(d[9] ^ byte(r>>8))
+		x2 = uintptr(d[10] ^ byte(r>>16))
+		x3 = uintptr(d[11] ^ byte(r>>24))
+		x4 = uintptr(d[12] ^ byte(r>>32))
+		x5 = uintptr(d[13] ^ byte(r>>40))
+		x6 = uintptr(d[14] ^ byte(r>>48))
+		x7 = uintptr(d[15] ^ byte(r>>56))
+
+		d[8] = *(*byte)(unsafe.Add(base, x0))
+		d[9] = *(*byte)(unsafe.Add(base, x1))
+		d[10] = *(*byte)(unsafe.Add(base, x2))
+		d[11] = *(*byte)(unsafe.Add(base, x3))
+		d[12] = *(*byte)(unsafe.Add(base, x4))
+		d[13] = *(*byte)(unsafe.Add(base, x5))
+		d[14] = *(*byte)(unsafe.Add(base, x6))
+		d[15] = *(*byte)(unsafe.Add(base, x7))
+
+		// inline xoshiro256** for next iteration
+		r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+		t = s1 << 17
+		s2 ^= s0
+		s3 ^= s1
+		s1 ^= s2
+		s0 ^= s3
+		s2 ^= t
+		s3 = (s3 << 45) | (s3 >> 19)
+		base = unsafe.Add(padsPtr, uintptr(uint16(r)%numPads)<<8)
 	}
-	data = data[repeat*8:]
+	data = data[repeat<<4:]
+
+	// handle remaining 8-byte block if any
+	if len(data) >= 8 {
+		d := data
+		_ = d[7] // bounds check elimination
+
+		x0 := uintptr(d[0] ^ byte(r))
+		x1 := uintptr(d[1] ^ byte(r>>8))
+		x2 := uintptr(d[2] ^ byte(r>>16))
+		x3 := uintptr(d[3] ^ byte(r>>24))
+		x4 := uintptr(d[4] ^ byte(r>>32))
+		x5 := uintptr(d[5] ^ byte(r>>40))
+		x6 := uintptr(d[6] ^ byte(r>>48))
+		x7 := uintptr(d[7] ^ byte(r>>56))
+
+		d[0] = *(*byte)(unsafe.Add(base, x0))
+		d[1] = *(*byte)(unsafe.Add(base, x1))
+		d[2] = *(*byte)(unsafe.Add(base, x2))
+		d[3] = *(*byte)(unsafe.Add(base, x3))
+		d[4] = *(*byte)(unsafe.Add(base, x4))
+		d[5] = *(*byte)(unsafe.Add(base, x5))
+		d[6] = *(*byte)(unsafe.Add(base, x6))
+		d[7] = *(*byte)(unsafe.Add(base, x7))
+
+		r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+		t := s1 << 17
+		s2 ^= s0
+		s3 ^= s1
+		s1 ^= s2
+		s0 ^= s3
+		s2 ^= t
+		s3 = (s3 << 45) | (s3 >> 19)
+		base = unsafe.Add(padsPtr, uintptr(uint16(r)%numPads)<<8)
+		data = data[8:]
+	}
 
 	// handle remaining tail bytes after the unrolled blocks
-	for i := range len(data) {
-		rr = byte(r >> (count * 8))
-		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]^byte(rr))))
+	for i := 0; i < len(data); i++ {
+		rr := byte(r >> (count << 3))
+		data[i] = *(*byte)(unsafe.Add(base, uintptr(data[i]^rr)))
 		count++
 	}
 
-	// set back r & count
-	rand.seed64 = uint64(r)
-	rand.count = uint8((int(rand.count) + size) % PAD_SWITCH)
+	// write back xoshiro state
+	rand.xoshiro[0], rand.xoshiro[1], rand.xoshiro[2], rand.xoshiro[3] = s0, s1, s2, s3
+	rand.seed64 = r
+	rand.count = uint8((int(rand.count) + size) & (PAD_SWITCH - 1))
 }
 
 // DecryptWithPRNG mirrors EncryptWithPRNG but walks the reverse permutation pads so that
 // the cipher stream remains synchronized with the same PRNG state.
+//
+//go:nosplit
 func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
+	if len(data) == 0 {
+		return
+	}
+
 	size := len(data)
 	r := rand.seed64
-	base := unsafe.Pointer(uintptr(qpp.rpadsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
+	numPads := qpp.numPads
+	rpadsPtr := qpp.rpadsPtr
+	base := unsafe.Add(rpadsPtr, uintptr(uint16(r)%numPads)<<8)
 	count := rand.count
-	var rr byte
+
+	// inline xoshiro state for speed
+	s0, s1, s2, s3 := rand.xoshiro[0], rand.xoshiro[1], rand.xoshiro[2], rand.xoshiro[3]
 
 	// handle unaligned 8bytes
 	if count != 0 {
 		offset := 0
 		for ; offset < len(data); offset++ {
-			rr = byte(r >> (count * 8))
-			data[offset] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[offset]))) ^ rr
+			rr := byte(r >> (count << 3))
+			data[offset] = *(*byte)(unsafe.Add(base, uintptr(data[offset]))) ^ rr
 			count++
 
 			if count == PAD_SWITCH {
-				r = xoshiro256ss(&rand.xoshiro)
-				base = unsafe.Pointer(uintptr(qpp.rpadsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
-				// Advance `offset` for the same reason as encryption: ensure the slice below
-				// resumes at the first unprocessed byte after we switch pads.
-				offset = offset + 1
+				// inline xoshiro256**
+				r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+				t := s1 << 17
+				s2 ^= s0
+				s3 ^= s1
+				s1 ^= s2
+				s0 ^= s3
+				s2 ^= t
+				s3 = (s3 << 45) | (s3 >> 19)
+
+				base = unsafe.Add(rpadsPtr, uintptr(uint16(r)%numPads)<<8)
+				offset++
 				count = 0
 				break
 			}
@@ -257,44 +374,109 @@ func (qpp *QuantumPermutationPad) DecryptWithPRNG(data []byte, rand *Rand) {
 		data = data[offset:]
 	}
 
-	// handle 8-byte aligned blocks using the same unrolling as encryption to stay in sync
-	repeat := len(data) / 8
-	for i := range repeat {
-		d := data[i*8 : i*8+8]
-		rr0 := byte(r >> 0)
-		rr1 := byte(r >> 8)
-		rr2 := byte(r >> 16)
-		rr3 := byte(r >> 24)
-		rr4 := byte(r >> 32)
-		rr5 := byte(r >> 40)
-		rr6 := byte(r >> 48)
-		rr7 := byte(r >> 56)
+	// handle 8-byte aligned blocks with 2x unrolling for better ILP
+	repeat := len(data) >> 4 // process 16 bytes at a time
+	for i := 0; i < repeat; i++ {
+		d := data[i<<4:]
+		_ = d[15] // bounds check elimination
 
-		d[0] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[0]))) ^ rr0
-		d[1] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[1]))) ^ rr1
-		d[2] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[2]))) ^ rr2
-		d[3] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[3]))) ^ rr3
-		d[4] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[4]))) ^ rr4
-		d[5] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[5]))) ^ rr5
-		d[6] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[6]))) ^ rr6
-		d[7] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(d[7]))) ^ rr7
+		// first 8 bytes
+		rr0, rr1 := byte(r), byte(r>>8)
+		rr2, rr3 := byte(r>>16), byte(r>>24)
+		rr4, rr5 := byte(r>>32), byte(r>>40)
+		rr6, rr7 := byte(r>>48), byte(r>>56)
 
-		r = xoshiro256ss(&rand.xoshiro)
-		base = unsafe.Pointer(uintptr(qpp.rpadsPtr) + uintptr(uint16(r)%qpp.numPads)<<8)
+		d[0] = *(*byte)(unsafe.Add(base, uintptr(d[0]))) ^ rr0
+		d[1] = *(*byte)(unsafe.Add(base, uintptr(d[1]))) ^ rr1
+		d[2] = *(*byte)(unsafe.Add(base, uintptr(d[2]))) ^ rr2
+		d[3] = *(*byte)(unsafe.Add(base, uintptr(d[3]))) ^ rr3
+		d[4] = *(*byte)(unsafe.Add(base, uintptr(d[4]))) ^ rr4
+		d[5] = *(*byte)(unsafe.Add(base, uintptr(d[5]))) ^ rr5
+		d[6] = *(*byte)(unsafe.Add(base, uintptr(d[6]))) ^ rr6
+		d[7] = *(*byte)(unsafe.Add(base, uintptr(d[7]))) ^ rr7
+
+		// inline xoshiro256** for next 8 bytes
+		r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+		t := s1 << 17
+		s2 ^= s0
+		s3 ^= s1
+		s1 ^= s2
+		s0 ^= s3
+		s2 ^= t
+		s3 = (s3 << 45) | (s3 >> 19)
+		base = unsafe.Add(rpadsPtr, uintptr(uint16(r)%numPads)<<8)
+
+		// second 8 bytes
+		rr0, rr1 = byte(r), byte(r>>8)
+		rr2, rr3 = byte(r>>16), byte(r>>24)
+		rr4, rr5 = byte(r>>32), byte(r>>40)
+		rr6, rr7 = byte(r>>48), byte(r>>56)
+
+		d[8] = *(*byte)(unsafe.Add(base, uintptr(d[8]))) ^ rr0
+		d[9] = *(*byte)(unsafe.Add(base, uintptr(d[9]))) ^ rr1
+		d[10] = *(*byte)(unsafe.Add(base, uintptr(d[10]))) ^ rr2
+		d[11] = *(*byte)(unsafe.Add(base, uintptr(d[11]))) ^ rr3
+		d[12] = *(*byte)(unsafe.Add(base, uintptr(d[12]))) ^ rr4
+		d[13] = *(*byte)(unsafe.Add(base, uintptr(d[13]))) ^ rr5
+		d[14] = *(*byte)(unsafe.Add(base, uintptr(d[14]))) ^ rr6
+		d[15] = *(*byte)(unsafe.Add(base, uintptr(d[15]))) ^ rr7
+
+		// inline xoshiro256** for next iteration
+		r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+		t = s1 << 17
+		s2 ^= s0
+		s3 ^= s1
+		s1 ^= s2
+		s0 ^= s3
+		s2 ^= t
+		s3 = (s3 << 45) | (s3 >> 19)
+		base = unsafe.Add(rpadsPtr, uintptr(uint16(r)%numPads)<<8)
 	}
-	data = data[repeat*8:]
+	data = data[repeat<<4:]
+
+	// handle remaining 8-byte block if any
+	if len(data) >= 8 {
+		d := data
+		_ = d[7] // bounds check elimination
+
+		rr0, rr1 := byte(r), byte(r>>8)
+		rr2, rr3 := byte(r>>16), byte(r>>24)
+		rr4, rr5 := byte(r>>32), byte(r>>40)
+		rr6, rr7 := byte(r>>48), byte(r>>56)
+
+		d[0] = *(*byte)(unsafe.Add(base, uintptr(d[0]))) ^ rr0
+		d[1] = *(*byte)(unsafe.Add(base, uintptr(d[1]))) ^ rr1
+		d[2] = *(*byte)(unsafe.Add(base, uintptr(d[2]))) ^ rr2
+		d[3] = *(*byte)(unsafe.Add(base, uintptr(d[3]))) ^ rr3
+		d[4] = *(*byte)(unsafe.Add(base, uintptr(d[4]))) ^ rr4
+		d[5] = *(*byte)(unsafe.Add(base, uintptr(d[5]))) ^ rr5
+		d[6] = *(*byte)(unsafe.Add(base, uintptr(d[6]))) ^ rr6
+		d[7] = *(*byte)(unsafe.Add(base, uintptr(d[7]))) ^ rr7
+
+		r = ((s1 * 5 << 7) | (s1 * 5 >> 57)) * 9
+		t := s1 << 17
+		s2 ^= s0
+		s3 ^= s1
+		s1 ^= s2
+		s0 ^= s3
+		s2 ^= t
+		s3 = (s3 << 45) | (s3 >> 19)
+		base = unsafe.Add(rpadsPtr, uintptr(uint16(r)%numPads)<<8)
+		data = data[8:]
+	}
 
 	// handle remaining tail bytes; at this point `count` already encodes how many bytes of `r`
 	// were consumed so the PRNG state stays identical to the encryption side.
-	for i := range len(data) {
-		rr = byte(r >> (count * 8))
-		data[i] = *(*byte)(unsafe.Pointer(uintptr(base) + uintptr(data[i]))) ^ rr
+	for i := 0; i < len(data); i++ {
+		rr := byte(r >> (count << 3))
+		data[i] = *(*byte)(unsafe.Add(base, uintptr(data[i]))) ^ rr
 		count++
 	}
 
-	// set back r & count
+	// write back xoshiro state
+	rand.xoshiro[0], rand.xoshiro[1], rand.xoshiro[2], rand.xoshiro[3] = s0, s1, s2, s3
 	rand.seed64 = r
-	rand.count = uint8((int(rand.count) + size) % PAD_SWITCH)
+	rand.count = uint8((int(rand.count) + size) & (PAD_SWITCH - 1))
 }
 
 // QPPMinimumSeedLength calculates the length required for the seed based on the number of qubits
@@ -337,7 +519,7 @@ func fill(pad []byte) {
 // reverse generates the reverse permutation pad from the given pad
 // This allows for efficient decryption by reversing the permutation process
 func reverse(pad []byte, rpad []byte) {
-	for i := 0; i < len(pad); i++ {
+	for i := range pad {
 		rpad[pad[i]] = byte(i)
 	}
 }
