@@ -23,7 +23,6 @@
 package kcp
 
 import (
-	"container/heap"
 	"sort"
 )
 
@@ -35,46 +34,26 @@ type pulse struct {
 	seq uint32 // sequence of the signal
 }
 
-// pulseHeap is a min-heap structure, ordered by the sequence number (seq).
-type pulseHeap []pulse
-
-func (h pulseHeap) Len() int { return len(h) }
-func (h pulseHeap) Less(i, j int) bool { // Min-heap: smaller seq goes to the top
-	return _itimediff(h[i].seq, h[j].seq) < 0
-}
-
-func (h pulseHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-func (h *pulseHeap) Push(x any) {
-	*h = append(*h, x.(pulse))
-}
-
-func (h *pulseHeap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
 // autoTune object to detect pulses in a signal
+// Uses a fixed-size ring buffer instead of heap to avoid allocations
 type autoTune struct {
-	pulses pulseHeap
+	pulses [maxAutoTuneSamples]pulse // fixed-size array to avoid heap allocations
+	head   int                       // oldest element index
+	tail   int                       // next write position
+	count  int                       // number of elements
 }
 
-// Sample adds a signal sample to the pulse buffer
+// Sample adds a signal sample to the pulse buffer using a ring buffer
 func (tune *autoTune) Sample(bit bool, seq uint32) {
-	// 1. Push the new sample onto the heap
-	heap.Push(&tune.pulses, pulse{
-		bit: bit,
-		seq: seq,
-	})
+	// Write to current tail position
+	tune.pulses[tune.tail] = pulse{bit: bit, seq: seq}
+	tune.tail = (tune.tail + 1) % maxAutoTuneSamples
 
-	// 2. Maintain the maximum capacity
-	// If the capacity is exceeded, pop the heap's root element (the packet with the smallest/oldest seq).
-	// This ensures the heap always contains the latest 258 packets in terms of sequence number.
-	if tune.pulses.Len() > maxAutoTuneSamples {
-		heap.Pop(&tune.pulses)
+	if tune.count < maxAutoTuneSamples {
+		tune.count++
+	} else {
+		// Buffer is full, advance head (discard oldest)
+		tune.head = (tune.head + 1) % maxAutoTuneSamples
 	}
 }
 
@@ -95,14 +74,16 @@ func (tune *autoTune) Sample(bit bool, seq uint32) {
 
 func (tune *autoTune) FindPeriod(bit bool) int {
 	// Need at least 3 samples to detect a period (rising and falling edges)
-	if tune.pulses.Len() < 3 {
+	if tune.count < 3 {
 		return -1
 	}
 
-	// Copy the underlying array for sorting and analysis.
-	// This avoids modifying the heap structure.
-	sorted := make([]pulse, len(tune.pulses))
-	copy(sorted, tune.pulses)
+	// Copy elements from ring buffer for sorting and analysis.
+	sorted := make([]pulse, tune.count)
+	for i := 0; i < tune.count; i++ {
+		idx := (tune.head + i) % maxAutoTuneSamples
+		sorted[i] = tune.pulses[idx]
+	}
 
 	// Sort the copied data by sequence number (seq) to ensure linear order for period calculation.
 	sort.Slice(sorted, func(i, j int) bool {
