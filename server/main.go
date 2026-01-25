@@ -519,8 +519,9 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 	defer p1.Close()
 	defer p2.Close()
 
-	logln("stream opened", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
-	defer logln("stream closed", "in:", fmt.Sprint(p1.RemoteAddr(), "(", p1.ID(), ")"), "out:", p2.RemoteAddr())
+	streamID := fmt.Sprintf("%v(%d)", p1.RemoteAddr(), p1.ID())
+	logln("stream opened", "in:", streamID, "out:", p2.RemoteAddr())
+	defer logln("stream closed", "in:", streamID, "out:", p2.RemoteAddr())
 
 	var s1, s2 io.ReadWriteCloser = p1, p2
 	// Optionally wrap the smux side with QPP obfuscation.
@@ -534,10 +535,10 @@ func handleClient(_Q_ *qpp.QuantumPermutationPad, seed []byte, p1 *smux.Stream, 
 
 	// Report non-EOF errors so operators can diagnose failing streams.
 	if err1 != nil && err1 != io.EOF {
-		logln("pipe:", err1, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
+		logln("pipe:", err1, "in:", streamID, "out:", p2.RemoteAddr())
 	}
 	if err2 != nil && err2 != io.EOF {
-		logln("pipe:", err2, "in:", p1.RemoteAddr(), "out:", fmt.Sprint(p2.RemoteAddr(), "(", p2.RemoteAddr(), ")"))
+		logln("pipe:", err2, "in:", streamID, "out:", p2.RemoteAddr())
 	}
 }
 

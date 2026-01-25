@@ -32,6 +32,15 @@ const (
 	bufSize = 4096
 )
 
+// bufPool is a pool of byte slices used for io.Copy operations.
+// Reusing buffers reduces GC pressure under high concurrency.
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		buf := make([]byte, bufSize)
+		return &buf
+	},
+}
+
 // Memory optimized io.Copy function specified for this library
 func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 	// If the reader has a WriteTo method, use it to do the copy.
@@ -44,9 +53,10 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 		return rt.ReadFrom(src)
 	}
 
-	// fallback to standard io.CopyBuffer
-	buf := make([]byte, bufSize)
-	return io.CopyBuffer(dst, src, buf)
+	// fallback to standard io.CopyBuffer with pooled buffer
+	bufPtr := bufPool.Get().(*[]byte)
+	defer bufPool.Put(bufPtr)
+	return io.CopyBuffer(dst, src, *bufPtr)
 }
 
 // Pipe create a general bidirectional pipe between two streams

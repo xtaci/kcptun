@@ -569,7 +569,8 @@ type timedSession struct {
 func scavenger(ch chan timedSession, config *Config) {
 	ticker := time.NewTicker(scavengePeriod * time.Second)
 	defer ticker.Stop()
-	var sessionList []timedSession
+	// Pre-allocate with reasonable capacity to reduce slice growth overhead
+	sessionList := make([]timedSession, 0, 16)
 	for {
 		select {
 		case item := <-ch:
@@ -577,7 +578,8 @@ func scavenger(ch chan timedSession, config *Config) {
 				item.session,
 				item.expiryDate.Add(time.Duration(config.ScavengeTTL) * time.Second)})
 		case <-ticker.C:
-			var newList []timedSession
+			// Reuse slice capacity to avoid allocation
+			newList := sessionList[:0]
 			for k := range sessionList {
 				s := sessionList[k]
 				if s.session.IsClosed() {

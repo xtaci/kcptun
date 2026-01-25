@@ -23,57 +23,57 @@
 package std
 
 import (
+	"log"
+
 	kcp "github.com/xtaci/kcp-go/v5"
 )
+
+// cryptMethod maps cipher names to their constructor functions and required key sizes.
+type cryptMethod struct {
+	keySize int // required key size (0 means use full key)
+	build   func(key []byte) (kcp.BlockCrypt, error)
+}
+
+// cryptMethods is a lookup table for supported encryption methods.
+// Using a map simplifies the code and makes adding new ciphers easier.
+var cryptMethods = map[string]cryptMethod{
+	"null":        {0, func(key []byte) (kcp.BlockCrypt, error) { return nil, nil }},
+	"sm4":         {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewSM4BlockCrypt(key) }},
+	"tea":         {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewTEABlockCrypt(key) }},
+	"xor":         {0, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewSimpleXORBlockCrypt(key) }},
+	"none":        {0, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewNoneBlockCrypt(key) }},
+	"aes-128":     {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewAESBlockCrypt(key) }},
+	"aes-192":     {24, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewAESBlockCrypt(key) }},
+	"blowfish":    {0, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewBlowfishBlockCrypt(key) }},
+	"twofish":     {0, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewTwofishBlockCrypt(key) }},
+	"cast5":       {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewCast5BlockCrypt(key) }},
+	"3des":        {24, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewTripleDESBlockCrypt(key) }},
+	"xtea":        {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewXTEABlockCrypt(key) }},
+	"salsa20":     {0, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewSalsa20BlockCrypt(key) }},
+	"aes-128-gcm": {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewAESGCMCrypt(key) }},
+}
 
 // SelectBlockCrypt translates a human readable cipher name into the concrete
 // kcp.BlockCrypt implementation. It also reports the effective cipher name after
 // applying fallbacks so callers can log the final choice.
 func SelectBlockCrypt(method string, pass []byte) (kcp.BlockCrypt, string) {
-	switch method {
-	case "null":
-		return nil, method
-	case "sm4":
-		block, _ := kcp.NewSM4BlockCrypt(pass[:16])
+	if m, ok := cryptMethods[method]; ok {
+		key := pass
+		if m.keySize > 0 && len(pass) >= m.keySize {
+			key = pass[:m.keySize]
+		}
+		block, err := m.build(key)
+		if err != nil {
+			log.Printf("crypt: failed to create %s cipher: %v, falling back to aes", method, err)
+			block, _ = kcp.NewAESBlockCrypt(pass)
+			return block, "aes"
+		}
 		return block, method
-	case "tea":
-		block, _ := kcp.NewTEABlockCrypt(pass[:16])
-		return block, method
-	case "xor":
-		block, _ := kcp.NewSimpleXORBlockCrypt(pass)
-		return block, method
-	case "none":
-		block, _ := kcp.NewNoneBlockCrypt(pass)
-		return block, method
-	case "aes-128":
-		block, _ := kcp.NewAESBlockCrypt(pass[:16])
-		return block, method
-	case "aes-192":
-		block, _ := kcp.NewAESBlockCrypt(pass[:24])
-		return block, method
-	case "blowfish":
-		block, _ := kcp.NewBlowfishBlockCrypt(pass)
-		return block, method
-	case "twofish":
-		block, _ := kcp.NewTwofishBlockCrypt(pass)
-		return block, method
-	case "cast5":
-		block, _ := kcp.NewCast5BlockCrypt(pass[:16])
-		return block, method
-	case "3des":
-		block, _ := kcp.NewTripleDESBlockCrypt(pass[:24])
-		return block, method
-	case "xtea":
-		block, _ := kcp.NewXTEABlockCrypt(pass[:16])
-		return block, method
-	case "salsa20":
-		block, _ := kcp.NewSalsa20BlockCrypt(pass)
-		return block, method
-	case "aes-128-gcm":
-		block, _ := kcp.NewAESGCMCrypt(pass[:16])
-		return block, method
-	default:
-		block, _ := kcp.NewAESBlockCrypt(pass)
-		return block, "aes"
 	}
+	// Default to AES for unknown methods
+	block, err := kcp.NewAESBlockCrypt(pass)
+	if err != nil {
+		log.Printf("crypt: failed to create default aes cipher: %v", err)
+	}
+	return block, "aes"
 }
