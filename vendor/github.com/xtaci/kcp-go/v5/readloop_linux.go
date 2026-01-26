@@ -25,6 +25,7 @@
 package kcp
 
 import (
+	"net"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -44,9 +45,14 @@ func (s *UDPSession) readLoop() {
 	}
 
 	// x/net version
-	var src string
+	var src *net.UDPAddr
+	var srcStr string
 	if s.remote != nil {
-		src = s.remote.String()
+		if udp, ok := s.remote.(*net.UDPAddr); ok {
+			src = udp
+		} else {
+			srcStr = s.remote.String()
+		}
 	}
 	msgs := make([]ipv4.Message, batchSize)
 	for k := range msgs {
@@ -68,9 +74,19 @@ func (s *UDPSession) readLoop() {
 			msg := &msgs[i]
 
 			// make sure the packet is from the same source
-			if src == "" { // set source address if nil
-				src = msg.Addr.String()
-			} else if msg.Addr.String() != src {
+			if src == nil && srcStr == "" { // set source address if nil
+				if udp, ok := msg.Addr.(*net.UDPAddr); ok {
+					src = udp
+				} else {
+					srcStr = msg.Addr.String()
+				}
+			} else if src != nil {
+				udp, ok := msg.Addr.(*net.UDPAddr)
+				if !ok || !sameUDPAddr(src, udp) {
+					atomic.AddUint64(&DefaultSnmp.InErrs, 1)
+					continue
+				}
+			} else if msg.Addr.String() != srcStr {
 				atomic.AddUint64(&DefaultSnmp.InErrs, 1)
 				continue
 			}

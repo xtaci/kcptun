@@ -204,9 +204,11 @@ func (dec *fecDecoder) decode(in fecPacket) (recovered [][]byte) {
 				dec.decodeCache = make([][]byte, dec.shardSize)
 				dec.flagCache = make([]bool, dec.shardSize)
 				dec.paws = 0xffffffff / uint32(dec.shardSize) * uint32(dec.shardSize)
-				dec.shouldTune = false
 				//log.Println("autotune to :", dec.dataShards, dec.parityShards)
 			}
+			// reset shouldTune flag regardless of whether parameters changed
+			// to avoid permanent blocking when detected parameters match current ones
+			dec.shouldTune = false
 		}
 		return nil
 	}

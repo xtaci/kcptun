@@ -23,18 +23,34 @@
 package kcp
 
 import (
+	"net"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
 )
 
+func sameUDPAddr(a, b *net.UDPAddr) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	if a.Port != b.Port || a.Zone != b.Zone {
+		return false
+	}
+	return a.IP.Equal(b.IP)
+}
+
 // defaultReadLoop is the standard procedure for reading from a connection
 func (s *UDPSession) defaultReadLoop() {
 	buf := make([]byte, mtuLimit)
 
-	var src string
+	var src *net.UDPAddr
+	var srcStr string
 	if s.remote != nil {
-		src = s.remote.String()
+		if udp, ok := s.remote.(*net.UDPAddr); ok {
+			src = udp
+		} else {
+			srcStr = s.remote.String()
+		}
 	}
 	for {
 		n, addr, err := s.conn.ReadFrom(buf)
@@ -48,9 +64,19 @@ func (s *UDPSession) defaultReadLoop() {
 		}
 
 		// make sure the packet is from the same source
-		if src == "" { // set source address if nil
-			src = addr.String()
-		} else if addr.String() != src {
+		if src == nil && srcStr == "" { // set source address if nil
+			if udp, ok := addr.(*net.UDPAddr); ok {
+				src = udp
+			} else {
+				srcStr = addr.String()
+			}
+		} else if src != nil {
+			udp, ok := addr.(*net.UDPAddr)
+			if !ok || !sameUDPAddr(src, udp) {
+				atomic.AddUint64(&DefaultSnmp.InErrs, 1)
+				continue
+			}
+		} else if addr.String() != srcStr {
 			atomic.AddUint64(&DefaultSnmp.InErrs, 1)
 			continue
 		}
