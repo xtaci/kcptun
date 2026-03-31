@@ -31,7 +31,7 @@ import (
 
 // SystemTimedSched is the library-level timed scheduler, shared by all sessions.
 // It drives periodic KCP flush()/update() calls, avoiding one goroutine per session.
-var SystemTimedSched *TimedSched = NewTimedSched(runtime.NumCPU())
+var SystemTimedSched *TimedSched = NewTimedSched(max(runtime.NumCPU(), 2))
 
 type timedFunc struct {
 	execute func()

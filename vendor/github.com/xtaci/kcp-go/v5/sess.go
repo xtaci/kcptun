@@ -273,14 +273,24 @@ func newUDPSession(conv uint32, dataShards, parityShards int, l *Listener, conn 
 
 // Read implements net.Conn
 func (s *UDPSession) Read(b []byte) (n int, err error) {
-RESET_TIMER:
 	var timeout *time.Timer
-	// deadline for current reading operation
 	var c <-chan time.Time
+
+RESET_TIMER:
+	// deadline for current reading operation
 	if trd, ok := s.rd.Load().(time.Time); ok && !trd.IsZero() {
-		timeout = time.NewTimer(time.Until(trd))
-		c = timeout.C
-		defer timeout.Stop()
+		if timeout == nil {
+			timeout = time.NewTimer(time.Until(trd))
+			c = timeout.C
+			defer timeout.Stop()
+		} else {
+			// Pre-Go 1.23: Reset does not drain the channel;
+			// callers must drain at the goto-site before arriving here.
+			timeout.Reset(time.Until(trd))
+		}
+	} else if timeout != nil {
+		timeout.Stop()
+		c = nil // disable timeout select case
 	}
 
 	for {
@@ -331,7 +341,12 @@ RESET_TIMER:
 		select {
 		case <-s.chReadEvent:
 			if timeout != nil {
-				timeout.Stop()
+				if !timeout.Stop() {
+					select {
+					case <-timeout.C:
+					default:
+					}
+				}
 				goto RESET_TIMER
 			}
 		case <-c:
@@ -349,13 +364,23 @@ func (s *UDPSession) Write(b []byte) (n int, err error) { return s.WriteBuffers(
 
 // WriteBuffers write a vector of byte slices to the underlying connection
 func (s *UDPSession) WriteBuffers(v [][]byte) (n int, err error) {
-RESET_TIMER:
 	var timeout *time.Timer
 	var c <-chan time.Time
+
+RESET_TIMER:
 	if twd, ok := s.wd.Load().(time.Time); ok && !twd.IsZero() {
-		timeout = time.NewTimer(time.Until(twd))
-		c = timeout.C
-		defer timeout.Stop()
+		if timeout == nil {
+			timeout = time.NewTimer(time.Until(twd))
+			c = timeout.C
+			defer timeout.Stop()
+		} else {
+			// Pre-Go 1.23: Reset does not drain the channel;
+			// callers must drain at the goto-site before arriving here.
+			timeout.Reset(time.Until(twd))
+		}
+	} else if timeout != nil {
+		timeout.Stop()
+		c = nil // disable timeout select case
 	}
 
 	for {
@@ -407,7 +432,12 @@ RESET_TIMER:
 		select {
 		case <-s.chWriteEvent:
 			if timeout != nil {
-				timeout.Stop()
+				if !timeout.Stop() {
+					select {
+					case <-timeout.C:
+					default:
+					}
+				}
 				goto RESET_TIMER
 			}
 		case <-c:

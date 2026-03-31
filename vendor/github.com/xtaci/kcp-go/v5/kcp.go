@@ -1078,7 +1078,7 @@ func (kcp *KCP) Check() uint32 {
 
 // SetMtu changes MTU size, default is 1400
 func (kcp *KCP) SetMtu(mtu int) int {
-	if mtu < 50 || mtu < IKCP_OVERHEAD {
+	if mtu <= IKCP_OVERHEAD {
 		return -1
 	}
 
