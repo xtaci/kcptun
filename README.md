@@ -4,15 +4,6 @@
 >
 > The source is provided for research and reference purposes only.
 
-[![Created at][1]][2] [![MIT License][3]][4] [![Codecov][5]][6]
-
-[1]: https://img.shields.io/github/created-at/xtaci/kcptun
-[2]: https://github.com/xtaci/kcptun
-[3]: https://img.shields.io/github/license/xtaci/kcptun
-[4]: LICENSE.md
-[5]: https://codecov.io/gh/xtaci/kcptun/branch/master/graph/badge.svg
-[6]: https://codecov.io/gh/xtaci/kcptun
-
 <img src="assets/kcptun.png" alt="kcptun" height="300px"/>
 
 ## Disclaimer
