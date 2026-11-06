@@ -1,53 +1,34 @@
-<img src="assets/smux.png" alt="smux" height="35px" />
+<img src="smux.png" alt="smux" height="35px" />
 
-[![GoDoc][1]][2] [![MIT licensed][3]][4] [![Build Status][5]][6] [![Go Report Card][7]][8] [![Coverage Statusd][9]][10] [![Sourcegraph][11]][12]
+[![GoDoc][1]][2] [![MIT licensed][3]][4] [![Build Status][5]][6] [![Go Report Card][7]][8] [![Coverage Statusd][9]][10]
 
-<img src="assets/mux.jpg" alt="smux" height="120px" /> 
+<img src="mux.jpg" alt="smux" height="120px" /> 
 
 [1]: https://godoc.org/github.com/xtaci/smux?status.svg
 [2]: https://godoc.org/github.com/xtaci/smux
 [3]: https://img.shields.io/badge/license-MIT-blue.svg
 [4]: LICENSE
-[5]: https://img.shields.io/github/created-at/xtaci/smux
-[6]: https://img.shields.io/github/created-at/xtaci/smux
+[5]: https://travis-ci.org/xtaci/smux.svg?branch=master
+[6]: https://travis-ci.org/xtaci/smux
 [7]: https://goreportcard.com/badge/github.com/xtaci/smux
 [8]: https://goreportcard.com/report/github.com/xtaci/smux
 [9]: https://codecov.io/gh/xtaci/smux/branch/master/graph/badge.svg
 [10]: https://codecov.io/gh/xtaci/smux
-[11]: https://sourcegraph.com/github.com/xtaci/smux/-/badge.svg
-[12]: https://sourcegraph.com/github.com/xtaci/smux?badge
-
-[English](README.md)
 
 ## Introduction
 
-Smux (**S**imple **MU**ltiple**X**ing) is a multiplexing library for Golang. It relies on an underlying connection to provide reliability and ordering, such as TCP or [KCP](https://github.com/xtaci/kcp-go), and provides stream-oriented multiplexing. This library was originally designed to power connection management for [kcp-go](https://github.com/xtaci/kcp-go).
+Smux ( **S**imple **MU**ltiple**X**ing) is a multiplexing library for Golang. It relies on an underlying connection to provide reliability and ordering, such as TCP or [KCP](https://github.com/xtaci/kcp-go), and provides stream-oriented multiplexing. The original intention of this library is to power the connection management for [kcp-go](https://github.com/xtaci/kcp-go).
 
 ## Features
 
-1. ***Token bucket*** controlled receiving, providing a smoother bandwidth graph (see picture below).
-2. Session-wide receive buffer shared among streams for **fully controlled** overall memory usage.
-3. Minimized header (8 bytes), maximized payload.
-4. Built-in fair queue traffic shaping.
-5. Per-stream sliding window for congestion control (protocol version 2+).
+1. Tiny, less than 1000 LOC.
+2. ***Token bucket*** controlled receiving, which provides smoother bandwidth graph(see picture below).
+3. Session-wide receive buffer, shared among streams, tightly controlled overall memory usage.
+4. Minimized header(8Bytes), maximized payload. 
+5. Well-tested on millions of devices in [kcptun](https://github.com/xtaci/kcptun).
+6. Builtin fair queue traffic shaping.
 
-![smooth bandwidth curve](assets/curve.jpg)
-
-## Architecture
-
-* **Session**: The main manager for a multiplexed connection. It manages the underlying `io.ReadWriteCloser`, handles stream creation/acceptance, and manages the shared receive buffer.
-* **Stream**: A logical stream within a session. It implements the `net.Conn` interface, handling data buffering and flow control.
-* **Frame**: The wire format for data transmission.
-
-## Frame Allocator
-
-`alloc.go` implements a slab-style allocator tuned for frames up to 64 KB. Seventeen `sync.Pool` buckets cache power-of-two slice capacities, and a De Bruijn based `msb()` lookup picks the smallest bucket that can satisfy a request in constant time. Buffers are deliberately reused without zeroing, so each new frame simply overwrites the previous payload without paying the Go runtime's memclr cost.
-
-Benefits for the session:
-
-1. Bounded fragmentation (each request wastes < 50%) keeps the shared receive buffer predictable under load.
-2. Reuse of pre-sized slices drastically lowers GC pressure and removes repeated zeroing work.
-3. Constant-time bucket selection avoids locks or searches, so high-throughput sessions keep tail latency steady even with thousands of flows.
+![smooth bandwidth curve](curve.jpg)
 
 ## Documentation
 
@@ -70,33 +51,21 @@ ok  	github.com/xtaci/smux	7.811s
 ## Specification
 
 ```
- +---------------+---------------+-------------------------------+
- |  VERSION (1B) |    CMD (1B)   |          LENGTH (2B)          |
- +---------------+---------------+-------------------------------+
- |                          STREAMID (4B)                        |
- +---------------------------------------------------------------+
- |                                                               |
- /                        DATA (Variable)                        /
- |                                                               |
- +---------------------------------------------------------------+
+VERSION(1B) | CMD(1B) | LENGTH(2B) | STREAMID(4B) | DATA(LENGTH)  
 
 VALUES FOR LATEST VERSION:
 VERSION:
-    1/2
+    1
     
 CMD:
     cmdSYN(0)
     cmdFIN(1)
     cmdPSH(2)
     cmdNOP(3)
-    cmdUPD(4)	// only supported on version 2
     
 STREAMID:
     client use odd numbers starts from 1
     server use even numbers starts from 0
-    
-cmdUPD:
-    | CONSUMED(4B) | WINDOW(4B) |
 ```
 
 ## Usage
@@ -156,18 +125,6 @@ func server() {
 
 ```
 
-## Configuration
+## Status
 
-`smux.Config` allows tuning the session parameters:
-
-* `Version`: Protocol version (1 or 2).
-* `KeepAliveInterval`: Interval for sending NOP frames to keep the connection alive.
-* `KeepAliveTimeout`: Timeout for closing the session if no data is received.
-* `MaxFrameSize`: Maximum size of a frame.
-* `MaxReceiveBuffer`: Maximum size of the shared receive buffer.
-* `MaxStreamBuffer`: Maximum size of the per-stream buffer.
-
-## Reference
-
-* [hashicorp/yamux](https://github.com/hashicorp/yamux)
-* [xtaci/kcp-go](https://github.com/xtaci/kcp-go)
+Stable
