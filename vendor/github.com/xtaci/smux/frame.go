@@ -28,25 +28,25 @@ import (
 )
 
 const ( // cmds
-	// protocol version 1:
+	// Commands available in protocol version 1:
 	cmdSYN byte = iota // stream open
 	cmdFIN             // stream close, a.k.a EOF mark
 	cmdPSH             // data push
 	cmdNOP             // no operation
 
-	// protocol version 2 extra commands
-	// notify bytes consumed by remote peer-end
+	// Additional commands in protocol version 2.
+	// cmdUPD reports bytes consumed by the peer.
 	cmdUPD
 )
 
 const (
-	// data size of cmdUPD, format:
-	// |4B data consumed(ACK)| 4B window size(WINDOW) |
+	// cmdUPD payload size and format:
+	// | 4-byte consumed count (ACK) | 4-byte window size (WINDOW) |
 	szCmdUPD = 8
 )
 
 const (
-	// initial peer window guess, a slow-start
+	// Initial estimate of the peer's receive window.
 	initialPeerWindow = 262144
 )
 
@@ -58,7 +58,7 @@ const (
 	headerSize   = sizeOfVer + sizeOfCmd + sizeOfSid + sizeOfLength
 )
 
-// Frame defines a packet from or to be multiplexed into a single connection
+// Frame represents a packet multiplexed over a single connection.
 type Frame struct {
 	ver  byte   // version
 	cmd  byte   // command
@@ -66,12 +66,12 @@ type Frame struct {
 	data []byte // payload
 }
 
-// newFrame creates a new frame with given version, command and stream id
+// newFrame creates a frame with the given version, command, and stream ID.
 func newFrame(version byte, cmd byte, sid uint32) Frame {
 	return Frame{ver: version, cmd: cmd, sid: sid}
 }
 
-// rawHeader is a byte array representation of Frame header
+// rawHeader is the byte representation of a Frame header.
 type rawHeader [headerSize]byte
 
 func (h rawHeader) Version() byte {
@@ -95,7 +95,7 @@ func (h rawHeader) String() string {
 		h.Version(), h.Cmd(), h.StreamID(), h.Length())
 }
 
-// updHeader is a byte array representation of cmdUPD
+// updHeader is the byte representation of a cmdUPD payload.
 type updHeader [szCmdUPD]byte
 
 func (h updHeader) Consumed() uint32 {

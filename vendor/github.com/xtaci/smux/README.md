@@ -1,6 +1,6 @@
 <img src="assets/smux.png" alt="smux" height="35px" />
 
-[![GoDoc][1]][2] [![MIT licensed][3]][4] [![Build Status][5]][6] [![Go Report Card][7]][8] [![Coverage Statusd][9]][10] [![Sourcegraph][11]][12]
+[![GoDoc][1]][2] [![MIT licensed][3]][4] [![Created At][5]][6] [![Coverage][9]][10]
 
 <img src="assets/mux.jpg" alt="smux" height="120px" /> 
 
@@ -9,51 +9,48 @@
 [3]: https://img.shields.io/badge/license-MIT-blue.svg
 [4]: LICENSE
 [5]: https://img.shields.io/github/created-at/xtaci/smux
-[6]: https://img.shields.io/github/created-at/xtaci/smux
-[7]: https://goreportcard.com/badge/github.com/xtaci/smux
-[8]: https://goreportcard.com/report/github.com/xtaci/smux
+[6]: https://github.com/xtaci/smux
 [9]: https://codecov.io/gh/xtaci/smux/branch/master/graph/badge.svg
 [10]: https://codecov.io/gh/xtaci/smux
-[11]: https://sourcegraph.com/github.com/xtaci/smux/-/badge.svg
-[12]: https://sourcegraph.com/github.com/xtaci/smux?badge
-
 [English](README.md)
 
 ## Introduction
 
-Smux (**S**imple **MU**ltiple**X**ing) is a multiplexing library for Golang. It relies on an underlying connection to provide reliability and ordering, such as TCP or [KCP](https://github.com/xtaci/kcp-go), and provides stream-oriented multiplexing. This library was originally designed to power connection management for [kcp-go](https://github.com/xtaci/kcp-go).
+Smux (**S**imple **MU**ltiple**X**ing) is a stream-multiplexing library for Go. It lets multiple logical streams share a single underlying connection, relying on that connection—such as TCP or [KCP](https://github.com/xtaci/kcp-go)—to provide reliable, ordered delivery. Smux was originally developed to manage connections in [kcp-go](https://github.com/xtaci/kcp-go).
 
 ## Features
 
-1. ***Token bucket*** controlled receiving, providing a smoother bandwidth graph (see picture below).
-2. Session-wide receive buffer shared among streams for **fully controlled** overall memory usage.
-3. Minimized header (8 bytes), maximized payload.
-4. Built-in fair queue traffic shaping.
-5. Per-stream sliding window for congestion control (protocol version 2+).
+1. Token-bucket-based receive control helps smooth bandwidth usage, as illustrated below.
+2. A shared, session-wide receive buffer bounds memory usage across streams.
+3. An 8-byte frame header leaves more space for payload.
+4. Built-in fair-queue traffic shaping.
+5. Per-stream sliding-window flow control in protocol version 2.
 
 ![smooth bandwidth curve](assets/curve.jpg)
 
 ## Architecture
 
-* **Session**: The main manager for a multiplexed connection. It manages the underlying `io.ReadWriteCloser`, handles stream creation/acceptance, and manages the shared receive buffer.
-* **Stream**: A logical stream within a session. It implements the `net.Conn` interface, handling data buffering and flow control.
-* **Frame**: The wire format for data transmission.
+* **Session**: Manages the underlying `io.ReadWriteCloser`, stream creation and acceptance, and the shared receive buffer.
+* **Stream**: Represents a logical connection within a session and implements `net.Conn`, including buffering and flow control.
+* **Frame**: Defines the wire format used to carry stream data and control messages.
 
 ## Frame Allocator
 
-`alloc.go` implements a slab-style allocator tuned for frames up to 64 KB. Seventeen `sync.Pool` buckets cache power-of-two slice capacities, and a De Bruijn based `msb()` lookup picks the smallest bucket that can satisfy a request in constant time. Buffers are deliberately reused without zeroing, so each new frame simply overwrites the previous payload without paying the Go runtime's memclr cost.
+`alloc.go` implements a slab-style allocator for frames up to 64 KiB. Seventeen `sync.Pool` buckets hold slices with power-of-two capacities. A De Bruijn-based `msb()` lookup selects the smallest bucket that can satisfy a request in constant time. Reused buffers are not cleared when returned to the pool; incoming frame data overwrites the bytes that are read.
 
-Benefits for the session:
+This design helps sessions by:
 
-1. Bounded fragmentation (each request wastes < 50%) keeps the shared receive buffer predictable under load.
-2. Reuse of pre-sized slices drastically lowers GC pressure and removes repeated zeroing work.
-3. Constant-time bucket selection avoids locks or searches, so high-throughput sessions keep tail latency steady even with thousands of flows.
+1. Limiting capacity waste to less than 50% for each allocation.
+2. Reusing pre-sized slices to reduce allocation and garbage-collection overhead.
+3. Selecting a capacity bucket in constant time.
 
 ## Documentation
 
-For complete documentation, see the associated [Godoc](https://godoc.org/github.com/xtaci/smux).
+For the complete API documentation, see [Godoc](https://godoc.org/github.com/xtaci/smux).
 
-## Benchmark
+## Benchmarks
+
+Run the benchmarks with:
 ```
 $ go test -v -run=^$ -bench .
 goos: darwin
@@ -80,7 +77,7 @@ ok  	github.com/xtaci/smux	7.811s
  |                                                               |
  +---------------------------------------------------------------+
 
-VALUES FOR LATEST VERSION:
+Protocol values:
 VERSION:
     1/2
     
@@ -92,8 +89,8 @@ CMD:
     cmdUPD(4)	// only supported on version 2
     
 STREAMID:
-    client use odd numbers starts from 1
-    server use even numbers starts from 0
+    client uses odd numbers, starting at 1
+    server uses even numbers, starting at 0
     
 cmdUPD:
     | CONSUMED(4B) | WINDOW(4B) |
@@ -104,19 +101,19 @@ cmdUPD:
 ```go
 
 func client() {
-    // Get a TCP connection
+    // Establish a TCP connection
     conn, err := net.Dial(...)
     if err != nil {
         panic(err)
     }
 
-    // Setup client side of smux
+    // Create a client session
     session, err := smux.Client(conn, nil)
     if err != nil {
         panic(err)
     }
 
-    // Open a new stream
+    // Open a stream
     stream, err := session.OpenStream()
     if err != nil {
         panic(err)
@@ -135,7 +132,7 @@ func server() {
         panic(err)
     }
 
-    // Setup server side of smux
+    // Create a server session
     session, err := smux.Server(conn, nil)
     if err != nil {
         panic(err)
@@ -147,7 +144,7 @@ func server() {
         panic(err)
     }
 
-    // Listen for a message
+    // Read a message
     buf := make([]byte, 4)
     stream.Read(buf)
     stream.Close()
@@ -158,14 +155,15 @@ func server() {
 
 ## Configuration
 
-`smux.Config` allows tuning the session parameters:
+Use `smux.Config` to tune session behavior:
 
 * `Version`: Protocol version (1 or 2).
-* `KeepAliveInterval`: Interval for sending NOP frames to keep the connection alive.
-* `KeepAliveTimeout`: Timeout for closing the session if no data is received.
-* `MaxFrameSize`: Maximum size of a frame.
-* `MaxReceiveBuffer`: Maximum size of the shared receive buffer.
-* `MaxStreamBuffer`: Maximum size of the per-stream buffer.
+* `KeepAliveDisabled`: Disables keep-alive messages and timeout checks.
+* `KeepAliveInterval`: Time between NOP keep-alive frames.
+* `KeepAliveTimeout`: Maximum time without received data before the session is closed.
+* `MaxFrameSize`: Maximum frame payload size.
+* `MaxReceiveBuffer`: Maximum amount of buffered data across all streams in the session.
+* `MaxStreamBuffer`: Per-stream receive-window size in protocol version 2.
 
 ## Reference
 

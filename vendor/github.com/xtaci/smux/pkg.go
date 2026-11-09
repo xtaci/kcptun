@@ -1,6 +1,6 @@
-// Package smux is a multiplexing library for Golang.
+// Package smux is a multiplexing library for Go.
 //
-// It relies on an underlying connection to provide reliability and ordering, such as TCP
-// or KCP, and provides stream-oriented multiplexing over a single channel.
+// It provides stream-oriented multiplexing over a single connection that
+// guarantees reliability and ordering, such as TCP or KCP.
 
 package smux

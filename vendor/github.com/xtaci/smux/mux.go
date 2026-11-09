@@ -30,35 +30,33 @@ import (
 	"time"
 )
 
-// Config is used to tune the Smux session
+// Config contains settings for a smux session.
 type Config struct {
-	// SMUX Protocol version, support 1,2
+	// Version is the smux protocol version: 1 or 2.
 	Version int
 
-	// Disabled keepalive
+	// KeepAliveDisabled disables keep-alive messages and timeout checks.
 	KeepAliveDisabled bool
 
-	// KeepAliveInterval is how often to send a NOP command to the remote
+	// KeepAliveInterval is the interval between NOP keep-alive messages.
 	KeepAliveInterval time.Duration
 
-	// KeepAliveTimeout is how long the session
-	// will be closed if no data has arrived
+	// KeepAliveTimeout is the maximum time without received data before the
+	// session is closed.
 	KeepAliveTimeout time.Duration
 
-	// MaxFrameSize is used to control the maximum
-	// frame size to sent to the remote
+	// MaxFrameSize is the maximum frame payload size sent to the peer.
 	MaxFrameSize int
 
-	// MaxReceiveBuffer is used to control the maximum
-	// number of data in the buffer pool
+	// MaxReceiveBuffer is the maximum amount of data buffered across all streams.
 	MaxReceiveBuffer int
 
-	// MaxStreamBuffer is used to control the maximum
-	// number of data per stream
+	// MaxStreamBuffer is the receive-window size advertised for each stream in
+	// protocol version 2.
 	MaxStreamBuffer int
 }
 
-// DefaultConfig is used to return a default configuration
+// DefaultConfig returns the default session configuration.
 func DefaultConfig() *Config {
 	return &Config{
 		Version:           1,
@@ -70,7 +68,7 @@ func DefaultConfig() *Config {
 	}
 }
 
-// VerifyConfig is used to verify the sanity of configuration
+// VerifyConfig validates the session configuration.
 func VerifyConfig(config *Config) error {
 	if !(config.Version == 1 || config.Version == 2) {
 		return errors.New("unsupported protocol version")
@@ -107,7 +105,7 @@ func VerifyConfig(config *Config) error {
 	return nil
 }
 
-// Server is used to initialize a new server-side connection.
+// Server initializes a new server-side session over conn.
 func Server(conn io.ReadWriteCloser, config *Config) (*Session, error) {
 	if config == nil {
 		config = DefaultConfig()
@@ -118,7 +116,7 @@ func Server(conn io.ReadWriteCloser, config *Config) (*Session, error) {
 	return newSession(config, conn, false), nil
 }
 
-// Client is used to initialize a new client-side connection.
+// Client initializes a new client-side session over conn.
 func Client(conn io.ReadWriteCloser, config *Config) (*Session, error) {
 	if config == nil {
 		config = DefaultConfig()

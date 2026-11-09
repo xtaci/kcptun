@@ -155,8 +155,8 @@ type (
 		chWriteEvent chan struct{} // notify Write() can be called without blocking
 
 		// socket error handling
-		socketReadError      atomic.Value
-		socketWriteError     atomic.Value
+		socketReadError      error
+		socketWriteError     error
 		chSocketReadError    chan struct{}
 		chSocketWriteError   chan struct{}
 		socketReadErrorOnce  sync.Once
@@ -181,7 +181,7 @@ type (
 		//
 		// OOB data bypasses the KCP reliable data path and is delivered unreliably.
 		// The callback is invoked synchronously from the KCP input processing path.
-		callbackForOOB atomic.Value
+		callbackForOOB atomic.Pointer[OOBCallBackType]
 	}
 
 	setReadBuffer interface {
@@ -358,7 +358,7 @@ func (s *UDPSession) Read(b []byte) (n int, err error) {
 		case <-s.readDeadline.Done():
 			return 0, errors.WithStack(errTimeout)
 		case <-s.chSocketReadError:
-			return 0, s.socketReadError.Load().(error)
+			return 0, s.socketReadError
 		case <-s.die:
 			return 0, errors.WithStack(io.ErrClosedPipe)
 		}
@@ -419,7 +419,7 @@ func (s *UDPSession) WriteBuffers(v [][]byte) (n int, err error) {
 	if buffersEmpty(v) {
 		select {
 		case <-s.chSocketWriteError:
-			return 0, s.socketWriteError.Load().(error)
+			return 0, s.socketWriteError
 		case <-s.die:
 			return 0, errors.WithStack(io.ErrClosedPipe)
 		default:
@@ -438,7 +438,7 @@ func (s *UDPSession) WriteBuffers(v [][]byte) (n int, err error) {
 		case <-s.writeDeadline.Done():
 			return 0, errors.WithStack(errTimeout)
 		case <-s.chSocketWriteError:
-			return 0, s.socketWriteError.Load().(error)
+			return 0, s.socketWriteError
 		case <-s.die:
 			return 0, errors.WithStack(io.ErrClosedPipe)
 		default:
@@ -454,7 +454,7 @@ func (s *UDPSession) WriteBuffers(v [][]byte) (n int, err error) {
 		case <-s.writeDeadline.Done():
 			return 0, errors.WithStack(errTimeout)
 		case <-s.chSocketWriteError:
-			return 0, s.socketWriteError.Load().(error)
+			return 0, s.socketWriteError
 		case <-s.die:
 			return 0, errors.WithStack(io.ErrClosedPipe)
 		}
@@ -498,7 +498,7 @@ func (s *UDPSession) waitWriteGate() error {
 		case <-s.writeDeadline.Done():
 			return errors.WithStack(errTimeout)
 		case <-s.chSocketWriteError:
-			return s.socketWriteError.Load().(error)
+			return s.socketWriteError
 		case <-s.die:
 			return errors.WithStack(io.ErrClosedPipe)
 		}
@@ -919,10 +919,10 @@ func (s *UDPSession) SetOOBHandler(callback OOBCallBackType) error {
 		return errors.New("OOB requires FEC to be enabled")
 	}
 	if callback == nil {
-		s.callbackForOOB.Store(OOBCallBackType(func([]byte) {}))
+		s.callbackForOOB.Store(nil)
 		return nil
 	}
-	s.callbackForOOB.Store(callback)
+	s.callbackForOOB.Store(&callback)
 	return nil
 }
 
@@ -1016,7 +1016,7 @@ func (s *UDPSession) notifyWriteEvent() {
 
 func (s *UDPSession) notifyReadError(err error) {
 	s.socketReadErrorOnce.Do(func() {
-		s.socketReadError.Store(err)
+		s.socketReadError = err
 		close(s.chSocketReadError)
 	})
 	s.callReadNotify()
@@ -1024,7 +1024,7 @@ func (s *UDPSession) notifyReadError(err error) {
 
 func (s *UDPSession) notifyWriteError(err error) {
 	s.socketWriteErrorOnce.Do(func() {
-		s.socketWriteError.Store(err)
+		s.socketWriteError = err
 		close(s.chSocketWriteError)
 	})
 }
@@ -1170,7 +1170,7 @@ func (s *UDPSession) kcpInput(data []byte) {
 		// The callback is responsible for ensuring non-blocking behavior.
 		if callback := s.callbackForOOB.Load(); callback != nil {
 			// Data layout: | FEC header (fecHeaderSizePlus2) | conv (4B) | OOB payload |
-			callback.(OOBCallBackType)(data[fecHeaderSizePlus2+convSize:])
+			(*callback)(data[fecHeaderSizePlus2+convSize:])
 		}
 	default: // packet without FEC
 		s.mu.Lock()
@@ -1228,7 +1228,7 @@ type (
 		dieOnce sync.Once
 
 		// socket error handling
-		socketReadError     atomic.Value
+		socketReadError     error
 		chSocketReadError   chan struct{}
 		socketReadErrorOnce sync.Once
 
@@ -1369,7 +1369,7 @@ func (l *Listener) packetInput(data []byte, addr net.Addr) {
 
 func (l *Listener) notifyReadError(err error) {
 	l.socketReadErrorOnce.Do(func() {
-		l.socketReadError.Store(err)
+		l.socketReadError = err
 		close(l.chSocketReadError)
 
 		// propagate read error to all sessions
@@ -1443,7 +1443,7 @@ func (l *Listener) AcceptKCP() (*UDPSession, error) {
 	case c := <-l.chAccepts:
 		return c, nil
 	case <-l.chSocketReadError:
-		return nil, l.socketReadError.Load().(error)
+		return nil, l.socketReadError
 	case <-l.die:
 		return nil, errors.WithStack(io.ErrClosedPipe)
 	}
@@ -1693,7 +1693,7 @@ func (s *UDPSession) TryRead(b []byte) (int, error) {
 
 	select {
 	case <-s.chSocketReadError:
-		return 0, s.socketReadError.Load().(error)
+		return 0, s.socketReadError
 	case <-s.die:
 		return 0, errors.WithStack(io.ErrClosedPipe)
 	default:
