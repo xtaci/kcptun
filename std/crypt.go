@@ -23,9 +23,12 @@
 package std
 
 import (
+	"crypto/sha1"
 	"log"
 
+	"github.com/awnumar/memguard"
 	kcp "github.com/xtaci/kcp-go/v5"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 // cryptMethod maps cipher names to their constructor functions and required key sizes.
@@ -51,6 +54,14 @@ var cryptMethods = map[string]cryptMethod{
 	"xtea":        {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewXTEABlockCrypt(key) }},
 	"salsa20":     {0, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewSalsa20BlockCrypt(key) }},
 	"aes-128-gcm": {16, func(key []byte) (kcp.BlockCrypt, error) { return kcp.NewAESGCMCrypt(key) }},
+}
+
+// DeriveBlockCrypt derives the protocol key and destroys its locked buffer after
+// the cipher has been initialized.
+func DeriveBlockCrypt(method string, key []byte, salt string) (kcp.BlockCrypt, string) {
+	pass := memguard.NewBufferFromBytes(pbkdf2.Key(key, []byte(salt), 4096, 32, sha1.New))
+	defer pass.Destroy()
+	return SelectBlockCrypt(method, pass.Bytes())
 }
 
 // SelectBlockCrypt translates a human readable cipher name into the concrete

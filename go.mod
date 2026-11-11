@@ -1,6 +1,7 @@
 module github.com/xtaci/kcptun
 
 require (
+	github.com/awnumar/memguard v0.23.0
 	github.com/fatih/color v1.19.0
 	github.com/golang/snappy v1.0.0
 	github.com/pkg/errors v0.9.1
@@ -13,6 +14,7 @@ require (
 )
 
 require (
+	github.com/awnumar/memcall v0.4.0 // indirect
 	github.com/coreos/go-iptables v0.8.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/google/gopacket v1.1.19 // indirect

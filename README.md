@@ -114,6 +114,8 @@ $ cd build
 
 `build-release.sh` creates release tarballs without macOS hidden metadata files (such as `._*`) to improve cross-platform extraction compatibility.
 
+GitHub Actions runs tests, `go vet`, and builds on Linux, macOS, and Windows, runs the race detector on Linux, and cross-compiles the release targets using vendored dependencies.
+
 ## Performance
 
 <img src="assets/fast.png" alt="fast.com" height="256px" />  
@@ -282,6 +284,10 @@ kcptun can encrypt packets using several cipher modes, including the AEAD mode `
 Legacy non-AEAD cipher modes use an unkeyed CRC-32 checksum to detect accidental corruption; `crypt=null` omits this packet protection. CRC-32 does not provide cryptographic integrity or protection against deliberate packet modification. Use an AEAD mode such as `aes-128-gcm` when packet integrity and authentication are required. AEAD authenticates packets with the configured key; it does not by itself authenticate a user's identity or provide application-level replay protection. Use an authenticated application protocol where those guarantees are needed.
 
 The `-crypt` method and `-key` must match on both endpoints. Do not use `-crypt xor` for security. Cipher performance depends on hardware and workload, so benchmark on the target system instead of relying on old benchmark figures.
+
+kcptun uses [memguard](https://github.com/awnumar/memguard) to keep the pre-shared key in read-only locked memory while it is needed, and clears the temporary derived key after cipher initialization. With QPP enabled, the pre-shared key remains locked for the lifetime of the process to initialize new streams; otherwise it is released after initialization. Memory locking requires an adequate OS memory-lock limit, and failure to lock memory terminates the process rather than silently falling back.
+
+This reduces exposure but does not protect every copy: command-line arguments, environment variables, JSON parsing and Go strings may retain the original key, and cipher key schedules, QPP state and temporary data inside dependencies are not protected by memguard. Command-line arguments may also be visible to other users. Restrict access to configuration and environment variables and avoid exposing debug or profiling endpoints.
 
 ### Quantum Resistance
 Quantum Resistance, also known as quantum-secure, post-quantum, or quantum-safe cryptography, refers to cryptographic algorithms that can withstand potential code-breaking attempts by quantum computers.

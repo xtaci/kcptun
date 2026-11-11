@@ -53,6 +53,24 @@ func TestQPPPortRoundTrip(t *testing.T) {
 	})
 }
 
+func TestQPPProtectedKeyCompatibility(t *testing.T) {
+	for _, secret := range []string{"", "session-seed", "密钥"} {
+		t.Run(secret, func(t *testing.T) {
+			key := NewProtectedKey(secret)
+			defer key.Destroy()
+			protectedPad := qpp.NewQPP(key.Bytes(), 16)
+			legacyPad := qpp.NewQPP([]byte(secret), 16)
+			aliceConn, bobConn := net.Pipe()
+			alice := NewQPPPort(aliceConn, protectedPad, key.Bytes())
+			bob := NewQPPPort(bobConn, legacyPad, []byte(secret))
+			defer alice.Close()
+			defer bob.Close()
+			assertRoundTrip(t, alice, bob, []byte("protected seed"))
+			assertRoundTrip(t, bob, alice, []byte("legacy seed"))
+		})
+	}
+}
+
 func assertRoundTrip(t *testing.T, writer io.Writer, reader io.Reader, payload []byte) {
 	t.Helper()
 

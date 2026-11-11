@@ -23,7 +23,6 @@
 package main
 
 import (
-	"crypto/sha1"
 	"fmt"
 	"io"
 	"log"
@@ -32,8 +31,6 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"time"
-
-	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
@@ -382,10 +379,12 @@ func main() {
 		}
 
 		// Derive the shared encryption key and prepare the block cipher.
+		key := std.NewProtectedKey(config.Key)
+		config.Key = ""
+		defer key.Destroy()
 		log.Println("initiating key derivation")
-		pass := pbkdf2.Key([]byte(config.Key), []byte(SALT), 4096, 32, sha1.New)
+		block, effectiveCrypt := std.DeriveBlockCrypt(config.Crypt, key.Bytes(), SALT)
 		log.Println("key derivation done")
-		block, effectiveCrypt := std.SelectBlockCrypt(config.Crypt, pass)
 		config.Crypt = effectiveCrypt
 
 		// Continuously export SNMP counters when requested.
@@ -415,9 +414,12 @@ func main() {
 
 		// Instantiate a shared QPP pad if the feature is enabled.
 		var _Q_ *qpp.QuantumPermutationPad
-		keySeed := []byte(config.Key)
+		var keySeed []byte
 		if config.QPP {
+			keySeed = key.Bytes()
 			_Q_ = qpp.NewQPP(keySeed, uint16(config.QPPCount))
+		} else {
+			key.Destroy()
 		}
 
 		// Main accept loop: assign each inbound client to a rotating smux session and
