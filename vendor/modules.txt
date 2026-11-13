@@ -39,7 +39,7 @@ github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.24
 ## explicit; go 1.20
 github.com/mattn/go-isatty
-# github.com/pion/transport/v5 v5.1.4
+# github.com/pion/transport/v5 v5.1.5
 ## explicit; go 1.24.0
 github.com/pion/transport/v5/deadline
 # github.com/pkg/errors v0.9.1
@@ -60,7 +60,7 @@ github.com/xtaci/kcp-go/v5
 # github.com/xtaci/qpp v1.1.25
 ## explicit; go 1.22.3
 github.com/xtaci/qpp
-# github.com/xtaci/smux v1.5.59
+# github.com/xtaci/smux v1.5.60
 ## explicit; go 1.24.0
 github.com/xtaci/smux
 # github.com/xtaci/tcpraw v1.2.32

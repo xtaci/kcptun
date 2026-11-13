@@ -39,6 +39,7 @@ func _itimediff(later, earlier uint32) int32 {
 // number within each class.
 type shaperHeap []writeRequest
 
+// Len returns the number of requests in the heap.
 func (h shaperHeap) Len() int { return len(h) }
 
 // Less reports whether the request at i has higher priority than the request at j.
@@ -50,9 +51,13 @@ func (h shaperHeap) Less(i, j int) bool {
 	return _itimediff(h[j].seq, h[i].seq) > 0
 }
 
+// Swap exchanges the requests at indices i and j.
 func (h shaperHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-func (h *shaperHeap) Push(x any)   { *h = append(*h, x.(writeRequest)) }
 
+// Push adds a write request to the heap.
+func (h *shaperHeap) Push(x any) { *h = append(*h, x.(writeRequest)) }
+
+// Pop removes and returns the request with the highest priority.
 func (h *shaperHeap) Pop() any {
 	old := *h
 	n := len(old)
@@ -79,6 +84,7 @@ var shaperHeapPool = sync.Pool{
 	},
 }
 
+// NewShaperQueue creates an empty queue for fairly scheduling stream writes.
 func NewShaperQueue() *shaperQueue {
 	return &shaperQueue{
 		streams: make(map[uint32]*shaperHeap),
@@ -86,7 +92,7 @@ func NewShaperQueue() *shaperQueue {
 	}
 }
 
-// Push adds a writeRequest to the shaperQueue.
+// Push adds a write request to its stream's priority heap.
 func (sq *shaperQueue) Push(req writeRequest) {
 	sq.mu.Lock()
 	defer sq.mu.Unlock()
@@ -110,7 +116,7 @@ func (sq *shaperQueue) Push(req writeRequest) {
 	sq.count.Add(1)
 }
 
-// Pop returns the next writeRequest in round-robin order, if one is available.
+// Pop returns the next request in round-robin stream order, or false if empty.
 func (sq *shaperQueue) Pop() (req writeRequest, ok bool) {
 	sq.mu.Lock()
 	defer sq.mu.Unlock()
@@ -175,7 +181,7 @@ func (sq *shaperQueue) IsEmpty() bool {
 	return sq.count.Load() == 0
 }
 
-// Len returns the total number of writeRequests in the shaperQueue.
+// Len returns the total number of queued write requests.
 func (sq *shaperQueue) Len() int {
 	return int(sq.count.Load())
 }

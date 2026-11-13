@@ -74,22 +74,27 @@ func newFrame(version byte, cmd byte, sid uint32) Frame {
 // rawHeader is the byte representation of a Frame header.
 type rawHeader [headerSize]byte
 
+// Version returns the protocol version encoded in the header.
 func (h rawHeader) Version() byte {
 	return h[0]
 }
 
+// Cmd returns the command encoded in the header.
 func (h rawHeader) Cmd() byte {
 	return h[1]
 }
 
+// Length returns the payload length encoded in the header.
 func (h rawHeader) Length() uint16 {
 	return binary.LittleEndian.Uint16(h[2:])
 }
 
+// StreamID returns the stream identifier encoded in the header.
 func (h rawHeader) StreamID() uint32 {
 	return binary.LittleEndian.Uint32(h[4:])
 }
 
+// String formats the header fields for diagnostic output.
 func (h rawHeader) String() string {
 	return fmt.Sprintf("Version:%d Cmd:%d StreamID:%d Length:%d",
 		h.Version(), h.Cmd(), h.StreamID(), h.Length())
@@ -98,9 +103,12 @@ func (h rawHeader) String() string {
 // updHeader is the byte representation of a cmdUPD payload.
 type updHeader [szCmdUPD]byte
 
+// Consumed returns the cumulative number of bytes consumed by the peer.
 func (h updHeader) Consumed() uint32 {
 	return binary.LittleEndian.Uint32(h[:])
 }
+
+// Window returns the receive-window size advertised by the peer.
 func (h updHeader) Window() uint32 {
 	return binary.LittleEndian.Uint32(h[4:])
 }

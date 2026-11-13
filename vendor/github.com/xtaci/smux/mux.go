@@ -30,7 +30,7 @@ import (
 	"time"
 )
 
-// Config contains settings for a smux session.
+// Config contains the settings used to create a smux session.
 type Config struct {
 	// Version is the smux protocol version: 1 or 2.
 	Version int
@@ -68,7 +68,7 @@ func DefaultConfig() *Config {
 	}
 }
 
-// VerifyConfig validates the session configuration.
+// VerifyConfig reports whether config contains valid session settings.
 func VerifyConfig(config *Config) error {
 	if !(config.Version == 1 || config.Version == 2) {
 		return errors.New("unsupported protocol version")
