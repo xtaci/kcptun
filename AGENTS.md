@@ -42,7 +42,7 @@ The project follows a Client-Server architecture:
 - **`vendor/`**: Vendored dependencies.
 - **`assets/`**: Images and other static assets.
 - **Root**:
-  - `build-release.sh`: Script to build releases for multiple platforms.
+  - `Makefile`: Builds and packages releases for multiple platforms.
   - `Dockerfile`: Docker build configuration.
   - `go.mod`: Go module definition.
 
@@ -56,17 +56,19 @@ The project follows a Client-Server architecture:
 ## 5. Build & Run
 
 ### Building
-To build the project, you can use the provided script or standard Go commands.
+To build the project, you can use Make or standard Go commands.
 
-**Using Script:**
+**Using Make:**
 ```bash
-./build-release.sh
+make
 ```
-This will generate binaries in the `build/` directory for a wide range of platforms including:
+This generates release archives in the `build/` directory for a wide range of platforms including:
 - **Darwin (macOS)**: amd64, arm64
 - **Linux**: 386, amd64, arm (v5, v6, v7), arm64, mips, mipsle, loong64
 - **Windows**: 386, amd64, arm64
 - **FreeBSD**: amd64
+
+Run `make clean` to remove the `build/` directory.
 
 **Using Go:**
 ```bash

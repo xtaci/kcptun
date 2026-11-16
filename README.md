@@ -108,11 +108,11 @@ $ go build -o server ./server
 These commands build binaries for the current platform. To cross-compile and package release builds for the supported targets, run:
 
 ```
-$ ./build-release.sh
+$ make
 $ cd build
 ```
 
-`build-release.sh` creates release tarballs without macOS hidden metadata files (such as `._*`) to improve cross-platform extraction compatibility.
+`make` (or `make build`) checks the Go environment and creates release tarballs and a `SHA1SUMS` file in `build/`. The tarballs exclude macOS hidden metadata files (such as `._*`) to improve cross-platform extraction compatibility. Run `make clean` to remove `build/`.
 
 GitHub Actions runs tests, `go vet`, and builds on Linux, macOS, and Windows, runs the race detector on Linux, and cross-compiles the release targets using vendored dependencies.
 
