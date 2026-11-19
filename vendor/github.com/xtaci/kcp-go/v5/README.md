@@ -116,14 +116,16 @@ func main() {
 }
 ```
 
-For optional packet encryption or FEC, use `ListenWithOptions` and `DialWithOptions`; both peers must use matching encryption keys and FEC shard settings. See [Godoc](https://pkg.go.dev/github.com/xtaci/kcp-go/v5) for configuration details.
+For optional packet encryption or FEC, use `ListenWithOptions` and `DialWithOptions`. Both peers must use matching encryption keys. The sender's FEC shard settings configure its encoder; the receiver can automatically detect and adapt to the sender's data/parity shard counts. See [Godoc](https://pkg.go.dev/github.com/xtaci/kcp-go/v5) for configuration details.
 
 ## Features
 
 - Reliable, ordered byte-stream delivery over UDP with configurable latency/throughput trade-offs.
 - `net.Conn` and `net.Listener` APIs; the familiar interface does not make the transport TCP.
 - Optional Reed-Solomon FEC to recover some packet loss, with configurable data/parity shard counts.
+- The FEC receiver can automatically detect and adapt to the sender's shard counts.
 - Optional packet encryption, including AEAD for packet-level integrity and authentication.
+- SNMP statistics are enabled by default. To disable statistics collection, build with `go build -tags kcp_no_snmp ./...`; in this build, `Snmp` is an empty placeholder and its statistics fields and reporting methods are unavailable.
 - A shared timer scheduler and batched, platform-specific UDP I/O to support many sessions efficiently.
 - Designed for high concurrency; capacity depends on workload, configuration, and hardware.
 - Based on [skywind3000's KCP](https://github.com/skywind3000/kcp), with additional features and optimizations.
@@ -208,6 +210,7 @@ Ultimately, nothing is more critical in a transmission system than the clock (re
 - Data/parity ratios are configurable per session. More parity can recover more packet loss, at the cost of additional bandwidth; the overhead depends on the configured ratio.
 - Encoder and decoder buffers are reused where possible to reduce allocations; actual memory use depends on traffic and configuration.
 - When enough shards arrive, the decoder attempts to reconstruct missing data packets and passes recovered packets to KCP for normal processing.
+- The receiver detects a sender/receiver shard-configuration mismatch from incoming data and parity packet sequence patterns. Once it has enough consecutive samples to identify both shard counts, it rebuilds its decoder and discards shards buffered under the old configuration. Detection tolerates missing or duplicate samples, but may take longer when packets are lost or reordered. The detected configuration is accepted only when the total number of data and parity shards is at most 256.
 - When packet encryption is enabled, FEC headers are included in the encrypted packet. AEAD authenticates packet contents; non-AEAD modes with CRC-32 do not provide cryptographic authentication.
 
 ## Specification
