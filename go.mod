@@ -6,7 +6,7 @@ require (
 	github.com/golang/snappy v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli v1.22.17
-	github.com/xtaci/kcp-go/v5 v5.7.5
+	github.com/xtaci/kcp-go/v5 v5.7.6
 	github.com/xtaci/qpp v1.1.25
 	github.com/xtaci/smux v1.5.60
 	github.com/xtaci/tcpraw v1.2.32
